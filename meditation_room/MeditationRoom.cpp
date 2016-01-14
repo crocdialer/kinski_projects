@@ -19,8 +19,12 @@ using namespace glm;
 void MeditationRoom::setup()
 {
     ViewerApp::setup();
+    
+    fonts()[1].load("Courier New Bold.ttf", 78);
+    
     register_property(m_shift_angle);
     register_property(m_shift_amount);
+    register_property(m_blur_amount);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     
@@ -46,6 +50,10 @@ void MeditationRoom::update(float timeDelta)
     m_mat_rgb_shift->textures() = {m_fbo_post.getTexture()};
     m_mat_rgb_shift->uniform("u_shift_amount", *m_shift_amount);
     m_mat_rgb_shift->uniform("u_shift_angle", *m_shift_angle);
+    m_mat_rgb_shift->uniform("u_blur_amount", *m_blur_amount);
+    m_mat_rgb_shift->uniform("u_window_dimension", gl::windowDimension());
+    
+    *m_shift_angle += 2.5f * timeDelta;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -55,9 +63,8 @@ void MeditationRoom::draw()
     textures()[0] = gl::render_to_texture(m_fbo_post, [this]()
     {
         gl::clear();
-        gl::drawText2D("kaka pupu", fonts()[0], gl::COLOR_WHITE,
-                       gl::vec2(100, gl::windowDimension().y / 3.f));
-        gl::drawCircle(gl::windowDimension() / 2.f, 85.f, true, 48);
+        gl::drawText2D("xxtreme shalom", fonts()[1], gl::COLOR_WHITE, gl::windowDimension() / 5.f);
+        gl::drawCircle(gl::windowDimension() / 2.f, 95.f, true, 48);
     });
     
     gl::drawQuad(m_mat_rgb_shift, gl::windowDimension());

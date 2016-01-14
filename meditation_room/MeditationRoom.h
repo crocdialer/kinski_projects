@@ -17,7 +17,8 @@ namespace kinski
         
         Property_<float>::Ptr
         m_shift_angle = Property_<float>::create("shift angle", 0.f),
-        m_shift_amount = Property_<float>::create("shift amount", 0.05f);
+        m_shift_amount = Property_<float>::create("shift amount", 10.f),
+        m_blur_amount = Property_<float>::create("blur amount", 10.f);
         
         gl::MaterialPtr m_mat_rgb_shift;
         gl::Fbo m_fbo_post;
