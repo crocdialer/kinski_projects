@@ -9,11 +9,19 @@
 
 #include "app/ViewerApp.h"
 
+// modules
+#include "video/MovieController.h"
+
+#include "CapacitiveSensor.hpp"
+
 namespace kinski
 {
     class MeditationRoom : public ViewerApp
     {
     private:
+        
+        enum class State{IDLE, MANDALA_LED, DESC_MOVIE, MEDITATION};
+        State m_current_state = State::IDLE;
         
         Property_<float>::Ptr
         m_shift_angle = Property_<float>::create("shift angle", 0.f),
@@ -21,7 +29,15 @@ namespace kinski
         m_blur_amount = Property_<float>::create("blur amount", 10.f);
         
         gl::MaterialPtr m_mat_rgb_shift;
-        gl::Fbo m_fbo_post;
+        std::vector<gl::Fbo> m_fbos;
+        
+        video::MovieControllerPtr m_movie;
+        
+        CapacitiveSensor m_chair_sensor;
+        
+        void read_door_sensor();
+        
+        void set_mandala_leds(const gl::Color &the_color);
         
     public:
         

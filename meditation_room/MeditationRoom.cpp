@@ -28,6 +28,13 @@ void MeditationRoom::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     
+    // create 2 empty fbos
+    m_fbos.resize(2);
+    
+//    gl::Fbo::Format fmt;
+//    fmt.setSamples(16);
+//    m_fbos[0] = gl::Fbo(gl::windowDimension(), fmt);
+    
     gl::Shader rgb_shader;
     rgb_shader.loadFromData(unlit_vert, kinski::read_file("rgb_shift.frag"));
     m_mat_rgb_shift = gl::Material::create(rgb_shader);
@@ -41,13 +48,30 @@ void MeditationRoom::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
     
-    if(!m_fbo_post)
+    // read sensors, according to current state
+    
+    switch (m_current_state)
+    {
+        case State::IDLE:
+        case State::MANDALA_LED:
+        case State::DESC_MOVIE:
+        case State::MEDITATION:
+            m_chair_sensor.update(timeDelta);
+            
+            if(m_chair_sensor.is_touched())
+            {
+                LOG_DEBUG << "touch detected";
+            }
+            break;
+    }
+    
+    if(!m_fbos[0])
     {
         gl::Fbo::Format fmt;
         fmt.setSamples(16);
-        m_fbo_post = gl::Fbo(gl::windowDimension(), fmt);
+        m_fbos[0] = gl::Fbo(gl::windowDimension(), fmt);
     }
-    m_mat_rgb_shift->textures() = {m_fbo_post.getTexture()};
+    m_mat_rgb_shift->textures() = {m_fbos[0].getTexture()};
     m_mat_rgb_shift->uniform("u_shift_amount", *m_shift_amount);
     m_mat_rgb_shift->uniform("u_shift_angle", *m_shift_angle);
     m_mat_rgb_shift->uniform("u_blur_amount", *m_blur_amount);
@@ -60,7 +84,7 @@ void MeditationRoom::update(float timeDelta)
 
 void MeditationRoom::draw()
 {
-    textures()[0] = gl::render_to_texture(m_fbo_post, [this]()
+    textures()[0] = gl::render_to_texture(m_fbos[0], [this]()
     {
         gl::clear();
         gl::drawText2D("xxtreme shalom", fonts()[1], gl::COLOR_WHITE, gl::windowDimension() / 5.f);
@@ -78,7 +102,7 @@ void MeditationRoom::resize(int w ,int h)
 {
     ViewerApp::resize(w, h);
     
-    m_fbo_post = gl::Fbo(w, h);
+    m_fbos[0] = gl::Fbo(w, h);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -156,4 +180,18 @@ void MeditationRoom::tearDown()
 void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MeditationRoom::read_door_sensor()
+{
+
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MeditationRoom::set_mandala_leds(const gl::Color &the_color)
+{
+    //TODO:
 }
