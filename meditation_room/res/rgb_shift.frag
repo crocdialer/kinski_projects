@@ -89,7 +89,7 @@ void main()
   vec4 texColors = vertex_in.color;
 
   float angle = u_shift_angle;
-  vec2 val = 2.f * (gl_FragCoord.xy / u_window_dimension - vec2(.5f));
+  vec2 val = vec2(1.f);//2.f * (gl_FragCoord.xy / u_window_dimension - vec2(.5f));
   vec2 coord_shift = val * vec2(u_shift_amount) / u_window_dimension;
 
   for(int i = 0; i < 3; i++, angle += angle_inc)

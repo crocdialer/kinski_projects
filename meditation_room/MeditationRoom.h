@@ -8,11 +8,13 @@
 #pragma once
 
 #include "app/ViewerApp.h"
+#include "core/Timer.h"
+#include "core/Serial.h"
 
 // modules
-#include "video/MovieController.h"
-
+#include "video/video.h"
 #include "cap_sense/cap_sense.h"
+#include "audio/audio.h"
 
 namespace kinski
 {
@@ -20,8 +22,12 @@ namespace kinski
     {
     private:
         
-        enum class State{IDLE, MANDALA_LED, DESC_MOVIE, MEDITATION};
-        State m_current_state = State::IDLE;
+        enum class State{IDLE, MANDALA_ILLUMINATED, DESC_MOVIE, MEDITATION};
+        State m_current_state = State::MANDALA_ILLUMINATED;
+        Timer m_timer_idle;
+        
+        Property_<float>::Ptr
+        m_timeout_idle = Property_<float>::create("timeout idle", 30.f);
         
         Property_<float>::Ptr
         m_shift_angle = Property_<float>::create("shift angle", 0.f),
@@ -31,14 +37,26 @@ namespace kinski
         Property_<gl::vec2>::Ptr
         m_output_res = Property_<gl::vec2>::create("output resolution", gl::vec2(1280, 720));
         
+        Property_<string>::Ptr
+        m_cap_sense_dev_name = Property_<string>::create("touch sensor device"),
+        m_motion_sense_dev_name = Property_<string>::create("motion sensor device");
+        
+        Serial m_motion_sense;
+        std::vector<uint8_t> m_serial_buf;
+        bool m_tmp_motion = false;
+        
         gl::MaterialPtr m_mat_rgb_shift;
         std::vector<gl::Fbo> m_fbos;
         
         video::MovieControllerPtr m_movie;
         
-        CapacitiveSensor m_chair_sensor;
+        CapacitiveSensor m_cap_sense;
         
-        void read_door_sensor();
+        bool change_state(State the_the_state);
+        
+        bool detect_motion();
+        
+        void read_belt_sensor();
         
         void set_mandala_leds(const gl::Color &the_color);
         
