@@ -22,6 +22,7 @@ void MeditationRoom::setup()
     
     fonts()[1].load("Courier New Bold.ttf", 78);
     
+    register_property(m_output_res);
     register_property(m_shift_angle);
     register_property(m_shift_amount);
     register_property(m_blur_amount);
@@ -30,10 +31,7 @@ void MeditationRoom::setup()
     
     // create 2 empty fbos
     m_fbos.resize(2);
-    
-//    gl::Fbo::Format fmt;
-//    fmt.setSamples(16);
-//    m_fbos[0] = gl::Fbo(gl::windowDimension(), fmt);
+    set_fbo_state();
     
     gl::Shader rgb_shader;
     rgb_shader.loadFromData(unlit_vert, kinski::read_file("rgb_shift.frag"));
@@ -65,12 +63,9 @@ void MeditationRoom::update(float timeDelta)
             break;
     }
     
-    if(!m_fbos[0])
-    {
-        gl::Fbo::Format fmt;
-        fmt.setSamples(16);
-        m_fbos[0] = gl::Fbo(gl::windowDimension(), fmt);
-    }
+    // ensure correct fbo status here
+    set_fbo_state();
+    
     m_mat_rgb_shift->textures() = {m_fbos[0].getTexture()};
     m_mat_rgb_shift->uniform("u_shift_amount", *m_shift_amount);
     m_mat_rgb_shift->uniform("u_shift_angle", *m_shift_angle);
@@ -88,7 +83,7 @@ void MeditationRoom::draw()
     {
         gl::clear();
         gl::drawText2D("xxtreme shalom", fonts()[1], gl::COLOR_WHITE, gl::windowDimension() / 5.f);
-        gl::drawCircle(gl::windowDimension() / 2.f, 95.f, true, 48);
+        gl::drawCircle(gl::windowDimension() / 2.f, 95.f, false, 48);
     });
     
     gl::drawQuad(m_mat_rgb_shift, gl::windowDimension());
@@ -180,6 +175,18 @@ void MeditationRoom::tearDown()
 void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MeditationRoom::set_fbo_state()
+{
+    if(!m_fbos[0] || m_fbos[0].getSize() != m_output_res->value())
+    {
+        gl::Fbo::Format fmt;
+        fmt.setSamples(16);
+        m_fbos[0] = gl::Fbo(*m_output_res, fmt);
+    }
 }
 
 /////////////////////////////////////////////////////////////////

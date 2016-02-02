@@ -12,7 +12,7 @@
 // modules
 #include "video/MovieController.h"
 
-#include "CapacitiveSensor.hpp"
+#include "cap_sense/cap_sense.h"
 
 namespace kinski
 {
@@ -28,6 +28,9 @@ namespace kinski
         m_shift_amount = Property_<float>::create("shift amount", 10.f),
         m_blur_amount = Property_<float>::create("blur amount", 10.f);
         
+        Property_<gl::vec2>::Ptr
+        m_output_res = Property_<gl::vec2>::create("output resolution", gl::vec2(1280, 720));
+        
         gl::MaterialPtr m_mat_rgb_shift;
         std::vector<gl::Fbo> m_fbos;
         
@@ -38,6 +41,9 @@ namespace kinski
         void read_door_sensor();
         
         void set_mandala_leds(const gl::Color &the_color);
+        
+        //! check if a valid fbo is present and set current resolution, if necessary
+        void set_fbo_state();
         
     public:
         
