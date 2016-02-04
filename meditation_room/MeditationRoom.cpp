@@ -24,6 +24,7 @@ void MeditationRoom::setup()
     
     register_property(m_cap_sense_dev_name);
     register_property(m_motion_sense_dev_name);
+    register_property(m_bio_sense_dev_name);
     register_property(m_led_dev_name);
     register_property(m_output_res);
     register_property(m_circle_radius);
@@ -61,18 +62,6 @@ void MeditationRoom::setup()
     // output window
     auto output_window = GLFW_Window::create(1280, 720, "output", false, 0, windows().back()->handle());
     add_window(output_window);
-    output_window->set_draw_function([this]()
-    {
-//        static auto mat = gl::Material::create();
-//        gl::apply_material(mat);
-        
-        gl::clear();
-//        gl::drawTexture(m_textures[1], gl::windowDimension());
-        
-        m_warp->quad_warp().render_output(m_textures[1]);
-        m_warp->quad_warp().render_grid();
-        m_warp->quad_warp().render_control_points();
-    });
     
     if(!load_assets()){ LOG_ERROR << "could not load assets"; }
     load_settings();
@@ -96,11 +85,17 @@ void MeditationRoom::update(float timeDelta)
         case State::IDLE:
             textures()[TEXTURE_OUTPUT].reset();
             if(m_audio){ m_audio->set_volume(1.f); }
+            *m_led_color = gl::COLOR_BLACK;
+            
             if(m_motion_detected){ change_state(State::MANDALA_ILLUMINATED); }
             break;
             
         case State::MANDALA_ILLUMINATED:
             textures()[TEXTURE_OUTPUT].reset();
+            
+            //TODO: fade in here
+            *m_led_color = gl::COLOR_WHITE;
+            
             if(m_audio){ m_audio->set_volume(0.f); }
             
             if(m_cap_sense.is_touched(12))
@@ -110,6 +105,9 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::DESC_MOVIE:
+            //TODO: fade out here
+            *m_led_color = gl::COLOR_BLACK;
+            
             if(m_movie && !m_movie->isPlaying() && m_timer_movie_start.has_expired())
             {
                 LOG_DEBUG << "starting movie in " << m_timeout_movie_start->value() <<" secs";
@@ -118,6 +116,8 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::MEDITATION:
+            //TODO: fade out here
+            *m_led_color = gl::COLOR_BLACK;
             if(m_movie){ m_movie->pause(); }
             break;
     }
@@ -140,7 +140,7 @@ void MeditationRoom::draw()
 {
     if(m_current_state == State::DESC_MOVIE)
     {
-        if(m_movie && m_movie->copy_frame_to_texture(textures()[TEXTURE_OUTPUT])){}
+        if(m_movie && m_movie->copy_frame_to_texture(textures()[TEXTURE_OUTPUT], true)){}
     }
     else if(m_current_state == State::MEDITATION)
     {
@@ -158,7 +158,7 @@ void MeditationRoom::draw()
             gl::drawQuad(m_mat_rgb_shift, gl::windowDimension());
         });
     }
-    
+    output_switch();
     
     // draw final result
     gl::drawTexture(textures()[TEXTURE_OUTPUT], gl::windowDimension());
@@ -193,6 +193,15 @@ void MeditationRoom::keyPress(const KeyEvent &e)
         case KEY_3:
         case KEY_4:
             next_state = e.getCode() - KEY_1;
+            break;
+        
+        case KEY_O:
+        {
+            // output window
+            auto output_window = GLFW_Window::create(1280, 720, "output", false, 0, windows().back()->handle());
+            add_window(output_window);
+            output_switch();
+        }
             break;
             
         default:
@@ -285,6 +294,16 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
             if(m_motion_sense.isInitialized()){ m_motion_sense.flush(); }
         }
     }
+    else if(theProperty == m_bio_sense_dev_name)
+    {
+        if(!m_bio_sense_dev_name->value().empty())
+        {
+            m_bio_sense.setup(*m_bio_sense_dev_name, 57600);
+            
+            // finally flush the newly initialized device
+            if(m_bio_sense.isInitialized()){ m_bio_sense.flush(); }
+        }
+    }
     else if(theProperty == m_led_dev_name)
     {
         if(!m_led_dev_name->value().empty())
@@ -295,6 +314,7 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
             if(m_led_device.isInitialized()){ m_led_device.flush(); }
         }
     }
+    else if(theProperty == m_led_color){ set_led_color(*m_led_color); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -364,7 +384,7 @@ void MeditationRoom::set_fbo_state()
     if(!m_fbos[1] || m_fbos[1].getSize() != m_output_res->value())
     {
         gl::Fbo::Format fmt;
-//        fmt.setSamples(16);
+        fmt.setSamples(16);
         m_fbos[1] = gl::Fbo(*m_output_res, fmt);
     }
 }
@@ -400,26 +420,26 @@ void MeditationRoom::detect_motion()
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::read_belt_sensor()
+void MeditationRoom::read_bio_sensor()
 {
-    LOG_DEBUG << "read_belt_sensor()";
     
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::set_mandala_leds(const gl::Color &the_color)
+void MeditationRoom::set_led_color(const gl::Color &the_color)
 {
-    LOG_DEBUG << "set_mandala_leds";
-    
-    // create RGBA integer val
-    uint32_t rgba_val = (static_cast<uint32_t>(the_color.r * 255) << 24) |
+    if(m_led_device.isInitialized())
+    {
+        // create RGBA integer val
+        uint32_t rgba_val = (static_cast<uint32_t>(the_color.r * 255) << 24) |
         (static_cast<uint32_t>(the_color.g * 255) << 16) |
         (static_cast<uint32_t>(the_color.b * 255) << 8) |
         static_cast<uint32_t>(the_color.a * 255);
+        
+        m_led_device.writeBytes(&rgba_val, sizeof(rgba_val));
+    }
     
-    //TODO: send colour via Serial device
-    m_led_device.writeBytes(&rgba_val, sizeof(rgba_val));
 }
 
 /////////////////////////////////////////////////////////////////
@@ -482,4 +502,25 @@ bool MeditationRoom::load_assets()
     m_movie->load(join_paths(asset_base_dir, "mandala.mov"));
     
     return true;
+}
+
+void MeditationRoom::output_switch()
+{
+    if(windows().size() > 1)
+    {
+        auto tex = textures()[TEXTURE_OUTPUT];
+        windows().back()->set_draw_function([this, tex]()
+        {
+            gl::clear();
+            
+            static auto mat = gl::Material::create();
+            gl::apply_material(mat);
+            
+            gl::drawTexture(tex, gl::windowDimension());
+            
+//            m_warp->quad_warp().render_output(tex);
+//            m_warp->quad_warp().render_grid();
+//            m_warp->quad_warp().render_control_points();
+        });
+    }
 }

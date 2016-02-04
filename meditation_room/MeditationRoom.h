@@ -41,7 +41,7 @@ namespace kinski
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
-        m_timeout_movie_start = Property_<float>::create("timeout movie start", 2.f);
+        m_timeout_movie_start = Property_<float>::create("timeout movie start", 1.f);
         
         Property_<float>::Ptr
         m_shift_angle = Property_<float>::create("shift angle", 0.f),
@@ -55,7 +55,8 @@ namespace kinski
         Property_<string>::Ptr
         m_cap_sense_dev_name = Property_<string>::create("touch sensor device"),
         m_led_dev_name = Property_<string>::create("led device"),
-        m_motion_sense_dev_name = Property_<string>::create("motion sensor device");
+        m_motion_sense_dev_name = Property_<string>::create("motion sensor device"),
+        m_bio_sense_dev_name = Property_<string>::create("bio sensor device");
         
         Serial m_motion_sense, m_bio_sense, m_led_device;
         std::vector<uint8_t> m_serial_buf;
@@ -66,6 +67,10 @@ namespace kinski
         
         gl::MaterialPtr m_mat_rgb_shift;
         std::vector<gl::Fbo> m_fbos;
+        
+        //! ouput warping
+        WarpComponent::Ptr m_warp;
+        void output_switch();
         
         // our content
         audio::SoundPtr m_audio;
@@ -78,15 +83,13 @@ namespace kinski
         //! read our motion sensor, update m_motion_detected member, start timer to reset val
         void detect_motion();
         
-        void read_belt_sensor();
+        float m_bio_score = 0.f;
+        void read_bio_sensor();
         
-        void set_mandala_leds(const gl::Color &the_color);
+        void set_led_color(const gl::Color &the_color);
         
         //! check if a valid fbo is present and set current resolution, if necessary
         void set_fbo_state();
-        
-        //! ouput warping
-        WarpComponent::Ptr m_warp;
         
         //! display sensor and application state
         void draw_status_info();
