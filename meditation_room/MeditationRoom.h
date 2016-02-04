@@ -23,8 +23,17 @@ namespace kinski
     private:
         
         enum class State{IDLE, MANDALA_ILLUMINATED, DESC_MOVIE, MEDITATION};
-        State m_current_state = State::MANDALA_ILLUMINATED;
-        Timer m_timer_idle;
+        
+        std::map<State, std::string> m_state_string_map =
+        {
+            {State::IDLE, "Idle"},
+            {State::MANDALA_ILLUMINATED, "Mandala Illuminated"},
+            {State::DESC_MOVIE, "Description Movie"},
+            {State::MEDITATION, "Meditation"}
+        };
+        
+        State m_current_state = State::IDLE;
+        Timer m_timer_idle, m_timer_motion_reset;
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f);
@@ -32,6 +41,7 @@ namespace kinski
         Property_<float>::Ptr
         m_shift_angle = Property_<float>::create("shift angle", 0.f),
         m_shift_amount = Property_<float>::create("shift amount", 10.f),
+        m_circle_radius = Property_<float>::create("circle radius", 95.f),
         m_blur_amount = Property_<float>::create("blur amount", 10.f);
         
         Property_<gl::vec2>::Ptr
@@ -39,11 +49,15 @@ namespace kinski
         
         Property_<string>::Ptr
         m_cap_sense_dev_name = Property_<string>::create("touch sensor device"),
+        m_led_dev_name = Property_<string>::create("led device"),
         m_motion_sense_dev_name = Property_<string>::create("motion sensor device");
         
-        Serial m_motion_sense;
+        Serial m_motion_sense, m_bio_sense, m_led_device;
         std::vector<uint8_t> m_serial_buf;
-        bool m_tmp_motion = false;
+        bool m_motion_detected = false;
+        
+        Property_<gl::Color>::Ptr
+        m_led_color = Property_<gl::Color>::create("LED color", gl::COLOR_BLACK);
         
         gl::MaterialPtr m_mat_rgb_shift;
         std::vector<gl::Fbo> m_fbos;
@@ -54,7 +68,8 @@ namespace kinski
         
         bool change_state(State the_the_state);
         
-        bool detect_motion();
+        //! read our motion sensor, update m_motion_detected member, start timer to reset val
+        void detect_motion();
         
         void read_belt_sensor();
         
@@ -62,6 +77,8 @@ namespace kinski
         
         //! check if a valid fbo is present and set current resolution, if necessary
         void set_fbo_state();
+        
+        void draw_status_info();
         
     public:
         

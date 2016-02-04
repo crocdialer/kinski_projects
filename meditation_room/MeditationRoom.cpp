@@ -20,15 +20,18 @@ void MeditationRoom::setup()
 {
     ViewerApp::setup();
     
-    fonts()[1].load("Courier New Bold.ttf", 78);
+    fonts()[1].load("Courier New Bold.ttf", 64);
     
     register_property(m_cap_sense_dev_name);
     register_property(m_motion_sense_dev_name);
+    register_property(m_led_dev_name);
     register_property(m_output_res);
+    register_property(m_circle_radius);
     register_property(m_shift_angle);
     register_property(m_shift_amount);
     register_property(m_blur_amount);
     register_property(m_timeout_idle);
+    register_property(m_led_color);
     
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
@@ -46,6 +49,7 @@ void MeditationRoom::setup()
     
     // setup timer objects
     m_timer_idle = Timer(io_service(), [this](){ change_state(State::IDLE); });
+    m_timer_motion_reset = Timer(io_service(), [this](){ m_motion_detected = false; });
     
     load_settings();
 }
@@ -56,20 +60,19 @@ void MeditationRoom::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
     
+    // update motion sensor status
+    detect_motion();
+    
+    m_cap_sense.update(timeDelta);
+    
     // read sensors, according to current state
     
     switch (m_current_state)
     {
         case State::IDLE:
-            m_tmp_motion = detect_motion();
             break;
             
         case State::MANDALA_ILLUMINATED:
-            
-            // TODO: remove when state machine works properly
-            m_tmp_motion = detect_motion();
-            
-            m_cap_sense.update(timeDelta);
             
             if(m_cap_sense.is_touched(12))
             {
@@ -105,19 +108,22 @@ void MeditationRoom::draw()
     textures()[0] = gl::render_to_texture(m_fbos[0], [this]()
     {
         gl::clear();
-        if(m_cap_sense.is_touched(12))
-        {
-            gl::drawText2D("the midas touch", fonts()[1], gl::COLOR_WHITE, gl::windowDimension() / 5.f);
-        }
-        if(m_tmp_motion)
-        {
-            gl::drawText2D("emotion", fonts()[1], gl::COLOR_WHITE, vec2(80, 200));
-        }
+//        if(m_cap_sense.is_touched(12))
+//        {
+//            gl::drawText2D("the midas touch", fonts()[1], gl::COLOR_WHITE, gl::windowDimension() / 5.f);
+//        }
+//        if(m_tmp_motion)
+//        {
+//            gl::drawText2D("motion", fonts()[1], gl::COLOR_WHITE, vec2(80, 200));
+//        }
         
-        gl::drawCircle(gl::windowDimension() / 2.f, 95.f, true, 48);
+        gl::drawCircle(gl::windowDimension() / 2.f, *m_circle_radius, true, 48);
     });
     
     gl::drawQuad(m_mat_rgb_shift, gl::windowDimension());
+    
+    // draw status overlay
+    draw_status_info();
     
     if(displayTweakBar()){ draw_textures(textures()); }
 }
@@ -127,8 +133,6 @@ void MeditationRoom::draw()
 void MeditationRoom::resize(int w ,int h)
 {
     ViewerApp::resize(w, h);
-    
-    m_fbos[0] = gl::Fbo(w, h);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -136,6 +140,25 @@ void MeditationRoom::resize(int w ,int h)
 void MeditationRoom::keyPress(const KeyEvent &e)
 {
     ViewerApp::keyPress(e);
+    
+    int next_state = -1;
+    static std::vector<State> states = {State::IDLE, State::MANDALA_ILLUMINATED, State::DESC_MOVIE,
+        State::MEDITATION};
+    
+    switch (e.getCode())
+    {
+        case KEY_1:
+        case KEY_2:
+        case KEY_3:
+        case KEY_4:
+            next_state = e.getCode() - KEY_1;
+            break;
+            
+        default:
+            break;
+    }
+    
+    if(next_state >= 0){ change_state(states[next_state]); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -213,11 +236,25 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_motion_sense_dev_name)
     {
-        if(m_motion_sense_dev_name->value().empty()){ m_motion_sense.setup(0, 57600); }
-        else{ m_motion_sense.setup(*m_motion_sense_dev_name, 57600); }
+        if(!m_motion_sense_dev_name->value().empty())
+        {
+            m_motion_sense.setup(*m_motion_sense_dev_name, 57600);
+            
+            // finally flush the newly initialized device
+            if(m_motion_sense.isInitialized()){ m_motion_sense.flush(); }
+        }
         
-        // finally flush the newly initialized device
-        if(m_motion_sense.isInitialized()){ m_motion_sense.flush(); }
+    }
+    else if(theProperty == m_led_dev_name)
+    {
+        if(!m_led_dev_name->value().empty())
+        {
+            m_led_device.setup(*m_led_dev_name, 57600);
+            
+            // finally flush the newly initialized device
+            if(m_led_device.isInitialized()){ m_led_device.flush(); }
+        }
+        
     }
 }
 
@@ -289,11 +326,8 @@ void MeditationRoom::set_fbo_state()
 
 /////////////////////////////////////////////////////////////////
 
-bool MeditationRoom::detect_motion()
+void MeditationRoom::detect_motion()
 {
-//    LOG_DEBUG << "read_motion_sensor()";
-    
-    //TODO: read sensor value via Serial device
     if(m_motion_sense.isInitialized())
     {
         size_t bytes_to_read = std::min(m_motion_sense.available(),
@@ -301,7 +335,7 @@ bool MeditationRoom::detect_motion()
         
         if(!bytes_to_read)
         {
-            // reconnect
+//            m_motion_sense_dev_name->notifyObservers();
         }
         
         uint8_t *buf_ptr = &m_serial_buf[0];
@@ -309,11 +343,17 @@ bool MeditationRoom::detect_motion()
         
         for(uint32_t i = 0; i < bytes_to_read; i++)
         {
-            if(*buf_ptr++){ return true; }
+            if(*buf_ptr++)
+            {
+                m_motion_detected = true;
+                m_timer_motion_reset.expires_from_now(5.f);
+                break;
+            }
         }
     }
-    return false;
 }
+
+/////////////////////////////////////////////////////////////////
 
 void MeditationRoom::read_belt_sensor()
 {
@@ -327,5 +367,56 @@ void MeditationRoom::set_mandala_leds(const gl::Color &the_color)
 {
     LOG_DEBUG << "set_mandala_leds";
     
+    // create RGBA integer val
+    uint32_t rgba_val = (static_cast<uint32_t>(the_color.r * 255) << 24) |
+        (static_cast<uint32_t>(the_color.g * 255) << 16) |
+        (static_cast<uint32_t>(the_color.b * 255) << 8) |
+        static_cast<uint32_t>(the_color.a * 255);
+    
     //TODO: send colour via Serial device
+    m_led_device.writeBytes(&rgba_val, sizeof(rgba_val));
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MeditationRoom::draw_status_info()
+{
+    vec2 offset(50, 50), step(0, 35);
+    
+    // display current state
+    gl::drawText2D("State: " + m_state_string_map[m_current_state], fonts()[0], gl::COLOR_WHITE, offset);
+    offset += step;
+    
+    bool motion_sensor_found = m_motion_sense.isInitialized();
+    bool cap_sensor_found = m_cap_sense.is_initialized();
+    bool bio_sensor_found = m_bio_sense.isInitialized();
+    bool led_device_found = m_led_device.isInitialized();
+    
+    string ms_string = motion_sensor_found ? "ok" : "not found";
+    string cs_string = cap_sensor_found ? "ok" : "not found";
+    string bs_string = bio_sensor_found ? "ok" : "not found";
+    string led_string = led_device_found ? "ok" : "not found";
+    
+    gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched(12)) ? gl::COLOR_GREEN : gl::COLOR_RED;
+    gl::Color motion_col = (motion_sensor_found && m_motion_detected) ?
+        gl::COLOR_GREEN : gl::COLOR_RED;
+    
+    // motion sensor
+    gl::drawText2D("motion-sensor: " + ms_string, fonts()[0], motion_col, offset);
+    
+    // chair sensor
+    offset += step;
+    gl::drawText2D("chair-sensor: " + cs_string, fonts()[0], cap_col, offset);
+    
+    // bio feedback sensor
+    offset += step;
+    gl::drawText2D("bio-sensor (accelo): " + bs_string, fonts()[0], gl::COLOR_WHITE, offset);
+    
+    // LED device
+    offset += step;
+    gl::drawText2D("LEDs: " + led_string, fonts()[0], gl::COLOR_WHITE, offset);
+    
+    offset += gl::vec2(150, 0);
+    gl::drawQuad(*m_led_color, gl::vec2(50.f), offset);
+    
 }
