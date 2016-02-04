@@ -31,6 +31,7 @@ void MeditationRoom::setup()
     register_property(m_shift_amount);
     register_property(m_blur_amount);
     register_property(m_timeout_idle);
+    register_property(m_timeout_movie_start);
     register_property(m_led_color);
     
     observe_properties();
@@ -50,7 +51,30 @@ void MeditationRoom::setup()
     // setup timer objects
     m_timer_idle = Timer(io_service(), [this](){ change_state(State::IDLE); });
     m_timer_motion_reset = Timer(io_service(), [this](){ m_motion_detected = false; });
+    m_timer_movie_start = Timer(io_service(), [this](){ if(m_movie){ m_movie->restart(); } });
     
+    // warp component
+    m_warp = std::make_shared<WarpComponent>();
+    m_warp->observe_properties();
+    add_tweakbar_for_component(m_warp);
+    
+    // output window
+    auto output_window = GLFW_Window::create(1280, 720, "output", false, 0, windows().back()->handle());
+    add_window(output_window);
+    output_window->set_draw_function([this]()
+    {
+//        static auto mat = gl::Material::create();
+//        gl::apply_material(mat);
+        
+        gl::clear();
+//        gl::drawTexture(m_textures[1], gl::windowDimension());
+        
+        m_warp->quad_warp().render_output(m_textures[1]);
+        m_warp->quad_warp().render_grid();
+        m_warp->quad_warp().render_control_points();
+    });
+    
+    if(!load_assets()){ LOG_ERROR << "could not load assets"; }
     load_settings();
 }
 
@@ -65,27 +89,36 @@ void MeditationRoom::update(float timeDelta)
     
     m_cap_sense.update(timeDelta);
     
-    // read sensors, according to current state
+    // update according to current state
     
     switch (m_current_state)
     {
         case State::IDLE:
+            textures()[TEXTURE_OUTPUT].reset();
+            if(m_audio){ m_audio->set_volume(1.f); }
+            if(m_motion_detected){ change_state(State::MANDALA_ILLUMINATED); }
             break;
             
         case State::MANDALA_ILLUMINATED:
+            textures()[TEXTURE_OUTPUT].reset();
+            if(m_audio){ m_audio->set_volume(0.f); }
             
             if(m_cap_sense.is_touched(12))
             {
-//                LOG_DEBUG << "touch detected";
+                change_state(State::DESC_MOVIE);
             }
             break;
             
         case State::DESC_MOVIE:
-            // nothing to do here
+            if(m_movie && !m_movie->isPlaying() && m_timer_movie_start.has_expired())
+            {
+                LOG_DEBUG << "starting movie in " << m_timeout_movie_start->value() <<" secs";
+                m_timer_movie_start.expires_from_now(*m_timeout_movie_start);
+            }
             break;
             
         case State::MEDITATION:
-            //
+            if(m_movie){ m_movie->pause(); }
             break;
     }
     
@@ -105,22 +138,30 @@ void MeditationRoom::update(float timeDelta)
 
 void MeditationRoom::draw()
 {
-    textures()[0] = gl::render_to_texture(m_fbos[0], [this]()
+    if(m_current_state == State::DESC_MOVIE)
     {
-        gl::clear();
-//        if(m_cap_sense.is_touched(12))
-//        {
-//            gl::drawText2D("the midas touch", fonts()[1], gl::COLOR_WHITE, gl::windowDimension() / 5.f);
-//        }
-//        if(m_tmp_motion)
-//        {
-//            gl::drawText2D("motion", fonts()[1], gl::COLOR_WHITE, vec2(80, 200));
-//        }
+        if(m_movie && m_movie->copy_frame_to_texture(textures()[TEXTURE_OUTPUT])){}
+    }
+    else if(m_current_state == State::MEDITATION)
+    {
+        // create undistorted offscreen tex
+        textures()[0] = gl::render_to_texture(m_fbos[0], [this]()
+        {
+            gl::clear();
+            gl::drawCircle(gl::windowDimension() / 2.f, *m_circle_radius, true, 48);
+        });
         
-        gl::drawCircle(gl::windowDimension() / 2.f, *m_circle_radius, true, 48);
-    });
+        // apply distortion shader
+        textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_fbos[1], [this]()
+        {
+            gl::clear();
+            gl::drawQuad(m_mat_rgb_shift, gl::windowDimension());
+        });
+    }
     
-    gl::drawQuad(m_mat_rgb_shift, gl::windowDimension());
+    
+    // draw final result
+    gl::drawTexture(textures()[TEXTURE_OUTPUT], gl::windowDimension());
     
     // draw status overlay
     draw_status_info();
@@ -243,7 +284,6 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
             // finally flush the newly initialized device
             if(m_motion_sense.isInitialized()){ m_motion_sense.flush(); }
         }
-        
     }
     else if(theProperty == m_led_dev_name)
     {
@@ -254,7 +294,6 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
             // finally flush the newly initialized device
             if(m_led_device.isInitialized()){ m_led_device.flush(); }
         }
-        
     }
 }
 
@@ -321,6 +360,12 @@ void MeditationRoom::set_fbo_state()
         gl::Fbo::Format fmt;
         fmt.setSamples(16);
         m_fbos[0] = gl::Fbo(*m_output_res, fmt);
+    }
+    if(!m_fbos[1] || m_fbos[1].getSize() != m_output_res->value())
+    {
+        gl::Fbo::Format fmt;
+//        fmt.setSamples(16);
+        m_fbos[1] = gl::Fbo(*m_output_res, fmt);
     }
 }
 
@@ -416,7 +461,25 @@ void MeditationRoom::draw_status_info()
     offset += step;
     gl::drawText2D("LEDs: " + led_string, fonts()[0], gl::COLOR_WHITE, offset);
     
-    offset += gl::vec2(150, 0);
-    gl::drawQuad(*m_led_color, gl::vec2(50.f), offset);
+    offset += gl::vec2(155, 0);
+    gl::drawQuad(*m_led_color, gl::vec2(75.f), offset);
     
+}
+
+bool MeditationRoom::load_assets()
+{
+    // asset path
+    const std::string asset_base_dir = "~/Desktop/mkb_assets";
+    
+    if(!is_directory(asset_base_dir)){ return false; }
+    
+    // background chanting audio
+    m_audio.reset(new audio::Fmod_Sound(join_paths(asset_base_dir, "chanting_loop.wav")));
+    m_audio->set_loop(true);
+    m_audio->play();
+    
+    // description movie
+    m_movie->load(join_paths(asset_base_dir, "mandala.mov"));
+    
+    return true;
 }

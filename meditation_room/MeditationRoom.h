@@ -8,6 +8,7 @@
 #pragma once
 
 #include "app/ViewerApp.h"
+#include "app/WarpComponent.h"
 #include "core/Timer.h"
 #include "core/Serial.h"
 
@@ -24,6 +25,9 @@ namespace kinski
         
         enum class State{IDLE, MANDALA_ILLUMINATED, DESC_MOVIE, MEDITATION};
         
+        enum AnimationEnum{ AUDIO_FADE_IN = 0, AUDIO_FADE_OUT = 1};
+        enum TextureEnum{ TEXTURE_BLANK = 0, TEXTURE_OUTPUT = 1};
+        
         std::map<State, std::string> m_state_string_map =
         {
             {State::IDLE, "Idle"},
@@ -33,10 +37,11 @@ namespace kinski
         };
         
         State m_current_state = State::IDLE;
-        Timer m_timer_idle, m_timer_motion_reset;
+        Timer m_timer_idle, m_timer_motion_reset, m_timer_movie_start;
         
         Property_<float>::Ptr
-        m_timeout_idle = Property_<float>::create("timeout idle", 30.f);
+        m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
+        m_timeout_movie_start = Property_<float>::create("timeout movie start", 2.f);
         
         Property_<float>::Ptr
         m_shift_angle = Property_<float>::create("shift angle", 0.f),
@@ -62,7 +67,9 @@ namespace kinski
         gl::MaterialPtr m_mat_rgb_shift;
         std::vector<gl::Fbo> m_fbos;
         
-        video::MovieControllerPtr m_movie;
+        // our content
+        audio::SoundPtr m_audio;
+        video::MovieControllerPtr m_movie = video::MovieController::create();
         
         CapacitiveSensor m_cap_sense;
         
@@ -78,7 +85,13 @@ namespace kinski
         //! check if a valid fbo is present and set current resolution, if necessary
         void set_fbo_state();
         
+        //! ouput warping
+        WarpComponent::Ptr m_warp;
+        
+        //! display sensor and application state
         void draw_status_info();
+        
+        bool load_assets();
         
     public:
         
