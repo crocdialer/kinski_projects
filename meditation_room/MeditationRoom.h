@@ -78,7 +78,7 @@ namespace kinski
         
         CapacitiveSensor m_cap_sense;
         
-        bool change_state(State the_the_state);
+        bool change_state(State the_the_state, bool force_change = false);
         
         //! read our motion sensor, update m_motion_detected member, start timer to reset val
         void detect_motion();

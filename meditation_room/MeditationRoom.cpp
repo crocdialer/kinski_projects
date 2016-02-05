@@ -112,6 +112,10 @@ void MeditationRoom::update(float timeDelta)
             {
                 LOG_DEBUG << "starting movie in " << m_timeout_movie_start->value() <<" secs";
                 m_timer_movie_start.expires_from_now(*m_timeout_movie_start);
+                m_movie->set_movie_ended_callback([this](video::MovieControllerPtr)
+                {
+                    change_state(State::MANDALA_ILLUMINATED);
+                });
             }
             break;
             
@@ -198,7 +202,8 @@ void MeditationRoom::keyPress(const KeyEvent &e)
         case KEY_O:
         {
             // output window
-            auto output_window = GLFW_Window::create(1280, 720, "output", false, 0, windows().back()->handle());
+            auto output_window = GLFW_Window::create(1280, 720, "output", false, 0,
+                                                     windows().back()->handle());
             add_window(output_window);
             output_switch();
         }
@@ -208,7 +213,7 @@ void MeditationRoom::keyPress(const KeyEvent &e)
             break;
     }
     
-    if(next_state >= 0){ change_state(states[next_state]); }
+    if(next_state >= 0){ change_state(states[next_state], e.isShiftDown()); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -319,7 +324,7 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
 
 /////////////////////////////////////////////////////////////////
 
-bool MeditationRoom::change_state(State the_state)
+bool MeditationRoom::change_state(State the_state, bool force_change)
 {
     bool ret = true;
     
@@ -331,24 +336,28 @@ bool MeditationRoom::change_state(State the_state)
             break;
             
         case State::MANDALA_ILLUMINATED:
-            ret = (the_state == State::DESC_MOVIE) ||
-                (the_state == State::IDLE);
+            ret =   (the_state == State::IDLE) || (the_state == State::DESC_MOVIE) ||
+                    (the_state == State::MEDITATION);
             break;
             
         case State::DESC_MOVIE:
-            ret = (the_state == State::MEDITATION) ||
-                (the_state == State::MANDALA_ILLUMINATED);
+            ret = the_state == State::MANDALA_ILLUMINATED;
             break;
             
         case State::MEDITATION:
             ret = the_state == State::MANDALA_ILLUMINATED;
             break;
     }
-    if(ret)
+    
+    if (!ret){ LOG_DEBUG << "invalid state change requested"; }
+    if (force_change){ LOG_DEBUG << "forced state change"; }
+    
+    if(ret || force_change)
     {
         m_current_state = the_state;
+        textures()[TEXTURE_OUTPUT].reset();
         
-        // handle state transition
+        //TODO: handle state transition
         switch(m_current_state)
         {
             case State::IDLE:
@@ -366,7 +375,6 @@ bool MeditationRoom::change_state(State the_state)
                 break;
         }
     }
-    else{ LOG_DEBUG << "invalid state change requested"; }
     
     return ret;
 }
