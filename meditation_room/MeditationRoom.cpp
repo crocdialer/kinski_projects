@@ -30,10 +30,13 @@ void MeditationRoom::setup()
     register_property(m_circle_radius);
     register_property(m_shift_angle);
     register_property(m_shift_amount);
+    register_property(m_shift_velocity);
     register_property(m_blur_amount);
     register_property(m_timeout_idle);
     register_property(m_timeout_movie_start);
+    register_property(m_timeout_fade);
     register_property(m_led_color);
+    register_property(m_volume);
     
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
@@ -65,6 +68,8 @@ void MeditationRoom::setup()
     
     if(!load_assets()){ LOG_ERROR << "could not load assets"; }
     load_settings();
+    
+    change_state(State::IDLE, true);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -83,59 +88,29 @@ void MeditationRoom::update(float timeDelta)
     switch (m_current_state)
     {
         case State::IDLE:
-            textures()[TEXTURE_OUTPUT].reset();
-            if(m_audio){ m_audio->set_volume(1.f); }
-            *m_led_color = gl::COLOR_BLACK;
-            
             if(m_motion_detected){ change_state(State::MANDALA_ILLUMINATED); }
             break;
             
         case State::MANDALA_ILLUMINATED:
-            textures()[TEXTURE_OUTPUT].reset();
-            
-            //TODO: fade in here
-            *m_led_color = gl::COLOR_WHITE;
-            
-            if(m_audio){ m_audio->set_volume(0.f); }
-            
-            if(m_cap_sense.is_touched(12))
-            {
-                change_state(State::DESC_MOVIE);
-            }
+            if(m_cap_sense.is_touched(12)){ change_state(State::DESC_MOVIE); }
             break;
             
         case State::DESC_MOVIE:
-            //TODO: fade out here
-            *m_led_color = gl::COLOR_BLACK;
             
-            if(m_movie && !m_movie->isPlaying() && m_timer_movie_start.has_expired())
-            {
-                LOG_DEBUG << "starting movie in " << m_timeout_movie_start->value() <<" secs";
-                m_timer_movie_start.expires_from_now(*m_timeout_movie_start);
-                m_movie->set_movie_ended_callback([this](video::MovieControllerPtr)
-                {
-                    change_state(State::MANDALA_ILLUMINATED);
-                });
-            }
             break;
             
         case State::MEDITATION:
-            //TODO: fade out here
-            *m_led_color = gl::COLOR_BLACK;
-            if(m_movie){ m_movie->pause(); }
+            m_mat_rgb_shift->textures() = {m_fbos[0].getTexture()};
+            m_mat_rgb_shift->uniform("u_shift_amount", *m_shift_amount);
+            m_mat_rgb_shift->uniform("u_shift_angle", *m_shift_angle);
+            m_mat_rgb_shift->uniform("u_blur_amount", *m_blur_amount);
+            m_mat_rgb_shift->uniform("u_window_dimension", gl::windowDimension());
+            *m_shift_angle += *m_shift_velocity * timeDelta;
             break;
     }
     
     // ensure correct fbo status here
     set_fbo_state();
-    
-    m_mat_rgb_shift->textures() = {m_fbos[0].getTexture()};
-    m_mat_rgb_shift->uniform("u_shift_amount", *m_shift_amount);
-    m_mat_rgb_shift->uniform("u_shift_angle", *m_shift_angle);
-    m_mat_rgb_shift->uniform("u_blur_amount", *m_blur_amount);
-    m_mat_rgb_shift->uniform("u_window_dimension", gl::windowDimension());
-    
-    *m_shift_angle += 2.5f * timeDelta;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -187,30 +162,33 @@ void MeditationRoom::keyPress(const KeyEvent &e)
     ViewerApp::keyPress(e);
     
     int next_state = -1;
-    static std::vector<State> states = {State::IDLE, State::MANDALA_ILLUMINATED, State::DESC_MOVIE,
+    std::vector<State> states = {State::IDLE, State::MANDALA_ILLUMINATED, State::DESC_MOVIE,
         State::MEDITATION};
     
-    switch (e.getCode())
+    if(!displayTweakBar())
     {
-        case KEY_1:
-        case KEY_2:
-        case KEY_3:
-        case KEY_4:
-            next_state = e.getCode() - KEY_1;
-            break;
-        
-        case KEY_O:
+        switch (e.getCode())
         {
-            // output window
-            auto output_window = GLFW_Window::create(1280, 720, "output", false, 0,
-                                                     windows().back()->handle());
-            add_window(output_window);
-            output_switch();
+            case KEY_1:
+            case KEY_2:
+            case KEY_3:
+            case KEY_4:
+                next_state = e.getCode() - KEY_1;
+                break;
+                
+            case KEY_O:
+            {
+                // output window
+                auto output_window = GLFW_Window::create(1280, 720, "output", false, 0,
+                                                         windows().back()->handle());
+                add_window(output_window);
+                output_switch();
+            }
+                break;
+                
+            default:
+                break;
         }
-            break;
-            
-        default:
-            break;
     }
     
     if(next_state >= 0){ change_state(states[next_state], e.isShiftDown()); }
@@ -320,6 +298,24 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
         }
     }
     else if(theProperty == m_led_color){ set_led_color(*m_led_color); }
+    else if(theProperty == m_volume)
+    {
+        if(m_audio)
+        {
+            m_audio->set_volume(*m_volume);
+        }
+    }
+    else if(theProperty == m_timeout_fade)
+    {
+        // setup animations
+        animations()[AUDIO_FADE_IN] = animation::create(m_volume, 0.f, 1.f, *m_timeout_fade);
+        animations()[AUDIO_FADE_OUT] = animation::create(m_volume, 1.f, 0.f, *m_timeout_fade);
+        animations()[LIGHT_FADE_IN] = animation::create(m_led_color, gl::COLOR_BLACK, gl::COLOR_WHITE,
+                                                        *m_timeout_fade);
+        animations()[LIGHT_FADE_OUT] = animation::create(m_led_color, gl::COLOR_WHITE, gl::COLOR_BLACK,
+                                                         *m_timeout_fade);
+        
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -354,26 +350,55 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
     
     if(ret || force_change)
     {
-        m_current_state = the_state;
         textures()[TEXTURE_OUTPUT].reset();
         
         //TODO: handle state transition
-        switch(m_current_state)
+        switch(the_state)
         {
             case State::IDLE:
-                // fade in audio
-                // fade out lights
+                animations()[AUDIO_FADE_IN]->start();
+                animations()[LIGHT_FADE_OUT]->start();
+                
+//                if(m_audio){ m_audio->set_volume(1.f); }
+//                *m_led_color = gl::COLOR_BLACK;
                 break;
                 
             case State::MANDALA_ILLUMINATED:
+                
+                //TODO: fade in here
+//                *m_led_color = gl::COLOR_WHITE;
+                animations()[LIGHT_FADE_IN]->start();
+                
+                if(m_current_state == State::IDLE){ animations()[AUDIO_FADE_OUT]->start(); }
+                else{ *m_volume = 0.f; }
+                
+                m_timer_idle.expires_from_now(*m_timeout_idle);
+                
                 break;
                 
             case State::DESC_MOVIE:
+                //TODO: fade out here
+//                *m_led_color = gl::COLOR_BLACK;
+                animations()[LIGHT_FADE_OUT]->start();
+                
+                if(m_movie)
+                {
+                    LOG_DEBUG << "starting movie in " << m_timeout_movie_start->value() <<" secs";
+                    m_timer_movie_start.expires_from_now(*m_timeout_movie_start);
+                    m_movie->set_movie_ended_callback([this](video::MovieControllerPtr)
+                    {
+                        change_state(State::MANDALA_ILLUMINATED);
+                    });
+                }
                 break;
                 
             case State::MEDITATION:
+//                *m_led_color = gl::COLOR_BLACK;
+                animations()[LIGHT_FADE_OUT]->start();
+                if(m_movie){ m_movie->pause(); }
                 break;
         }
+        m_current_state = the_state;
     }
     
     return ret;

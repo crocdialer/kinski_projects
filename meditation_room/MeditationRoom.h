@@ -25,7 +25,8 @@ namespace kinski
         
         enum class State{IDLE, MANDALA_ILLUMINATED, DESC_MOVIE, MEDITATION};
         
-        enum AnimationEnum{ AUDIO_FADE_IN = 0, AUDIO_FADE_OUT = 1};
+        enum AnimationEnum{ AUDIO_FADE_IN = 0, AUDIO_FADE_OUT = 1, LIGHT_FADE_IN = 2,
+            LIGHT_FADE_OUT = 3};
         enum TextureEnum{ TEXTURE_BLANK = 0, TEXTURE_OUTPUT = 1};
         
         std::map<State, std::string> m_state_string_map =
@@ -41,11 +42,13 @@ namespace kinski
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
-        m_timeout_movie_start = Property_<float>::create("timeout movie start", 1.f);
+        m_timeout_movie_start = Property_<float>::create("timeout movie start", 1.f),
+        m_timeout_fade = Property_<float>::create("timeout fade audio/light", 2.f);
         
         Property_<float>::Ptr
         m_shift_angle = Property_<float>::create("shift angle", 0.f),
         m_shift_amount = Property_<float>::create("shift amount", 10.f),
+        m_shift_velocity = Property_<float>::create("shift velocity", 2.5f),
         m_circle_radius = Property_<float>::create("circle radius", 95.f),
         m_blur_amount = Property_<float>::create("blur amount", 10.f);
         
@@ -64,6 +67,9 @@ namespace kinski
         
         Property_<gl::Color>::Ptr
         m_led_color = Property_<gl::Color>::create("LED color", gl::COLOR_BLACK);
+        
+        Property_<float>::Ptr
+        m_volume = Property_<float>::create("volume", 1.f);
         
         gl::MaterialPtr m_mat_rgb_shift;
         std::vector<gl::Fbo> m_fbos;
