@@ -50,7 +50,9 @@ namespace kinski
         m_shift_amount = Property_<float>::create("shift amount", 10.f),
         m_shift_velocity = Property_<float>::create("shift velocity", 2.5f),
         m_circle_radius = Property_<float>::create("circle radius", 95.f),
-        m_blur_amount = Property_<float>::create("blur amount", 10.f);
+        m_blur_amount = Property_<float>::create("blur amount", 10.f),
+        m_bio_sensitivity = Property_<float>::create("bio sensitivity", 20.f);
+        float m_current_circ_radius;
         
         Property_<gl::vec2>::Ptr
         m_output_res = Property_<gl::vec2>::create("output resolution", gl::vec2(1280, 720));
@@ -69,7 +71,8 @@ namespace kinski
         m_led_color = Property_<gl::Color>::create("LED color", gl::COLOR_BLACK);
         
         Property_<float>::Ptr
-        m_volume = Property_<float>::create("volume", 1.f);
+        m_volume = Property_<float>::create("volume", 1.f),
+        m_bio_score = Property_<float>::create("bio score", 0.f);
         
         gl::MaterialPtr m_mat_rgb_shift;
         std::vector<gl::Fbo> m_fbos;
@@ -89,8 +92,9 @@ namespace kinski
         //! read our motion sensor, update m_motion_detected member, start timer to reset val
         void detect_motion();
         
-        float m_bio_score = 0.f;
         void read_bio_sensor();
+        
+        void update_bio_visuals();
         
         void set_led_color(const gl::Color &the_color);
         

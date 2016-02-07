@@ -37,6 +37,8 @@ void MeditationRoom::setup()
     register_property(m_timeout_fade);
     register_property(m_led_color);
     register_property(m_volume);
+    register_property(m_bio_score);
+    register_property(m_bio_sensitivity);
     
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
@@ -78,9 +80,9 @@ void MeditationRoom::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
     
-    // update motion sensor status
+    // update sensor status
     detect_motion();
-    
+    read_bio_sensor();
     m_cap_sense.update(timeDelta);
     
     // update according to current state
@@ -104,13 +106,37 @@ void MeditationRoom::update(float timeDelta)
             m_mat_rgb_shift->uniform("u_shift_amount", *m_shift_amount);
             m_mat_rgb_shift->uniform("u_shift_angle", *m_shift_angle);
             m_mat_rgb_shift->uniform("u_blur_amount", *m_blur_amount);
-            m_mat_rgb_shift->uniform("u_window_dimension", gl::windowDimension());
+            m_mat_rgb_shift->uniform("u_window_dimension", *m_output_res);
             *m_shift_angle += *m_shift_velocity * timeDelta;
             break;
     }
     
     // ensure correct fbo status here
     set_fbo_state();
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MeditationRoom::update_bio_visuals()
+{
+//    float val = clamp<float>(10.f * *m_bio_score, 0.f, 5.f);
+    float val = map_value<float>(m_bio_sensitivity->value() * *m_bio_score, 0.f, 10.f, 0.f, 1.f);
+    val = glm::smoothstep(0.f, 1.f, val);
+    
+    //TODO: couple bioscore with meditation-parameters
+    
+    // shiftamount
+    *m_shift_amount = mix<float>(*m_shift_amount, val * 80.f, .15f);
+    
+    // shiftvelocity
+    *m_shift_velocity = mix<float>(*m_shift_velocity, val * 20.f, .015f);
+    
+    // circle radius
+//    float circ_base_radius = 150.f;
+    m_current_circ_radius = mix<float>(m_current_circ_radius, *m_circle_radius * (1.f + val * 2.f), .05f);
+    
+    // blurmount
+    *m_blur_amount = mix<float>(*m_blur_amount, 120.f * val, .1f);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -127,7 +153,7 @@ void MeditationRoom::draw()
         textures()[0] = gl::render_to_texture(m_fbos[0], [this]()
         {
             gl::clear();
-            gl::drawCircle(gl::windowDimension() / 2.f, *m_circle_radius, true, 48);
+            gl::drawCircle(gl::windowDimension() / 2.f, m_current_circ_radius, true, 48);
         });
         
         // apply distortion shader
@@ -310,11 +336,20 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
         // setup animations
         animations()[AUDIO_FADE_IN] = animation::create(m_volume, 0.f, 1.f, *m_timeout_fade);
         animations()[AUDIO_FADE_OUT] = animation::create(m_volume, 1.f, 0.f, *m_timeout_fade);
+        
         animations()[LIGHT_FADE_IN] = animation::create(m_led_color, gl::COLOR_BLACK, gl::COLOR_WHITE,
                                                         *m_timeout_fade);
         animations()[LIGHT_FADE_OUT] = animation::create(m_led_color, gl::COLOR_WHITE, gl::COLOR_BLACK,
                                                          *m_timeout_fade);
+        animations()[LIGHT_FADE_OUT]->set_finish_callback([this]()
+        {
+            *m_led_color = gl::COLOR_BLACK;
+        });
         
+    }
+    else if(theProperty == m_bio_score)
+    {
+        update_bio_visuals();
     }
 }
 
@@ -367,8 +402,11 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 
                 //TODO: fade in here
 //                *m_led_color = gl::COLOR_WHITE;
+                animations()[AUDIO_FADE_IN]->stop();
+                animations()[LIGHT_FADE_OUT]->stop();
                 animations()[LIGHT_FADE_IN]->start();
-                
+                if(m_movie){ m_movie->pause(); }
+                    
                 if(m_current_state == State::IDLE){ animations()[AUDIO_FADE_OUT]->start(); }
                 else{ *m_volume = 0.f; }
                 
@@ -379,7 +417,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
             case State::DESC_MOVIE:
                 //TODO: fade out here
 //                *m_led_color = gl::COLOR_BLACK;
-                animations()[LIGHT_FADE_OUT]->start();
+                animations()[LIGHT_FADE_OUT]->start(44.f);
                 
                 if(m_movie)
                 {
@@ -394,6 +432,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 
             case State::MEDITATION:
 //                *m_led_color = gl::COLOR_BLACK;
+                animations()[LIGHT_FADE_IN]->stop();
                 animations()[LIGHT_FADE_OUT]->start();
                 if(m_movie){ m_movie->pause(); }
                 break;
@@ -455,7 +494,49 @@ void MeditationRoom::detect_motion()
 
 void MeditationRoom::read_bio_sensor()
 {
+    static std::vector<uint8_t> buf, accum;
+    const size_t num_bytes = sizeof(float);
+    buf.resize(32);
     
+    enum SerialCodes{SERIAL_START_CODE = 0x7E, SERIAL_END_CODE = 0xE7};
+    
+    if(m_bio_sense.isInitialized())
+    {
+        size_t bytes_to_read = std::min(m_bio_sense.available(), buf.size());
+        
+        if(!bytes_to_read){}
+        
+        float val;
+        bool reading_complete = false;
+        uint8_t *buf_ptr = &buf[0];
+        m_bio_sense.readBytes(&buf[0], bytes_to_read);
+        
+        for(uint32_t i = 0; i < bytes_to_read; i++)
+        {
+            uint8_t byte = *buf_ptr++;
+            
+            switch(byte)
+            {
+                case SERIAL_END_CODE:
+                    if(accum.size() >= num_bytes)
+                    {
+                        memcpy(&val, &accum[0], num_bytes);
+                        accum.clear();
+                        reading_complete = true;
+                    }
+                    else{ accum.push_back(byte); }
+                    break;
+                    
+                case SERIAL_START_CODE:
+                    if(accum.empty()){ break; }
+                    
+                default:
+                    accum.push_back(byte);
+                    break;
+            }
+        }
+        if(reading_complete){ *m_bio_score = val; }
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -465,12 +546,16 @@ void MeditationRoom::set_led_color(const gl::Color &the_color)
     if(m_led_device.isInitialized())
     {
         // create RGBA integer val
-        uint32_t rgba_val = (static_cast<uint32_t>(the_color.r * 255) << 24) |
-        (static_cast<uint32_t>(the_color.g * 255) << 16) |
-        (static_cast<uint32_t>(the_color.b * 255) << 8) |
-        static_cast<uint32_t>(the_color.a * 255);
+//        uint32_t rgb_val = (static_cast<uint32_t>(the_color.r * 255) << 16) |
+//        (static_cast<uint32_t>(the_color.g * 255) << 8) |
+//        (static_cast<uint32_t>(the_color.b * 255));
+//        static_cast<uint32_t>(the_color.a * 255);
         
-        m_led_device.writeBytes(&rgba_val, sizeof(rgba_val));
+//        m_led_device.writeBytes(&rgb_val, sizeof(rgb_val));
+//        m_led_device.writeByte('\n');
+        
+        m_led_device.writeByte(the_color.r * 255);
+        m_led_device.flush();
     }
     
 }
@@ -492,12 +577,14 @@ void MeditationRoom::draw_status_info()
     
     string ms_string = motion_sensor_found ? "ok" : "not found";
     string cs_string = cap_sensor_found ? "ok" : "not found";
-    string bs_string = bio_sensor_found ? "ok" : "not found";
+    string bs_string = bio_sensor_found ? as_string(m_bio_score->value(), 2) : "not found";
     string led_string = led_device_found ? "ok" : "not found";
     
     gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched(12)) ? gl::COLOR_GREEN : gl::COLOR_RED;
     gl::Color motion_col = (motion_sensor_found && m_motion_detected) ?
         gl::COLOR_GREEN : gl::COLOR_RED;
+    gl::Color bio_col = (bio_sensor_found && *m_bio_score > .5f) ?
+    gl::COLOR_GREEN : gl::COLOR_RED;
     
     // motion sensor
     gl::drawText2D("motion-sensor: " + ms_string, fonts()[0], motion_col, offset);
@@ -508,7 +595,7 @@ void MeditationRoom::draw_status_info()
     
     // bio feedback sensor
     offset += step;
-    gl::drawText2D("bio-sensor (accelo): " + bs_string, fonts()[0], gl::COLOR_WHITE, offset);
+    gl::drawText2D("bio-sensor (accelo): " + bs_string, fonts()[0], bio_col, offset);
     
     // LED device
     offset += step;
@@ -526,13 +613,24 @@ bool MeditationRoom::load_assets()
     
     if(!is_directory(asset_base_dir)){ return false; }
     
-    // background chanting audio
-    m_audio.reset(new audio::Fmod_Sound(join_paths(asset_base_dir, "chanting_loop.wav")));
-    m_audio->set_loop(true);
-    m_audio->play();
+    auto audio_files = get_directory_entries(asset_base_dir, FileType::AUDIO, true);
     
-    // description movie
-    m_movie->load(join_paths(asset_base_dir, "mandala.mov"));
+    if(!audio_files.empty())
+    {
+        // background chanting audio
+        m_audio.reset(new audio::Fmod_Sound(audio_files.front()));
+        m_audio->set_loop(true);
+        m_audio->play();
+    }
+    
+    auto video_files = get_directory_entries(asset_base_dir, FileType::MOVIE, true);
+    
+    if(!video_files.empty())
+    {
+        // description movie
+        m_movie->load(video_files.front());
+    }
+    
     
     return true;
 }
