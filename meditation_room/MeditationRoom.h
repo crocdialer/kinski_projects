@@ -52,7 +52,8 @@ namespace kinski
         m_shift_velocity = Property_<float>::create("shift velocity", 2.5f),
         m_circle_radius = Property_<float>::create("circle radius", 95.f),
         m_blur_amount = Property_<float>::create("blur amount", 10.f),
-        m_bio_sensitivity = Property_<float>::create("bio sensitivity", 20.f);
+        m_bio_sensitivity = Property_<float>::create("bio sensitivity", 20.f),
+        m_bio_thresh = Property_<float>::create("bio threshold", 0.4f);
         float m_current_circ_radius;
         
         Property_<gl::vec2>::Ptr

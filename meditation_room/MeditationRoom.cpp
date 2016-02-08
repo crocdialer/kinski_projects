@@ -38,6 +38,7 @@ void MeditationRoom::setup()
     register_property(m_led_color);
     register_property(m_volume);
     register_property(m_bio_score);
+    register_property(m_bio_thresh);
     register_property(m_bio_sensitivity);
     
     observe_properties();
@@ -55,7 +56,7 @@ void MeditationRoom::setup()
     m_mat_rgb_shift = gl::Material::create(rgb_shader);
     
     // setup timer objects
-    m_timer_idle = Timer(io_service(), [this](){ change_state(State::IDLE); });
+    m_timer_idle = Timer(io_service(), [this](){ change_state(State::IDLE, true); });
     m_timer_motion_reset = Timer(io_service(), [this](){ m_motion_detected = false; });
     m_timer_movie_start = Timer(io_service(), [this](){ if(m_movie){ m_movie->restart(); } });
     
@@ -95,6 +96,7 @@ void MeditationRoom::update(float timeDelta)
             
         case State::MANDALA_ILLUMINATED:
             if(m_cap_sense.is_touched(12) && m_show_movie){ change_state(State::DESC_MOVIE); }
+            else if(*m_bio_score > *m_bio_thresh){ change_state(State::MEDITATION); }
             break;
             
         case State::DESC_MOVIE:
@@ -108,6 +110,7 @@ void MeditationRoom::update(float timeDelta)
             m_mat_rgb_shift->uniform("u_blur_amount", *m_blur_amount);
             m_mat_rgb_shift->uniform("u_window_dimension", *m_output_res);
             *m_shift_angle += *m_shift_velocity * timeDelta;
+            if(*m_bio_score > *m_bio_thresh){ m_timer_idle.expires_from_now(*m_timeout_idle); }
             break;
     }
     
@@ -333,8 +336,8 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_timeout_fade)
     {
         // setup animations
-        animations()[AUDIO_FADE_IN] = animation::create(m_volume, 0.f, 1.f, *m_timeout_fade);
-        animations()[AUDIO_FADE_OUT] = animation::create(m_volume, 1.f, 0.f, *m_timeout_fade);
+        animations()[AUDIO_FADE_IN] = animation::create(m_volume, 0.f, .4f, *m_timeout_fade);
+        animations()[AUDIO_FADE_OUT] = animation::create(m_volume, .4f, .0f, *m_timeout_fade);
         
         animations()[LIGHT_FADE_IN] = animation::create(m_led_color, gl::COLOR_BLACK, gl::COLOR_WHITE,
                                                         *m_timeout_fade);
@@ -418,6 +421,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 //TODO: fade out here
 //                *m_led_color = gl::COLOR_BLACK;
                 animations()[LIGHT_FADE_OUT]->start(44.f);
+                m_timer_idle.cancel();
                 
                 if(m_movie)
                 {
@@ -590,7 +594,7 @@ void MeditationRoom::draw_status_info()
     gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched(12)) ? gl::COLOR_GREEN : gl::COLOR_RED;
     gl::Color motion_col = (motion_sensor_found && m_motion_detected) ?
         gl::COLOR_GREEN : gl::COLOR_RED;
-    gl::Color bio_col = (bio_sensor_found && *m_bio_score > .5f) ?
+    gl::Color bio_col = (bio_sensor_found && *m_bio_score > *m_bio_thresh) ?
     gl::COLOR_GREEN : gl::COLOR_RED;
     
     // motion sensor
