@@ -94,7 +94,7 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::MANDALA_ILLUMINATED:
-            if(m_cap_sense.is_touched(12)){ change_state(State::DESC_MOVIE); }
+            if(m_cap_sense.is_touched(12) && m_show_movie){ change_state(State::DESC_MOVIE); }
             break;
             
         case State::DESC_MOVIE:
@@ -132,11 +132,10 @@ void MeditationRoom::update_bio_visuals()
     *m_shift_velocity = mix<float>(*m_shift_velocity, val * 20.f, .015f);
     
     // circle radius
-//    float circ_base_radius = 150.f;
     m_current_circ_radius = mix<float>(m_current_circ_radius, *m_circle_radius * (1.f + val * 2.f), .05f);
     
     // blurmount
-    *m_blur_amount = mix<float>(*m_blur_amount, 120.f * val, .1f);
+    *m_blur_amount = mix<float>(*m_blur_amount, 2.f + 120.f * val, .1f);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -351,6 +350,7 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     {
         update_bio_visuals();
     }
+    else if (theProperty == m_circle_radius){ m_current_circ_radius = *m_circle_radius; }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -393,7 +393,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
             case State::IDLE:
                 animations()[AUDIO_FADE_IN]->start();
                 animations()[LIGHT_FADE_OUT]->start();
-                
+                m_show_movie = true;
 //                if(m_audio){ m_audio->set_volume(1.f); }
 //                *m_led_color = gl::COLOR_BLACK;
                 break;
@@ -425,6 +425,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     m_timer_movie_start.expires_from_now(*m_timeout_movie_start);
                     m_movie->set_movie_ended_callback([this](video::MovieControllerPtr)
                     {
+                        m_show_movie = false;
                         change_state(State::MANDALA_ILLUMINATED);
                     });
                 }
@@ -567,7 +568,13 @@ void MeditationRoom::draw_status_info()
     vec2 offset(50, 50), step(0, 35);
     
     // display current state
-    gl::drawText2D("State: " + m_state_string_map[m_current_state], fonts()[0], gl::COLOR_WHITE, offset);
+    auto state_str = "State: " + m_state_string_map[m_current_state];
+    if((m_current_state == State::DESC_MOVIE) && m_movie)
+    {
+        state_str += " (" + as_string(m_movie->current_time(),1) + "/" +
+            as_string(m_movie->duration(), 1) + ")";
+    }
+    gl::drawText2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
     offset += step;
     
     bool motion_sensor_found = m_motion_sense.isInitialized();

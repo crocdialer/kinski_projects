@@ -39,6 +39,7 @@ namespace kinski
         
         State m_current_state = State::IDLE;
         Timer m_timer_idle, m_timer_motion_reset, m_timer_movie_start;
+        bool m_show_movie = true;
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
