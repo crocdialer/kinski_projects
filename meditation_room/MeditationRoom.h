@@ -9,8 +9,8 @@
 
 #include "app/ViewerApp.h"
 #include "app/WarpComponent.h"
-#include "core/Timer.h"
-#include "core/Serial.h"
+#include "core/Timer.hpp"
+#include "core/Serial.hpp"
 
 // modules
 #include "video/video.h"
