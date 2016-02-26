@@ -155,20 +155,20 @@ void MeditationRoom::draw()
         textures()[0] = gl::render_to_texture(m_fbos[0], [this]()
         {
             gl::clear();
-            gl::drawCircle(gl::windowDimension() / 2.f, m_current_circ_radius, true, 48);
+            gl::draw_circle(gl::window_dimension() / 2.f, m_current_circ_radius, true, 48);
         });
         
         // apply distortion shader
         textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_fbos[1], [this]()
         {
             gl::clear();
-            gl::drawQuad(m_mat_rgb_shift, gl::windowDimension());
+            gl::draw_quad(m_mat_rgb_shift, gl::window_dimension());
         });
     }
     output_switch();
     
     // draw final result
-    gl::drawTexture(textures()[TEXTURE_OUTPUT], gl::windowDimension());
+    gl::draw_texture(textures()[TEXTURE_OUTPUT], gl::window_dimension());
     
     // draw status overlay
     draw_status_info();
@@ -197,14 +197,14 @@ void MeditationRoom::keyPress(const KeyEvent &e)
     {
         switch (e.getCode())
         {
-            case KEY_1:
-            case KEY_2:
-            case KEY_3:
-            case KEY_4:
-                next_state = e.getCode() - KEY_1;
+            case Key::_1:
+            case Key::_2:
+            case Key::_3:
+            case Key::_4:
+                next_state = e.getCode() - Key::_1;
                 break;
                 
-            case KEY_O:
+            case Key::_O:
             {
                 // output window
                 auto output_window = GLFW_Window::create(1280, 720, "output", false, 0,
@@ -578,7 +578,7 @@ void MeditationRoom::draw_status_info()
         state_str += " (" + as_string(m_movie->current_time(),1) + "/" +
             as_string(m_movie->duration(), 1) + ")";
     }
-    gl::drawText2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
+    gl::draw_text_2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
     offset += step;
     
     bool motion_sensor_found = m_motion_sense.isInitialized();
@@ -598,22 +598,22 @@ void MeditationRoom::draw_status_info()
     gl::COLOR_GREEN : gl::COLOR_RED;
     
     // motion sensor
-    gl::drawText2D("motion-sensor: " + ms_string, fonts()[0], motion_col, offset);
+    gl::draw_text_2D("motion-sensor: " + ms_string, fonts()[0], motion_col, offset);
     
     // chair sensor
     offset += step;
-    gl::drawText2D("chair-sensor: " + cs_string, fonts()[0], cap_col, offset);
+    gl::draw_text_2D("chair-sensor: " + cs_string, fonts()[0], cap_col, offset);
     
     // bio feedback sensor
     offset += step;
-    gl::drawText2D("bio-sensor (accelo): " + bs_string, fonts()[0], bio_col, offset);
+    gl::draw_text_2D("bio-sensor (accelo): " + bs_string, fonts()[0], bio_col, offset);
     
     // LED device
     offset += step;
-    gl::drawText2D("LEDs: " + led_string, fonts()[0], gl::COLOR_WHITE, offset);
+    gl::draw_text_2D("LEDs: " + led_string, fonts()[0], gl::COLOR_WHITE, offset);
     
     offset += gl::vec2(155, 0);
-    gl::drawQuad(*m_led_color, gl::vec2(75.f), offset);
+    gl::draw_quad(*m_led_color, gl::vec2(75.f), offset);
     
 }
 
@@ -658,7 +658,7 @@ void MeditationRoom::output_switch()
             static auto mat = gl::Material::create();
             gl::apply_material(mat);
             
-            gl::drawTexture(tex, gl::windowDimension());
+            gl::draw_texture(tex, gl::window_dimension());
             
 //            m_warp->quad_warp().render_output(tex);
 //            m_warp->quad_warp().render_grid();
