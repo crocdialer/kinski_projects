@@ -67,25 +67,26 @@ void ModelViewer::update(float timeDelta)
         bool use_bones = m_mesh->geometry()->hasBones() && *m_use_bones;
         gl::Shader shader;
         
-        if(use_bones)
+        try
         {
-            shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SKIN_SHADOWS :
-                                                        gl::ShaderType::UNLIT_SKIN, false);
-        }
-        else
-        {
-            shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SHADOWS :
-                                                        gl::ShaderType::UNLIT, false);
-        }
-        
-        if(!m_normalmap_path->value().empty())
-        {
-            try
+            if(use_bones)
+            {
+                shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SKIN_SHADOWS :
+                                                            gl::ShaderType::UNLIT_SKIN, false);
+            }
+            else
+            {
+                shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SHADOWS :
+                                                            gl::ShaderType::UNLIT, false);
+            }
+            
+            if(!m_normalmap_path->value().empty())
             {
                 shader = gl::create_shader_from_file("phong_normalmap.vert", "phong_normalmap.frag");
             }
-            catch (Exception &e){ LOG_ERROR << e.what(); }
         }
+        catch (Exception &e){ LOG_ERROR << e.what(); }
+        
         for(auto &mat : m_mesh->materials())
         {
             mat->setShader(shader);
