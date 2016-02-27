@@ -8,6 +8,7 @@
 
 #include "ModelViewer.h"
 #include "AssimpConnector.h"
+//#include "gl/Texture.hpp"
 
 using namespace std;
 using namespace kinski;
@@ -31,6 +32,7 @@ void ModelViewer::setup()
     register_property(m_display_bones);
     register_property(m_animation_index);
     register_property(m_animation_speed);
+    register_property(m_normalmap_path);
     register_property(m_cube_map_folder);
     observe_properties();
     
@@ -76,6 +78,14 @@ void ModelViewer::update(float timeDelta)
                                                         gl::ShaderType::UNLIT, false);
         }
         
+        if(!m_normalmap_path->value().empty())
+        {
+            try
+            {
+                shader = gl::create_shader_from_file("phong_normalmap.vert", "phong_normalmap.frag");
+            }
+            catch (Exception &e){ LOG_ERROR << e.what(); }
+        }
         for(auto &mat : m_mesh->materials())
         {
             mat->setShader(shader);
@@ -117,17 +127,27 @@ void ModelViewer::draw()
         }
     }
     
-    std::vector<gl::Texture> comb_texs;
+    
+    if(m_loading)
+    {
+        gl::draw_text_2D("loading ...", fonts()[0], gl::COLOR_WHITE,
+                         gl::vec2(gl::window_dimension().x - 130, 20));
+    }
     
     // draw texture map(s)
-    if(displayTweakBar() && m_mesh)
+    if(displayTweakBar())
     {
-        for(auto &mat : m_mesh->materials())
-        {
-            comb_texs = concat_containers<gl::Texture>(mat->textures(), comb_texs);
-        }
         
-        draw_textures(comb_texs);
+        if(m_mesh)
+        {
+            std::vector<gl::Texture> comb_texs;
+            
+            for(auto &mat : m_mesh->materials())
+            {
+                comb_texs = concat_containers<gl::Texture>(mat->textures(), comb_texs);
+            }
+            draw_textures(comb_texs);
+        }
     }
 }
 
@@ -236,7 +256,7 @@ void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &
 
 void ModelViewer::tearDown()
 {
-    LOG_PRINT<<"ciao model viewer";
+    LOG_PRINT<<"ciao " << name();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -248,9 +268,20 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     if(theProperty == m_model_path)
     {
         add_search_path(get_directory_part(*m_model_path));
-        scene().removeObject(m_mesh);
-        load_asset(*m_model_path);
-        scene().addObject(m_mesh);
+        async_load_asset(*m_model_path, [this](gl::MeshPtr m)
+        {
+            if(m)
+            {
+                scene().removeObject(m_mesh);
+                m_mesh = m;
+                scene().addObject(m_mesh);
+                m_dirty_shader = true;
+            }
+        });
+    }
+    else if(theProperty == m_normalmap_path)
+    {
+        m_dirty_shader = true;
     }
     else if(theProperty == m_use_bones){ m_dirty_shader = true; }
     else if(theProperty == m_use_lighting){ m_dirty_shader = true; }
@@ -324,7 +355,7 @@ void ModelViewer::build_skeleton(gl::BonePtr currentBone, vector<vec3> &points,
 
 /////////////////////////////////////////////////////////////////
 
-bool ModelViewer::load_asset(const std::string &the_path)
+gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
 {
     gl::MeshPtr m;
     gl::Texture t;
@@ -376,9 +407,62 @@ bool ModelViewer::load_asset(const std::string &the_path)
             gl::AssimpConnector::add_animations_to_mesh(f, m);
         }
         m->set_animation_speed(*m_animation_speed);
-        m_mesh = m;
-        m_dirty_shader = true;
-        return true;
     }
-    return false;
+    return m;
+}
+
+/////////////////////////////////////////////////////////////////
+
+void ModelViewer::async_load_asset(const std::string &the_path,
+                                   std::function<void(gl::MeshPtr)> the_completion_handler)
+{
+    m_loading = true;
+    
+    m_loader_pool.submit([this, the_completion_handler]()
+    {
+        // load model on worker thread
+        auto m = load_asset(*m_model_path);
+     
+        std::map<gl::MaterialPtr, std::vector<gl::Image>> mat_img_map;
+     
+        if(m)
+        {
+            // load and decode images on worker thread
+            for(auto &mat : m->materials())
+            {
+                std::vector<gl::Image> tex_imgs;
+             
+                for(const auto &p : mat->load_queue_textures())
+                {
+                    try
+                    {
+                        auto dataVec = kinski::read_binary_file(p);
+                        tex_imgs.push_back(gl::decode_image(dataVec));
+                    }
+                    catch(Exception &e){ LOG_WARNING << e.what(); }
+                }
+                mat->load_queue_textures().clear();
+                mat_img_map[mat] = tex_imgs;
+            }
+        }
+        
+        // work on this thread done, now queue texture creation on main queue
+        main_queue().submit([this, m, mat_img_map, the_completion_handler]()
+        {
+            if(m)
+            {
+                for(auto &mat : m->materials())
+                {
+                    for(const gl::Image &img : mat_img_map.at(mat))
+                    {
+                        gl::Texture tex = gl::create_texture_from_image(img, true, true);
+                        free(img.data);
+                        mat->addTexture(tex);
+                    }
+                }
+            }
+            the_completion_handler(m);
+            m_loading = false;
+        });
+    });
 }

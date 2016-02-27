@@ -6,8 +6,7 @@
 //
 //
 
-#ifndef __gl__3dViewer__
-#define __gl__3dViewer__
+#pragma once
 
 #include "app/ViewerApp.h"
 
@@ -20,7 +19,10 @@ namespace kinski
         gl::MeshPtr m_mesh;
         gl::Texture m_cube_map;
         
+        ThreadPool m_loader_pool{1};
+        
         bool m_dirty_shader = true;
+        bool m_loading = false;
         
         Property_<bool>::Ptr
         m_use_lighting = Property_<bool>::create("use lighting", true),
@@ -28,6 +30,7 @@ namespace kinski
         
         Property_<std::string>::Ptr
         m_model_path = Property_<std::string>::create("Model path", ""),
+        m_normalmap_path = Property_<std::string>::create("normalmap path", ""),
         m_cube_map_folder = Property_<std::string>::create("Cubemap folder", "");
         
         Property_<bool>::Ptr
@@ -45,7 +48,13 @@ namespace kinski
         void build_skeleton(gl::BonePtr currentBone, vector<gl::vec3> &points,
                             vector<string> &bone_names);
         
-        bool load_asset(const std::string &the_path);
+        //! asset loading routine
+        gl::MeshPtr load_asset(const std::string &the_path);
+        
+        //! asynchronous asset loading
+        void async_load_asset(const std::string &the_path,
+                              std::function<void(gl::MeshPtr)> the_completion_handler);
+        
     public:
         
         void setup() override;
@@ -65,5 +74,3 @@ namespace kinski
         void update_property(const Property::ConstPtr &theProperty) override;
     };
 }// namespace kinski
-
-#endif /* defined(__gl__3dViewer__) */
