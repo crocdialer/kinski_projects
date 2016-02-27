@@ -109,6 +109,10 @@ void ModelViewer::draw()
     
     scene().render(camera());
     
+    gl::draw_text_2D(as_string(fps(), 1), fonts()[0],
+                     glm::mix(gl::COLOR_DARK_RED, gl::COLOR_GREEN, fps() / 60.f),
+                     gl::vec2(50));
+    
     if(m_mesh && *m_display_bones) // slow!
     {
         // crunch bone data
