@@ -19,20 +19,20 @@ void MovieTest::setup()
 {
     ViewerApp::setup();
     set_window_title("movie tester");
-    
+
     register_property(m_movie_speed);
     register_property(m_movie_path);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
-    
+
 //    m_movie->set_on_load_callback(bind(&MovieTest::on_movie_load, this));
-    
+
     // warp component
     m_warp = std::make_shared<WarpComponent>();
     m_warp->observe_properties();
     m_warp->quad_warp().set_grid_resolution(gl::vec2(1));
     add_tweakbar_for_component(m_warp);
-    
+
     load_settings();
 }
 
@@ -51,7 +51,7 @@ void MovieTest::update(float timeDelta)
 void MovieTest::draw()
 {
     gl::draw_texture(m_textures[0], gl::window_dimension());
-    
+
     if(displayTweakBar())
     {
         gl::draw_text_2D(m_movie->get_path() + " : " +
@@ -66,7 +66,7 @@ void MovieTest::draw()
 void MovieTest::keyPress(const KeyEvent &e)
 {
     ViewerApp::keyPress(e);
-    
+
     switch (e.getCode())
     {
         case Key::_C:
@@ -75,43 +75,43 @@ void MovieTest::keyPress(const KeyEvent &e)
             else
                 m_camera_control->start_capture();
             break;
-            
+
         case Key::_P:
             m_movie->isPlaying() ? m_movie->pause() : m_movie->play();
             break;
-            
+
         case Key::_LEFT:
             m_movie->seek_to_time(m_movie->current_time() - 5);
             break;
-        
+
         case Key::_RIGHT:
             m_movie->seek_to_time(m_movie->current_time() + 5);
             break;
         case Key::_UP:
             m_movie->set_volume(m_movie->volume() + .1f);
             break;
-            
+
         case Key::_DOWN:
             m_movie->set_volume(m_movie->volume() - .1f);
             break;
-        
+
         case Key::_O:
         {
-            auto new_window = GLFW_Window::create(640, 480, "output", false, 0, windows().back()->handle());
-            add_window(new_window);
-            new_window->set_draw_function([this]()
-            {
-                static auto mat = gl::Material::create();
-                gl::apply_material(mat);
-              
-                gl::clear();
-                m_warp->quad_warp().render_output(m_textures[0]);
-                m_warp->quad_warp().render_grid();
-                m_warp->quad_warp().render_control_points();
-            });
+            // auto new_window = GLFW_Window::create(640, 480, "output", false, 0, windows().back()->handle());
+            // add_window(new_window);
+            // new_window->set_draw_function([this]()
+            // {
+            //     static auto mat = gl::Material::create();
+            //     gl::apply_material(mat);
+            //
+            //     gl::clear();
+            //     m_warp->quad_warp().render_output(m_textures[0]);
+            //     m_warp->quad_warp().render_grid();
+            //     m_warp->quad_warp().render_control_points();
+            // });
         }
             break;
-            
+
         default:
             break;
     }
@@ -150,7 +150,7 @@ void MovieTest::on_movie_load()
 void MovieTest::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
-    
+
     if(theProperty == m_movie_path)
     {
 //        glfwMakeContextCurrent(windows().front()->handle());
