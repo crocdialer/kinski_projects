@@ -92,6 +92,10 @@ void ModelViewer::update(float timeDelta)
             mat->setShader(shader);
             mat->setBlending();
         }
+        
+        // set animation stuff
+        m_animation_index->notifyObservers();
+        m_animation_speed->notifyObservers();
     }
 }
 
@@ -110,8 +114,9 @@ void ModelViewer::draw()
     scene().render(camera());
     
     gl::draw_text_2D(as_string(fps(), 1), fonts()[0],
-                     glm::mix(gl::COLOR_DARK_RED, gl::COLOR_GREEN, fps() / 60.f),
-                     gl::vec2(50));
+                     glm::mix(gl::COLOR_DARK_RED, gl::COLOR_WHITE,
+                              glm::smoothstep(0.f, 1.f, fps() / 60.f)),
+                     gl::vec2(10));
     
     if(m_mesh && *m_display_bones) // slow!
     {
