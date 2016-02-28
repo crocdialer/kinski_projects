@@ -423,7 +423,7 @@ void ModelViewer::async_load_asset(const std::string &the_path,
 {
     m_loading = true;
     
-    m_loader_pool.submit([this, the_completion_handler]()
+    background_queue().submit([this, the_completion_handler]()
     {
         // load model on worker thread
         auto m = load_asset(*m_model_path);

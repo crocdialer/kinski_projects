@@ -19,8 +19,6 @@ namespace kinski
         gl::MeshPtr m_mesh;
         gl::Texture m_cube_map;
         
-        ThreadPool m_loader_pool{1};
-        
         bool m_dirty_shader = true;
         bool m_loading = false;
         

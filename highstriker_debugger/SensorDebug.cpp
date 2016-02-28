@@ -226,10 +226,16 @@ void SensorDebug::update_property(const Property::ConstPtr &theProperty)
 
     if(theProperty == m_serial_device_name)
     {
-        if(m_serial_device_name->value().empty()){ m_serial.setup(0, 57600); }
-        else{ m_serial.setup(*m_serial_device_name, 57600); }
-        m_serial.flush();
-        m_serial.drain();
+        background_queue().submit([this]()
+        {
+            if(m_serial_device_name->value().empty()){ m_serial.setup(0, 57600); }
+            else{ m_serial.setup(*m_serial_device_name, 57600); }
+            if(m_serial.isInitialized())
+            {
+                m_serial.flush();
+                m_serial.drain();
+            }
+        });
     }
 }
 

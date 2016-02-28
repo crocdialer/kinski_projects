@@ -293,36 +293,48 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_cap_sense_dev_name)
     {
-        m_cap_sense.connect(*m_cap_sense_dev_name);
+        background_queue().submit([this]()
+        {
+            m_cap_sense.connect(*m_cap_sense_dev_name);
+        });
     }
     else if(theProperty == m_motion_sense_dev_name)
     {
         if(!m_motion_sense_dev_name->value().empty())
         {
-            m_motion_sense.setup(*m_motion_sense_dev_name, 57600);
-            
-            // finally flush the newly initialized device
-            if(m_motion_sense.isInitialized()){ m_motion_sense.flush(); }
+            background_queue().submit([this]()
+            {
+                m_motion_sense.setup(*m_motion_sense_dev_name, 57600);
+              
+                // finally flush the newly initialized device
+                if(m_motion_sense.isInitialized()){ m_motion_sense.flush(); }
+            });
         }
     }
     else if(theProperty == m_bio_sense_dev_name)
     {
         if(!m_bio_sense_dev_name->value().empty())
         {
-            m_bio_sense.setup(*m_bio_sense_dev_name, 57600);
-            
-            // finally flush the newly initialized device
-            if(m_bio_sense.isInitialized()){ m_bio_sense.flush(); }
+            background_queue().submit([this]()
+            {
+                m_bio_sense.setup(*m_bio_sense_dev_name, 57600);
+                
+                // finally flush the newly initialized device
+                if(m_bio_sense.isInitialized()){ m_bio_sense.flush(); }
+            });
         }
     }
     else if(theProperty == m_led_dev_name)
     {
         if(!m_led_dev_name->value().empty())
         {
-            m_led_device.setup(*m_led_dev_name, 57600);
-            
-            // finally flush the newly initialized device
-            if(m_led_device.isInitialized()){ m_led_device.flush(); }
+            background_queue().submit([this]()
+            {
+                m_led_device.setup(*m_led_dev_name, 57600);
+              
+                // finally flush the newly initialized device
+                if(m_led_device.isInitialized()){ m_led_device.flush(); }
+            });
         }
     }
     else if(theProperty == m_led_color){ set_led_color(*m_led_color); }
