@@ -25,6 +25,7 @@ void ModelViewer::setup()
 {
     ViewerApp::setup();
     
+    register_property(m_draw_fps);
     register_property(m_model_path);
     register_property(m_use_lighting);
     register_property(m_use_ground_plane);
@@ -113,10 +114,13 @@ void ModelViewer::draw()
     
     scene().render(camera());
     
-    gl::draw_text_2D(as_string(fps(), 1), fonts()[0],
-                     glm::mix(gl::COLOR_DARK_RED, gl::COLOR_WHITE,
-                              glm::smoothstep(0.f, 1.f, fps() / 60.f)),
-                     gl::vec2(10));
+    if(*m_draw_fps)
+    {
+        gl::draw_text_2D(as_string(fps(), 1), fonts()[0],
+                         glm::mix(gl::COLOR_OLIVE, gl::COLOR_WHITE,
+                                  glm::smoothstep(0.f, 1.f, fps() / max_fps())),
+                         gl::vec2(10));
+    }
     
     if(m_mesh && *m_display_bones) // slow!
     {

@@ -23,6 +23,7 @@ namespace kinski
         bool m_loading = false;
         
         Property_<bool>::Ptr
+        m_draw_fps = Property_<bool>::create("draw fps", true),
         m_use_lighting = Property_<bool>::create("use lighting", true),
         m_use_ground_plane = Property_<bool>::create("use ground plane", true);
         
