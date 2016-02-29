@@ -42,7 +42,17 @@ void ModelViewer::setup()
     add_tweakbar_for_component(m_light_component);
     
     // add lights to scene
-    for (auto l : lights()){ scene().addObject(l ); }
+    gl::Object3DPtr light_root = gl::Object3D::create();
+    light_root->set_update_function([this, light_root](float time_delta)
+    {
+        light_root->transform() = gl::rotate(light_root->transform(), 0.1f * time_delta, gl::Y_AXIS);
+    });
+    
+    for (auto l : lights())
+    {
+        light_root->add_child(l);
+    }
+    scene().addObject(light_root);
     
     // add groundplane
     auto ground_mesh = gl::Mesh::create(gl::Geometry::createPlane(400, 400),
@@ -67,6 +77,7 @@ void ModelViewer::update(float timeDelta)
         
         bool use_bones = m_mesh->geometry()->hasBones() && *m_use_bones;
         gl::Shader shader;
+        gl::Texture normal_map;
         
         try
         {
@@ -83,7 +94,8 @@ void ModelViewer::update(float timeDelta)
             
             if(!m_normalmap_path->value().empty())
             {
-                shader = gl::create_shader_from_file("phong_normalmap.vert", "phong_normalmap.frag");
+                shader = gl::create_shader(gl::ShaderType::PHONG_NORMALMAP);
+                normal_map = gl::create_texture_from_file(*m_normalmap_path, true);
             }
         }
         catch (Exception &e){ LOG_ERROR << e.what(); }
@@ -92,6 +104,13 @@ void ModelViewer::update(float timeDelta)
         {
             mat->setShader(shader);
             mat->setBlending();
+            if(!m_normalmap_path->value().empty() && normal_map && mat->textures().size() < 2)
+            {
+                mat->textures().push_back(normal_map);
+                mat->setSpecular(gl::COLOR_WHITE);
+                mat->setShinyness(10.f);
+            }
+            else{ mat->textures().resize(1); }
         }
         
         // set animation stuff
@@ -141,7 +160,6 @@ void ModelViewer::draw()
         }
     }
     
-    
     if(m_loading)
     {
         gl::draw_text_2D("loading ...", fonts()[0], gl::COLOR_WHITE,
@@ -151,7 +169,6 @@ void ModelViewer::draw()
     // draw texture map(s)
     if(displayTweakBar())
     {
-        
         if(m_mesh)
         {
             std::vector<gl::Texture> comb_texs;

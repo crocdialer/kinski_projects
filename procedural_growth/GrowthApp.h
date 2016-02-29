@@ -76,7 +76,7 @@ namespace kinski
         void refresh_lsystem();
         
     public:
-        
+        GrowthApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;
         void update(float timeDelta) override;
         void draw() override;

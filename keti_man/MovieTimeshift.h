@@ -127,7 +127,7 @@ namespace kinski
 //        cv::UMat create_foreground_image(std::vector<uint8_t> &the_data, int width, int height);
         
     public:
-        
+        MovieTimeshift(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;
         void update(float timeDelta) override;
         void draw() override;
