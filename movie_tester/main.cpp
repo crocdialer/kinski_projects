@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-    auto theApp = std::make_shared<kinski::MovieTest>();
+    auto theApp = std::make_shared<kinski::MovieTest>(argc, argv);
     LOG_INFO << "local ip: " << kinski::net::local_ip();
     return theApp->run();
 }

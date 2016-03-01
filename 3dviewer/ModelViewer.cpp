@@ -24,7 +24,7 @@ namespace
 void ModelViewer::setup()
 {
     ViewerApp::setup();
-    
+
     register_property(m_draw_fps);
     register_property(m_model_path);
     register_property(m_use_lighting);
@@ -36,32 +36,32 @@ void ModelViewer::setup()
     register_property(m_normalmap_path);
     register_property(m_cube_map_folder);
     observe_properties();
-    
+
     // create our UI
     add_tweakbar_for_component(shared_from_this());
     add_tweakbar_for_component(m_light_component);
-    
+
     // add lights to scene
     gl::Object3DPtr light_root = gl::Object3D::create();
     light_root->set_update_function([this, light_root](float time_delta)
     {
         light_root->transform() = gl::rotate(light_root->transform(), 0.1f * time_delta, gl::Y_AXIS);
     });
-    
+
     for (auto l : lights())
     {
         light_root->add_child(l);
     }
     scene().addObject(light_root);
-    
+
     // add groundplane
     auto ground_mesh = gl::Mesh::create(gl::Geometry::createPlane(400, 400),
                                         gl::Material::create(gl::create_shader(gl::ShaderType::PHONG_SHADOWS)));
     ground_mesh->transform() = glm::rotate(mat4(), -glm::half_pi<float>(), gl::X_AXIS);
     ground_mesh->add_tag(tag_ground_plane);
-    
+
     scene().addObject(ground_mesh);
-    
+
     load_settings();
 }
 
@@ -70,15 +70,15 @@ void ModelViewer::setup()
 void ModelViewer::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    
+
     if(m_mesh && m_dirty_shader)
     {
         m_dirty_shader  = false;
-        
+
         bool use_bones = m_mesh->geometry()->hasBones() && *m_use_bones;
         gl::Shader shader;
         gl::Texture normal_map;
-        
+
         try
         {
             if(use_bones)
@@ -91,18 +91,19 @@ void ModelViewer::update(float timeDelta)
                 shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SHADOWS :
                                                             gl::ShaderType::UNLIT, false);
             }
-            
+
             if(!m_normalmap_path->value().empty())
             {
+                LOG_DEBUG << "adding normalmap: '" << m_normalmap_path->value() << "'";
                 shader = gl::create_shader(gl::ShaderType::PHONG_NORMALMAP);
                 normal_map = gl::create_texture_from_file(*m_normalmap_path, true);
             }
         }
         catch (Exception &e){ LOG_ERROR << e.what(); }
-        
+
         for(auto &mat : m_mesh->materials())
         {
-            mat->setShader(shader);
+            if(shader){ mat->setShader(shader); }
             mat->setBlending();
             if(!m_normalmap_path->value().empty() && normal_map && mat->textures().size() < 2)
             {
@@ -110,9 +111,9 @@ void ModelViewer::update(float timeDelta)
                 mat->setSpecular(gl::COLOR_WHITE);
                 mat->setShinyness(10.f);
             }
-            else{ mat->textures().resize(1); }
+            else if(!mat->textures().empty()){ mat->textures().resize(1); }
         }
-        
+
         // set animation stuff
         m_animation_index->notifyObservers();
         m_animation_speed->notifyObservers();
@@ -125,14 +126,14 @@ void ModelViewer::draw()
 {
     gl::set_matrices(camera());
     if(draw_grid()){ gl::draw_grid(50, 50); }
-    
+
     if(m_light_component->draw_light_dummies())
     {
         for (auto l : lights()){ gl::draw_light(l); }
     }
-    
+
     scene().render(camera());
-    
+
     if(*m_draw_fps)
     {
         gl::draw_text_2D(as_string(fps(), 1), fonts()[0],
@@ -140,7 +141,7 @@ void ModelViewer::draw()
                                   glm::smoothstep(0.f, 1.f, fps() / max_fps())),
                          gl::vec2(10));
     }
-    
+
     if(m_mesh && *m_display_bones) // slow!
     {
         // crunch bone data
@@ -148,10 +149,10 @@ void ModelViewer::draw()
         vector<string> bone_names;
         build_skeleton(m_mesh->rootBone(), skel_points, bone_names);
         gl::load_matrix(gl::MODEL_VIEW_MATRIX, camera()->getViewMatrix() * m_mesh->global_transform());
-        
+
         // draw bone data
         gl::draw_lines(skel_points, gl::COLOR_DARK_RED, 5.f);
-        
+
         for(const auto &p : skel_points)
         {
             vec3 p_trans = (m_mesh->global_transform() * vec4(p, 1.f)).xyz();
@@ -159,20 +160,20 @@ void ModelViewer::draw()
             gl::draw_circle(p2d, 5.f, false);
         }
     }
-    
+
     if(m_loading)
     {
         gl::draw_text_2D("loading ...", fonts()[0], gl::COLOR_WHITE,
                          gl::vec2(gl::window_dimension().x - 130, 20));
     }
-    
+
     // draw texture map(s)
     if(displayTweakBar())
     {
         if(m_mesh)
         {
             std::vector<gl::Texture> comb_texs;
-            
+
             for(auto &mat : m_mesh->materials())
             {
                 comb_texs = concat_containers<gl::Texture>(mat->textures(), comb_texs);
@@ -250,11 +251,11 @@ void ModelViewer::got_message(const std::vector<uint8_t> &the_message)
 void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     std::vector<gl::Texture> dropped_textures;
-    
+
     for(const string &f : files)
     {
         LOG_INFO << f;
-        
+
         switch (get_file_type(f))
         {
             case FileType::DIRECTORY:
@@ -264,7 +265,7 @@ void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &
             case FileType::MODEL:
                 *m_model_path = f;
                 break;
-            
+
             case FileType::IMAGE:
                 try
                 {
@@ -295,7 +296,7 @@ void ModelViewer::tearDown()
 void ModelViewer::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
-    
+
     if(theProperty == m_model_path)
     {
         add_search_path(get_directory_part(*m_model_path));
@@ -355,7 +356,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_use_ground_plane)
     {
         auto objs = scene().get_objects_by_tag(tag_ground_plane);
-        
+
         for(auto &o : objs)
         {
             o->set_enabled(*m_use_ground_plane);
@@ -369,17 +370,17 @@ void ModelViewer::build_skeleton(gl::BonePtr currentBone, vector<vec3> &points,
                                  vector<string> &bone_names)
 {
     if(!currentBone) return;
-    
+
     // read out the bone names
     bone_names.push_back(currentBone->name);
-    
+
     for (auto child_bone : currentBone->children)
     {
         mat4 globalTransform = currentBone->worldtransform;
         mat4 childGlobalTransform = child_bone->worldtransform;
         points.push_back(globalTransform[3].xyz());
         points.push_back(childGlobalTransform[3].xyz());
-        
+
         build_skeleton(child_bone, points, bone_names);
     }
 }
@@ -390,25 +391,25 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
 {
     gl::MeshPtr m;
     gl::Texture t;
-    
+
     auto asset_dir = get_directory_part(the_path);
     add_search_path(asset_dir);
-    
+
     switch (get_file_type(the_path))
     {
         case FileType::DIRECTORY:
             for(const auto &p : get_directory_entries(the_path)){ load_asset(p); }
             break;
-            
+
         case FileType::MODEL:
             m = gl::AssimpConnector::loadModel(the_path);
             break;
-            
+
         case FileType::IMAGE:
-            
+
             try { t = gl::create_texture_from_file(the_path, true, true); }
             catch (Exception &e) { LOG_WARNING << e.what(); }
-            
+
             if(t)
             {
                 auto geom = gl::Geometry::createPlane(t.getWidth(), t.getHeight(), 100, 100);
@@ -418,21 +419,21 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
                 m->transform() = rotate(mat4(), 90.f, gl::Y_AXIS);
             }
             break;
-            
+
         default:
             break;
     }
-    
+
     if(m)
     {
         // apply scaling
         auto aabb = m->boundingBox();
         float scale_factor = 50.f / length(aabb.halfExtents());
         m->setScale(scale_factor);
-        
+
         // look for animations for this mesh
         auto animation_folder = join_paths(asset_dir, "animations");
-        
+
         for(const auto &f : get_directory_entries(animation_folder, FileType::MODEL))
         {
             gl::AssimpConnector::add_animations_to_mesh(f, m);
@@ -448,21 +449,21 @@ void ModelViewer::async_load_asset(const std::string &the_path,
                                    std::function<void(gl::MeshPtr)> the_completion_handler)
 {
     m_loading = true;
-    
+
     background_queue().submit([this, the_completion_handler]()
     {
         // load model on worker thread
         auto m = load_asset(*m_model_path);
-     
+
         std::map<gl::MaterialPtr, std::vector<gl::Image>> mat_img_map;
-     
+
         if(m)
         {
             // load and decode images on worker thread
             for(auto &mat : m->materials())
             {
                 std::vector<gl::Image> tex_imgs;
-             
+
                 for(const auto &p : mat->load_queue_textures())
                 {
                     try
@@ -476,7 +477,7 @@ void ModelViewer::async_load_asset(const std::string &the_path,
                 mat_img_map[mat] = tex_imgs;
             }
         }
-        
+
         // work on this thread done, now queue texture creation on main queue
         main_queue().submit([this, m, mat_img_map, the_completion_handler]()
         {

@@ -30,7 +30,6 @@ void MovieTest::setup()
     // warp component
     m_warp = std::make_shared<WarpComponent>();
     m_warp->observe_properties();
-    m_warp->quad_warp().set_grid_resolution(gl::vec2(1));
     add_tweakbar_for_component(m_warp);
 
     load_settings();
@@ -41,16 +40,18 @@ void MovieTest::setup()
 void MovieTest::update(float timeDelta)
 {
     if(m_camera_control && m_camera_control->is_capturing())
-        m_camera_control->copy_frame_to_texture(m_textures[0]);
+        m_camera_control->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
     else
-        m_movie->copy_frame_to_texture(m_textures[0]);
+        m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
 }
 
 /////////////////////////////////////////////////////////////////
 
 void MovieTest::draw()
 {
-    gl::draw_texture(m_textures[0], gl::window_dimension());
+    // gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension());
+    m_warp->quad_warp().render_output(textures()[TEXTURE_INPUT]);
+    m_warp->quad_warp().render_grid();
 
     if(displayTweakBar())
     {
@@ -58,6 +59,7 @@ void MovieTest::draw()
                        kinski::as_string(m_movie->current_time(), 2) + " / " +
                        kinski::as_string(m_movie->duration(), 2),
                        fonts()[0]);
+        draw_textures(textures());
     }
 }
 
@@ -105,7 +107,7 @@ void MovieTest::keyPress(const KeyEvent &e)
             //     gl::apply_material(mat);
             //
             //     gl::clear();
-            //     m_warp->quad_warp().render_output(m_textures[0]);
+            //     m_warp->quad_warp().render_output(textures()[0]);
             //     m_warp->quad_warp().render_grid();
             //     m_warp->quad_warp().render_control_points();
             // });
@@ -119,9 +121,51 @@ void MovieTest::keyPress(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::got_message(const std::vector<uint8_t> &the_data)
+void MovieTest::resize(int w ,int h)
 {
-    LOG_INFO << string(the_data.begin(), the_data.end());
+    ViewerApp::resize(w, h);
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MovieTest::keyRelease(const KeyEvent &e)
+{
+    ViewerApp::keyRelease(e);
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MovieTest::mousePress(const MouseEvent &e)
+{
+    ViewerApp::mousePress(e);
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MovieTest::mouseRelease(const MouseEvent &e)
+{
+    ViewerApp::mouseRelease(e);
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MovieTest::mouseMove(const MouseEvent &e)
+{
+    ViewerApp::mouseMove(e);
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MovieTest::mouseDrag(const MouseEvent &e)
+{
+    ViewerApp::mouseDrag(e);
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MovieTest::mouseWheel(const MouseEvent &e)
+{
+    ViewerApp::mouseWheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -135,7 +179,7 @@ void MovieTest::fileDrop(const MouseEvent &e, const std::vector<std::string> &fi
 
 void MovieTest::tearDown()
 {
-    LOG_PRINT << "ciao movie sample";
+    LOG_PRINT << "ciao " << name();
 }
 
 /////////////////////////////////////////////////////////////////

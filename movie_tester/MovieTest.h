@@ -20,30 +20,36 @@ namespace kinski
     class MovieTest : public ViewerApp
     {
     private:
-        
+
+        enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_OUTPUT = 1};
+
         WarpComponent::Ptr m_warp;
-        
+
         video::MovieControllerPtr m_movie = video::MovieController::create();
         video::CameraControllerPtr m_camera_control = video::CameraController::create();
-        vector<gl::Texture> m_textures{4};
-        
+
         // properties
         Property_<string>::Ptr m_movie_path = Property_<string>::create("movie path", "");
         Property_<float>::Ptr m_movie_speed = Property_<float>::create("movie speed", 1.f);
-        
+
     public:
-        
-        void setup();
-        void update(float timeDelta);
-        void draw();
-        void got_message(const std::vector<uint8_t> &the_data);
-        void fileDrop(const MouseEvent &e, const std::vector<std::string> &files);
-        void tearDown();
-        void update_property(const Property::ConstPtr &theProperty);
-        
-        void keyPress(const KeyEvent &e);
-        
+
+        MovieTest(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
+        void setup() override;
+        void update(float timeDelta) override;
+        void draw() override;
+        void resize(int w ,int h) override;
+        void keyPress(const KeyEvent &e) override;
+        void keyRelease(const KeyEvent &e) override;
+        void mousePress(const MouseEvent &e) override;
+        void mouseRelease(const MouseEvent &e) override;
+        void mouseMove(const MouseEvent &e) override;
+        void mouseDrag(const MouseEvent &e) override;
+        void mouseWheel(const MouseEvent &e) override;
+        void fileDrop(const MouseEvent &e, const std::vector<std::string> &files) override;
+        void tearDown() override;
+        void update_property(const Property::ConstPtr &theProperty) override;
         void on_movie_load();
-        
+
     };
 }// namespace kinski
