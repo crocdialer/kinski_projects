@@ -43,7 +43,7 @@ void MovieTest::update(float timeDelta)
     if(m_camera_control && m_camera_control->is_capturing())
         m_camera_control->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
     else
-        m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
+        m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT], true);
 }
 
 /////////////////////////////////////////////////////////////////
