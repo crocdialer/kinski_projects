@@ -32,6 +32,7 @@ void MovieTest::setup()
     m_warp->observe_properties();
     add_tweakbar_for_component(m_warp);
 
+    remote_control().set_components({ shared_from_this(), m_warp });
     load_settings();
 }
 
@@ -42,7 +43,7 @@ void MovieTest::update(float timeDelta)
     if(m_camera_control && m_camera_control->is_capturing())
         m_camera_control->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
     else
-        m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT], true);
+        m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
 }
 
 /////////////////////////////////////////////////////////////////
