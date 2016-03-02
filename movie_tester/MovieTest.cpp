@@ -25,8 +25,6 @@ void MovieTest::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
 
-//    m_movie->set_on_load_callback(bind(&MovieTest::on_movie_load, this));
-
     // warp component
     m_warp = std::make_shared<WarpComponent>();
     m_warp->observe_properties();
@@ -185,13 +183,6 @@ void MovieTest::tearDown()
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::on_movie_load()
-{
-    m_movie->play();
-}
-
-/////////////////////////////////////////////////////////////////
-
 void MovieTest::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
@@ -205,4 +196,34 @@ void MovieTest::update_property(const Property::ConstPtr &theProperty)
     {
         m_movie->set_rate(*m_movie_speed);
     }
+}
+
+/////////////////////////////////////////////////////////////////
+
+bool MovieTest::save_settings(const std::string &path)
+{
+    bool ret = ViewerApp::save_settings(path);
+    try
+    {
+        Serializer::saveComponentState(m_warp,
+                                       join_paths(path ,"warp_config.json"),
+                                       PropertyIO_GL());
+    }
+    catch(Exception &e){ LOG_ERROR << e.what(); return false; }
+    return ret;
+}
+
+/////////////////////////////////////////////////////////////////
+
+bool MovieTest::load_settings(const std::string &path)
+{
+    bool ret = ViewerApp::load_settings(path);
+    try
+    {
+        Serializer::loadComponentState(m_warp,
+                                       join_paths(path , "warp_config.json"),
+                                       PropertyIO_GL());
+    }
+    catch(Exception &e){ LOG_ERROR << e.what(); return false; }
+    return ret;
 }
