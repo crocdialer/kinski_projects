@@ -20,15 +20,15 @@ void MovieTest::setup()
     ViewerApp::setup();
     set_window_title("movie tester");
 
-    register_property(m_movie_speed);
     register_property(m_movie_path);
+    register_property(m_movie_speed);
+    register_property(m_use_warping);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
 
     // warp component
     m_warp = std::make_shared<WarpComponent>();
     m_warp->observe_properties();
-    add_tweakbar_for_component(m_warp);
 
     remote_control().set_components({ shared_from_this(), m_warp });
     load_settings();
@@ -48,10 +48,9 @@ void MovieTest::update(float timeDelta)
 
 void MovieTest::draw()
 {
-    // gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension());
-    m_warp->quad_warp().render_output(textures()[TEXTURE_INPUT]);
-    m_warp->quad_warp().render_grid();
-
+    if(*m_use_warping){ m_warp->render_output(textures()[TEXTURE_INPUT]); }
+    else{ gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension()); }
+    
     if(displayTweakBar())
     {
         gl::draw_text_2D(m_movie->get_path() + " : " +
@@ -189,12 +188,16 @@ void MovieTest::update_property(const Property::ConstPtr &theProperty)
 
     if(theProperty == m_movie_path)
     {
-//        glfwMakeContextCurrent(windows().front()->handle());
         m_movie->load(*m_movie_path, true, true);
     }
     else if(theProperty == m_movie_speed)
     {
         m_movie->set_rate(*m_movie_speed);
+    }
+    else if(theProperty == m_use_warping)
+    {
+        if(*m_use_warping){ add_tweakbar_for_component(m_warp); }
+        else{ remove_tweakbar_for_component(m_warp); }
     }
 }
 
