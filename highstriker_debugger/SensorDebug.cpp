@@ -146,7 +146,7 @@ void SensorDebug::resize(int w ,int h)
 void SensorDebug::keyPress(const KeyEvent &e)
 {
     ViewerApp::keyPress(e);
-    LOG_DEBUG << "press: " << e.getCode();
+    LOG_DEBUG << "key press: " << e.getCode();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -154,7 +154,7 @@ void SensorDebug::keyPress(const KeyEvent &e)
 void SensorDebug::keyRelease(const KeyEvent &e)
 {
     ViewerApp::keyRelease(e);
-    LOG_DEBUG << "release: " << e.getCode();
+    LOG_DEBUG << "key release: " << e.getCode();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -162,7 +162,7 @@ void SensorDebug::keyRelease(const KeyEvent &e)
 void SensorDebug::mousePress(const MouseEvent &e)
 {
     ViewerApp::mousePress(e);
-    LOG_DEBUG << "press: " << e.getX() << " - " << e.getY();
+    LOG_DEBUG << "press: " << e.getX() << " - " << e.getY() << " - idx: " << e.touch_index();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -170,7 +170,7 @@ void SensorDebug::mousePress(const MouseEvent &e)
 void SensorDebug::mouseRelease(const MouseEvent &e)
 {
     ViewerApp::mouseRelease(e);
-    LOG_DEBUG << "release: " << e.getX() << " - " << e.getY();
+    LOG_DEBUG << "release: " << e.getX() << " - " << e.getY() << " - idx: " << e.touch_index();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -186,7 +186,7 @@ void SensorDebug::mouseMove(const MouseEvent &e)
 void SensorDebug::mouseDrag(const MouseEvent &e)
 {
     ViewerApp::mouseDrag(e);
-    LOG_DEBUG << "drag: " << e.getX() << " - " << e.getY();
+    LOG_DEBUG << "drag: " << e.getX() << " - " << e.getY() << " - idx: " << e.touch_index();
 }
 
 /////////////////////////////////////////////////////////////////
