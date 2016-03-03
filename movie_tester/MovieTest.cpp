@@ -196,8 +196,8 @@ void MovieTest::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_use_warping)
     {
+        remove_tweakbar_for_component(m_warp);
         if(*m_use_warping){ add_tweakbar_for_component(m_warp); }
-        else{ remove_tweakbar_for_component(m_warp); }
     }
 }
 
