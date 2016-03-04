@@ -8,7 +8,7 @@
 
 #include "AsteroidField.h"
 
-#include "gl/Visitor.h"
+#include "gl/Visitor.hpp"
 
 // module headers
 #include "assimp/AssimpConnector.h"
@@ -32,8 +32,8 @@ void AsteroidField::setup()
     register_property(m_mode);
     observe_properties();
     
-    create_tweakbar_from_component(shared_from_this());
-    create_tweakbar_from_component(m_light_component);
+    add_tweakbar_for_component(shared_from_this());
+    add_tweakbar_for_component(m_light_component);
     
     m_skybox_mesh = gl::Mesh::create(gl::Geometry::createSphere(1.f, 16), gl::Material::create());
     m_skybox_mesh->material()->setDepthWrite(false);
@@ -104,18 +104,18 @@ void AsteroidField::draw()
     // skybox drawing
     if(*m_mode == MODE_NORMAL)
     {
-        gl::setProjection(camera());
+        gl::set_projection(camera());
         mat4 m = camera()->getViewMatrix();
         m[3] = vec4(0, 0, 0, 1);
-        gl::loadMatrix(gl::MODEL_VIEW_MATRIX, m);
-        gl::drawMesh(m_skybox_mesh);
+        gl::load_matrix(gl::MODEL_VIEW_MATRIX, m);
+        gl::draw_mesh(m_skybox_mesh);
     }
     
     /////////////////////////////////////////////////////////
     
     // draw asteroid field
-    gl::setMatrices(camera());
-    if(*m_draw_grid){ gl::drawGrid(50, 50); }
+    gl::set_matrices(camera());
+    if(*m_draw_grid){ gl::draw_grid(50, 50); }
     
     scene().render(camera());
 }
@@ -217,7 +217,7 @@ void AsteroidField::update_property(const Property::ConstPtr &theProperty)
         tex_vec.clear();
         try
         {
-            tex_vec.push_back(gl::createTextureFromFile(*m_sky_box_path, true, true));
+            tex_vec.push_back(gl::create_texture_from_file(*m_sky_box_path, true, true));
         }
         catch (Exception &e){ LOG_WARNING << e.what(); }
     }
@@ -238,7 +238,7 @@ void AsteroidField::load_assets()
     
     add_search_path(*m_model_folder);
     add_search_path(*m_texture_folder);
-    auto shader = gl::createShader(gl::ShaderType::GOURAUD);
+    auto shader = gl::create_shader(gl::ShaderType::GOURAUD);
     
     for (const auto &p : get_directory_entries(*m_model_folder, FileType::MODEL))
     {
@@ -246,7 +246,7 @@ void AsteroidField::load_assets()
         if(mesh)
         {
             auto &verts = mesh->geometry()->vertices();
-            vec3 centroid = gl::calculateCentroid(verts);
+            vec3 centroid = gl::calculate_centroid(verts);
             for(auto &v : verts){ v -= centroid; }
             mesh->geometry()->createGLBuffers();
             mesh->geometry()->computeBoundingBox();
@@ -268,7 +268,7 @@ void AsteroidField::load_assets()
     {
         try
         {
-            m_proto_textures.push_back(gl::createTextureFromFile(p, true, true));
+            m_proto_textures.push_back(gl::create_texture_from_file(p, true, true));
         }
         catch (Exception &e){ LOG_WARNING << e.what(); }
     }

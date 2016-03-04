@@ -22,11 +22,11 @@ void ModelViewer::setup()
     register_property(m_model_path);
     register_property(m_movie_path);
     observe_properties();
-    create_tweakbar_from_component(shared_from_this());
+    add_tweakbar_for_component(shared_from_this());
     
     m_light_component = std::make_shared<LightComponent>();
     m_light_component->set_lights(lights());
-    create_tweakbar_from_component(m_light_component);
+    add_tweakbar_for_component(m_light_component);
     
     
     gl::Fbo::Format fmt;
@@ -46,7 +46,7 @@ void ModelViewer::setup()
     
     try
     {
-        auto sh = gl::createShaderFromFile("depthmap.vert", "depthmap.frag");
+        auto sh = gl::create_shader_from_file("depthmap.vert", "depthmap.frag");
         m_draw_depth_mat->setShader(sh);
     } catch (Exception &e) { LOG_ERROR << e.what(); }
     
@@ -83,12 +83,12 @@ void ModelViewer::update(float timeDelta)
 
 void ModelViewer::draw()
 {
-    gl::setMatrices(camera());
-    if(draw_grid()){ gl::drawGrid(50, 50); }
+    gl::set_matrices(camera());
+    if(draw_grid()){ gl::draw_grid(50, 50); }
     
     if(m_light_component->draw_light_dummies())
     {
-        for (auto l : lights()){ gl::drawLight(l); }
+        for (auto l : lights()){ gl::draw_light(l); }
     }
     
     scene().render(camera());
@@ -196,7 +196,7 @@ void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &
             case FileType::IMAGE:
                 try
                 {
-                    textures().push_back(gl::createTextureFromFile(f, true, false));
+                    textures().push_back(gl::create_texture_from_file(f, true, false));
                     
                     if(m_mesh)
                     {
@@ -205,7 +205,7 @@ void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &
                     }
                 }
                 catch (Exception &e) { LOG_WARNING << e.what();}
-                if(scene().pick(gl::calculateRay(camera(), vec2(e.getPos()))))
+                if(scene().pick(gl::calculate_ray(camera(), vec2(e.getPos()))))
                 {
                     LOG_INFO << "texture drop on model";
                 }

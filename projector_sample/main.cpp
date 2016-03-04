@@ -1,5 +1,5 @@
 #include "ModelViewer.h"
-#include "core/networking.h"
+#include "core/networking.hpp"
 
 int main(int argc, char *argv[])
 {

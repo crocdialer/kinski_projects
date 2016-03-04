@@ -1,10 +1,9 @@
 #include "AsteroidField.h"
-#include "core/networking.h"
+#include "core/networking.hpp"
 
 int main(int argc, char *argv[])
 {
-    auto theApp = std::make_shared<kinski::AsteroidField>();
-    LOG_INFO<<"local ip: " << kinski::net::local_ip();
-    theApp->set_name(kinski::get_filename_part(argv[0]));
+    auto theApp = std::make_shared<kinski::AsteroidField>(argc, argv);
+    LOG_INFO << "local ip: " << kinski::net::local_ip();
     return theApp->run();
 }

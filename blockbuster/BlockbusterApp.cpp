@@ -21,35 +21,35 @@ void BlockbusterApp::setup()
     ViewerApp::setup();
     set_window_title("blockbuster");
     
-    registerProperty(m_view_type);
-    registerProperty(m_media_path);
-    registerProperty(m_use_syphon);
-    registerProperty(m_syphon_server_name);
-    registerProperty(m_fbo_cam_pos);
-    registerProperty(m_fbo_cam_fov);
-    registerProperty(m_fbo_resolution);
-    registerProperty(m_num_tiles_x);
-    registerProperty(m_num_tiles_y);
-    registerProperty(m_spacing_x);
-    registerProperty(m_spacing_y);
-    registerProperty(m_block_length);
-    registerProperty(m_block_width);
-    registerProperty(m_block_width_multiplier);
-    registerProperty(m_border);
-    registerProperty(m_mirror_img);
-    registerProperty(m_use_shadows);
-    registerProperty(m_depth_min);
-    registerProperty(m_depth_max);
-    registerProperty(m_depth_multiplier);
-    registerProperty(m_depth_smooth_fall);
-    registerProperty(m_depth_smooth_rise);
-    registerProperty(m_poisson_radius);
-    observeProperties();
-    create_tweakbar_from_component(shared_from_this());
+    register_property(m_view_type);
+    register_property(m_media_path);
+    register_property(m_use_syphon);
+    register_property(m_syphon_server_name);
+    register_property(m_fbo_cam_pos);
+    register_property(m_fbo_cam_fov);
+    register_property(m_fbo_resolution);
+    register_property(m_num_tiles_x);
+    register_property(m_num_tiles_y);
+    register_property(m_spacing_x);
+    register_property(m_spacing_y);
+    register_property(m_block_length);
+    register_property(m_block_width);
+    register_property(m_block_width_multiplier);
+    register_property(m_border);
+    register_property(m_mirror_img);
+    register_property(m_use_shadows);
+    register_property(m_depth_min);
+    register_property(m_depth_max);
+    register_property(m_depth_multiplier);
+    register_property(m_depth_smooth_fall);
+    register_property(m_depth_smooth_rise);
+    register_property(m_poisson_radius);
+    observe_properties();
+    add_tweakbar_for_component(shared_from_this());
     
     m_light_component = std::make_shared<LightComponent>();
     m_light_component->set_lights(lights());
-    create_tweakbar_from_component(m_light_component);
+    add_tweakbar_for_component(m_light_component);
     
     // add lights to scene
     for (auto l : lights()){ scene().addObject(l ); }
@@ -65,8 +65,8 @@ void BlockbusterApp::setup()
     
     // openni
     m_open_ni = gl::OpenNIConnector::Ptr(new gl::OpenNIConnector());
-    m_open_ni->observeProperties();
-    create_tweakbar_from_component(m_open_ni);
+    m_open_ni->observe_properties();
+    add_tweakbar_for_component(m_open_ni);
     
     load_settings();
     m_light_component->refresh();
@@ -156,19 +156,19 @@ void BlockbusterApp::draw()
     switch (*m_view_type)
     {
         case VIEW_DEBUG:
-            gl::setMatrices(camera());
-            if(draw_grid()){ gl::drawGrid(50, 50); }
+            gl::set_matrices(camera());
+            if(draw_grid()){ gl::draw_grid(50, 50); }
             
             if(m_light_component->draw_light_dummies())
             {
-                for (auto l : lights()){ gl::drawLight(l); }
+                for (auto l : lights()){ gl::draw_light(l); }
             }
             
             scene().render(camera());
             break;
             
         case VIEW_OUTPUT:
-            gl::drawTexture(textures()[TEXTURE_SYPHON], gl::windowDimension());
+            gl::draw_texture(textures()[TEXTURE_SYPHON], gl::window_dimension());
             break;
             
         default:
@@ -177,7 +177,7 @@ void BlockbusterApp::draw()
     
     if(m_light_component->draw_light_dummies())
     {
-        for (auto &l : lights()){ gl::drawLight(l); }
+        for (auto &l : lights()){ gl::draw_light(l); }
     }
     
     if(displayTweakBar()){ draw_textures(textures());}
@@ -273,9 +273,9 @@ void BlockbusterApp::tearDown()
 
 /////////////////////////////////////////////////////////////////
 
-void BlockbusterApp::updateProperty(const Property::ConstPtr &theProperty)
+void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
 {
-    ViewerApp::updateProperty(theProperty);
+    ViewerApp::update_property(theProperty);
     
     if(theProperty == m_media_path)
     {
@@ -397,7 +397,7 @@ bool BlockbusterApp::load_settings(const std::string &path)
 glm::vec3 BlockbusterApp::click_pos_on_ground(const glm::vec2 click_pos)
 {
     gl::Plane ground_plane(vec3(0), vec3(0, 1, 0));
-    auto ray = gl::calculateRay(camera(), click_pos);
+    auto ray = gl::calculate_ray(camera(), click_pos);
     auto intersect = ground_plane.intersect(ray);
     vec3 ret = ray * intersect.distance;
     return ret;

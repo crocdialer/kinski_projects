@@ -6,12 +6,11 @@
 //
 //
 
-#ifndef __gl__3dViewer__
-#define __gl__3dViewer__
+#pragma once
 
 #include "app/ViewerApp.h"
 #include "app/LightComponent.h"
-#include "gl/Fbo.h"
+#include "gl/Fbo.hpp"
 
 #include "video/MovieController.h"
 
@@ -61,5 +60,3 @@ namespace kinski
         void update_property(const Property::ConstPtr &theProperty) override;
     };
 }// namespace kinski
-
-#endif /* defined(__gl__3dViewer__) */

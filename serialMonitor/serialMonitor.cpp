@@ -1,5 +1,5 @@
 #include "app/ViewerApp.h"
-#include "core/Serial.h"
+#include "core/Serial.hpp"
 
 #include "RtMidi.h"
 #include "DMXController.h"

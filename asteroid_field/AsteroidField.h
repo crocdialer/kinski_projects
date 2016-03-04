@@ -6,11 +6,10 @@
 //
 //
 
-#ifndef __gl__AsteroidField__
-#define __gl__AsteroidField__
+#pragma once
 
 #include "app/ViewerApp.h"
-#include "core/Timer.h"
+#include "core/Timer.hpp"
 
 namespace kinski
 {
@@ -53,6 +52,7 @@ namespace kinski
         
     public:
         
+        AsteroidField(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;
         void update(float timeDelta) override;
         void draw() override;
@@ -70,5 +70,3 @@ namespace kinski
         void update_property(const Property::ConstPtr &theProperty) override;
     };
 }// namespace kinski
-
-#endif /* defined(__gl__AsteroidField__) */
