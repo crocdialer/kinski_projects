@@ -41,20 +41,20 @@ private:
 
 void KeyPointApp::setup()
 {
-    registerProperty(m_activator);
-    registerProperty(m_img_path);
-    registerProperty(m_imageIndex);
+    register_property(m_activator);
+    register_property(m_img_path);
+    register_property(m_imageIndex);
     
-    create_tweakbar_from_component(shared_from_this());
-    observeProperties();
+    add_tweakbar_for_component(shared_from_this());
+    observe_properties();
     
     // CV stuff
     m_cvThread = std::make_shared<CVThread>();
     m_processNode = std::make_shared<KeyPointNode>(cv::imread(search_file("kinder.jpg")));
     
     // trigger observer callbacks
-    m_processNode->observeProperties();
-    create_tweakbar_from_component(m_processNode);
+    m_processNode->observe_properties();
+    add_tweakbar_for_component(m_processNode);
     
     m_cvThread->setProcessingNode(m_processNode);
     m_cvThread->streamUSBCamera();
@@ -64,7 +64,7 @@ void KeyPointApp::setup()
     
     if(m_processNode)
     {
-        addPropertyListToTweakBar(m_processNode->getPropertyList());
+        addPropertyListToTweakBar(m_processNode->get_property_list());
         LOG_INFO<<"CVProcessNode: "<<m_processNode->getDescription();
     }
     
@@ -84,7 +84,7 @@ void KeyPointApp::update(float timeDelta)
         vector<cv::Mat> images = m_cvThread->getImages();
         
         float imgAspect = images.front().cols/(float)images.front().rows;
-        setWindowSize( vec2(getWidth(), getWidth() / imgAspect) );
+        set_window_size( vec2(getWidth(), getWidth() / imgAspect) );
         
         
         for(int i = 0; i < images.size(); i++)
@@ -102,7 +102,7 @@ void KeyPointApp::update(float timeDelta)
 void KeyPointApp::draw()
 {
     // draw fullscreen image
-    gl::drawTexture(textures()[*m_imageIndex], gl::windowDimension());
+    gl::draw_texture(textures()[*m_imageIndex], gl::window_dimension());
     
     if(displayTweakBar()){ draw_textures(textures()); }
 }
@@ -165,13 +165,6 @@ void KeyPointApp::mouseWheel(const MouseEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::got_message(const std::vector<uint8_t> &the_message)
-{
-    LOG_INFO<<string(the_message.begin(), the_message.end());
-}
-
-/////////////////////////////////////////////////////////////////
-
 void KeyPointApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     ViewerApp::fileDrop(e, files);
@@ -180,9 +173,9 @@ void KeyPointApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &
     {
         LOG_DEBUG << f;
         
-        switch (get_filetype(f))
+        switch (get_file_type(f))
         {
-            case FileType::FILE_IMAGE:
+            case FileType::IMAGE:
                 *m_img_path = f;
                 break;
             default:
@@ -196,14 +189,14 @@ void KeyPointApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &
 void KeyPointApp::tearDown()
 {
     m_cvThread->stop();
-    LOG_PRINT<<"ciao keypointer";
+    LOG_PRINT << "ciao " << name();
 }
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::updateProperty(const Property::ConstPtr &theProperty)
+void KeyPointApp::update_property(const Property::ConstPtr &theProperty)
 {
-    ViewerApp::updateProperty(theProperty);
+    ViewerApp::update_property(theProperty);
     
     if(theProperty == m_img_path)
     {

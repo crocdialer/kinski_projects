@@ -168,6 +168,27 @@ void MovieTest::mouseWheel(const MouseEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
+void MovieTest::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+{
+    
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MovieTest::touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+{
+    
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MovieTest::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+{
+    
+}
+
+/////////////////////////////////////////////////////////////////
+
 void MovieTest::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     *m_movie_path = files.back();

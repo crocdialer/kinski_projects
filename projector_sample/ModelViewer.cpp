@@ -169,13 +169,6 @@ void ModelViewer::mouseWheel(const MouseEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::got_message(const std::vector<uint8_t> &the_message)
-{
-    LOG_INFO<<string(the_message.begin(), the_message.end());
-}
-
-/////////////////////////////////////////////////////////////////
-
 void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     for(const string &f : files)

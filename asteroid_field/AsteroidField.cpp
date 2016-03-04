@@ -178,13 +178,6 @@ void AsteroidField::mouseWheel(const MouseEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void AsteroidField::got_message(const std::vector<uint8_t> &the_message)
-{
-    LOG_INFO<<string(the_message.begin(), the_message.end());
-}
-
-/////////////////////////////////////////////////////////////////
-
 void AsteroidField::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     for(const string &f : files){ LOG_INFO << f; }

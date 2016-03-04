@@ -1,9 +1,9 @@
 #include "BluetoothApp.h"
-#include "core/networking.h"
+#include "core/networking.hpp"
 
 int main(int argc, char *argv[])
 {
-    auto theApp = std::make_shared<kinski::BluetoothApp>();
-    LOG_INFO<<"local ip: " << kinski::net::local_ip();
+    auto theApp = std::make_shared<kinski::BluetoothApp>(argc, argv);
+    LOG_INFO << "local ip: " << kinski::net::local_ip();
     return theApp->run();
 }

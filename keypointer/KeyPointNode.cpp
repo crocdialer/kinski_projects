@@ -8,7 +8,7 @@
 
 #include "KeyPointNode.h"
 #include "boost/timer/timer.hpp"
-#include "core/Logger.h"
+#include "core/Logger.hpp"
 
 using namespace std;
 using namespace cv;
@@ -29,10 +29,10 @@ namespace kinski
     m_minMatchCount(RangedProperty<uint32_t>::create("Minimum match-count",
                                                                       8, 4, 64))
     {
-        registerProperty(m_maxFeatureDist);
-        registerProperty(m_maxImageWidth);
-        registerProperty(m_maxPatchWidth);
-        registerProperty(m_minMatchCount);
+        register_property(m_maxFeatureDist);
+        register_property(m_maxImageWidth);
+        register_property(m_maxPatchWidth);
+        register_property(m_minMatchCount);
         
         setReferenceImage(refImage);
         

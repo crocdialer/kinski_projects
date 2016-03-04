@@ -69,7 +69,7 @@ void FractureApp::setup()
     
     // init joystick crosshairs
     m_crosshair_pos.resize(get_joystick_states().size());
-    for(auto &p : m_crosshair_pos){ p = windowSize() / 2.f; }
+    for(auto &p : m_crosshair_pos){ p = gl::window_dimension() / 2.f; }
     
     // dof material
 //    gl::Shader sh; sh.loadFromData(unlit_vert, read_file("~/Desktop/shader_dof.frag").c_str());
@@ -256,13 +256,6 @@ void FractureApp::mouseDrag(const MouseEvent &e)
 void FractureApp::mouseWheel(const MouseEvent &e)
 {
     ViewerApp::mouseWheel(e);
-}
-
-/////////////////////////////////////////////////////////////////
-
-void FractureApp::got_message(const std::vector<uint8_t> &the_message)
-{
-    LOG_INFO<<string(the_message.begin(), the_message.end());
 }
 
 /////////////////////////////////////////////////////////////////

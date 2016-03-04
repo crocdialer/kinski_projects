@@ -241,9 +241,23 @@ void ModelViewer::mouseWheel(const MouseEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::got_message(const std::vector<uint8_t> &the_message)
+void ModelViewer::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    LOG_INFO<<string(the_message.begin(), the_message.end());
+    
+}
+
+/////////////////////////////////////////////////////////////////
+
+void ModelViewer::touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+{
+    
+}
+
+/////////////////////////////////////////////////////////////////
+
+void ModelViewer::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+{
+    
 }
 
 /////////////////////////////////////////////////////////////////

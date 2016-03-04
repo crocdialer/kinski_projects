@@ -33,7 +33,7 @@ namespace kinski
         virtual ~SalienceNode();
         
         std::string getDescription();
-        void updateProperty(const Property::ConstPtr &theProperty);
+        void update_property(const Property::ConstPtr &theProperty);
         
         std::vector<cv::Mat> doProcessing(const cv::Mat &img);
     };

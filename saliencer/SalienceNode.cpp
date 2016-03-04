@@ -19,10 +19,10 @@ namespace kinski
     m_useDoB(Property_<bool>::create("Difference of Box (spatial)", true)),
     m_useDoE(Property_<bool>::create("Difference of Exponential (motion)", true))
     {
-        registerProperty(m_salienceImageWidth);
-        registerProperty(m_useColor);
-        registerProperty(m_useDoB);
-        registerProperty(m_useDoE);
+        register_property(m_salienceImageWidth);
+        register_property(m_useColor);
+        register_property(m_useDoB);
+        register_property(m_useDoE);
     }
     
     SalienceNode::~SalienceNode()
@@ -57,7 +57,7 @@ namespace kinski
     }
     
     // Property observer callback
-    void SalienceNode::updateProperty(const Property::ConstPtr &theProperty)
+    void SalienceNode::update_property(const Property::ConstPtr &theProperty)
     {
         // one of our porperties was changed
         if(theProperty == m_useColor)

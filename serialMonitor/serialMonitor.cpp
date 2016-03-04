@@ -4,6 +4,8 @@
 #include "RtMidi.h"
 #include "DMXController.h"
 
+#include <boost/asio.hpp>
+
 using namespace std;
 using namespace kinski;
 using namespace glm;
@@ -33,14 +35,14 @@ private:
     // used for analog input measuring
     string m_input_prefix = "a_";
     
-    std::vector<Measurement<float>> m_analog_in {   Measurement<float>("Harp 1 - 1"),
-                                                    Measurement<float>("Harp 1 - 2"),
-                                                    Measurement<float>("Harp 1 - 3"),
-                                                    Measurement<float>("Harp 1 - 4"),
-                                                    Measurement<float>("Harp 1 - 5"),
-                                                    Measurement<float>("Harp 1 - 6"),
-                                                    Measurement<float>("Harp 1 - 7"),
-                                                    Measurement<float>("Harp 1 - 8")
+    std::vector<Measurement<float>> m_analog_in {   Measurement<float>(1000, "Harp 1 - 1"),
+                                                    Measurement<float>(1000, "Harp 1 - 2"),
+                                                    Measurement<float>(1000, "Harp 1 - 3"),
+                                                    Measurement<float>(1000, "Harp 1 - 4"),
+                                                    Measurement<float>(1000, "Harp 1 - 5"),
+                                                    Measurement<float>(1000, "Harp 1 - 6"),
+                                                    Measurement<float>(1000, "Harp 1 - 7"),
+                                                    Measurement<float>(1000, "Harp 1 - 8")
                                                 };
     std::vector<bool> m_channel_activity;
     
@@ -111,7 +113,7 @@ public:
     
     /////////////////////////////////////////////////////////////////
     
-    void setup()
+    void setup() override
     {
         ViewerApp::setup();
         
@@ -126,11 +128,11 @@ public:
         
         m_arduino_device_name = Property_<string>::create("Arduino device name",
                                                           "/dev/tty.usbmodem1411");
-        registerProperty(m_arduino_device_name);
+        register_property(m_arduino_device_name);
         
         m_selected_index = RangedProperty<int>::create("selected index", 0, 0,
                                                        m_analog_in.size() - 1);
-        registerProperty(m_selected_index);
+        register_property(m_selected_index);
         
         // udp server
         m_udp_server = net::udp_server(io_service(), std::bind(&SerialMonitorSample::got_message,
@@ -139,43 +141,44 @@ public:
         
         // register midi properties
         m_midi_port_name = Property_<string>::create("Midi virtual port name", "Baumhafer");
-        registerProperty(m_midi_port_name);
-        registerProperty(m_midi_plug_multiplier);
-        registerProperty(m_midi_velocity);
-        registerProperty(m_midi_fixed_velocity);
-        registerProperty(m_midi_autoplay);
-        registerProperty(m_midi_start_note);
+        register_property(m_midi_port_name);
+        register_property(m_midi_plug_multiplier);
+        register_property(m_midi_velocity);
+        register_property(m_midi_fixed_velocity);
+        register_property(m_midi_autoplay);
+        register_property(m_midi_start_note);
         
         // register DMX properties
-        registerProperty(m_dmx_start_index);
-        registerProperty(m_dmx_min_val);
-        registerProperty(m_dmx_max_val);
-        registerProperty(m_dmx_smoothness);
-        registerProperty(m_dmx_idle_max_val);
-        registerProperty(m_dmx_idle_speed);
-        registerProperty(m_dmx_idle_spread);
-        registerProperty(m_dmx_extra_1);
-        registerProperty(m_dmx_extra_2);
+        register_property(m_dmx_start_index);
+        register_property(m_dmx_min_val);
+        register_property(m_dmx_max_val);
+        register_property(m_dmx_smoothness);
+        register_property(m_dmx_idle_max_val);
+        register_property(m_dmx_idle_speed);
+        register_property(m_dmx_idle_spread);
+        register_property(m_dmx_extra_1);
+        register_property(m_dmx_extra_2);
         
         // register idle properties
-        registerProperty(m_idle_time);
-        registerProperty(m_idle_note_duration);
+        register_property(m_idle_time);
+        register_property(m_idle_note_duration);
         
         m_thresh_low = Property_<uint32_t>::create("thresh low", 10);
-        registerProperty(m_thresh_low);
+        register_property(m_thresh_low);
         
         m_thresh_high = Property_<uint32_t>::create("thresh high", 80);
-        registerProperty(m_thresh_high);
+        register_property(m_thresh_high);
         
-        observeProperties();
-        create_tweakbar_from_component(shared_from_this());
+        observe_properties();
+        add_tweakbar_for_component(shared_from_this());
         displayTweakBar(false);
         
         // drain the serial buffer before we start
         m_serial.drain();
         m_serial.flush();
         
-        m_ortho_cam = gl::OrthographicCamera::create(0, windowSize().x, 0, windowSize().y, 0, 1);
+        m_ortho_cam = gl::OrthographicCamera::create(0, gl::window_dimension().x, 0,
+                                                     gl::window_dimension().y, 0, 1);
         
         for(auto &m : m_analog_in)
         {
@@ -185,7 +188,7 @@ public:
         
         m_channel_activity.assign(m_analog_in.size(), false);
         
-        m_textures[0] = gl::createTextureFromFile("harp_icon.png");
+        m_textures[0] = gl::create_texture_from_file("harp_icon.png");
         
         // init midi output
         LOG_INFO<<"found "<<m_midi_out->getPortCount()<<" midi-outs";
@@ -216,7 +219,7 @@ public:
     
     /////////////////////////////////////////////////////////////////
     
-    void update(float timeDelta)
+    void update(float timeDelta) override
     {
         ViewerApp::update(timeDelta);
         
@@ -263,7 +266,7 @@ public:
         m_points.resize(measure.history().size(), vec3(0));
         for (int i = 0; i < measure.history().size(); i++)
         {
-            m_points[i].x = i * windowSize().x / measure.history().size();
+            m_points[i].x = i * gl::window_dimension().x / measure.history().size();
             m_points[i].y = measure.history()[i] / 2.f;
         }
         
@@ -273,21 +276,21 @@ public:
     
     /////////////////////////////////////////////////////////////////
     
-    void draw()
+    void draw() override
     {
         // background icon
-        gl::drawTexture(m_textures[0], vec2(256),
-                        vec2(10, windowSize().y - 256));
+        gl::draw_texture(m_textures[0], vec2(256),
+                        vec2(10, gl::window_dimension().y - 256));
         
         const auto &measure = m_analog_in[*m_selected_index];
         
-        float play_head_x_pos = measure.current_index() * windowSize().x /
+        float play_head_x_pos = measure.current_index() * gl::window_dimension().x /
                                 measure.history().size();
-        gl::drawLine(vec2(play_head_x_pos, 0), vec2(play_head_x_pos, windowSize().y), gl::COLOR_BLACK);
+        gl::draw_line(vec2(play_head_x_pos, 0), vec2(play_head_x_pos, gl::window_dimension().y), gl::COLOR_BLACK);
         
-        gl::setProjection(m_ortho_cam);
+        gl::set_projection(m_ortho_cam);
         
-        gl::drawLineStrip(m_points, vec4(1) - clear_color());
+        gl::draw_linestrip(m_points, vec4(1) - clear_color());
         //gl::drawLines(m_points, gl::COLOR_BLACK, 15.f);
         
         auto measured_val = measure.last_value();
@@ -295,42 +298,42 @@ public:
         
 //        gl::drawQuad(gl::COLOR_OLIVE,
 //                     vec2(80, measured_val / 2),
-//                     vec2(windowSize().x - 100, windowSize().y - measured_val / 2));
+//                     vec2(gl::window_dimension().x - 100, gl::window_dimension().y - measured_val / 2));
         
-        gl::drawText2D(measure.description() + " (" + as_string(m_selected_index->value()) +"): " +
+        gl::draw_text_2D(measure.description() + " (" + as_string(m_selected_index->value()) +"): " +
                             as_string(volt_value, 2) + " V",
                        m_font_large,
                        gl::COLOR_BLACK, glm::vec2(30, 30));
         
-        gl::drawText2D(" (" + as_string(measure.min()) +
+        gl::draw_text_2D(" (" + as_string(measure.min()) +
                        " - " + as_string(measure.max()) + ")",
                        m_font_small,
                        gl::COLOR_BLACK, glm::vec2(50, 110));
         
         // string activity icons
         int icon_width = 25;
-        vec2 offset(windowSize().x - 290, 120), step(icon_width + 8, 0);
+        vec2 offset(gl::window_dimension().x - 290, 120), step(icon_width + 8, 0);
         for(int i = 0; i < m_analog_in.size(); i++)
         {
-            gl::drawQuad(m_channel_activity[i] ? gl::COLOR_DARK_RED : gl::Color(.2),
-                         m_channel_activity[i] ? vec2(icon_width + 6) : vec2(icon_width),
-                         offset - (m_channel_activity[i] ? vec2(3) : vec2(0)));
+            gl::draw_quad(m_channel_activity[i] ? gl::COLOR_DARK_RED : gl::Color(.2),
+                          m_channel_activity[i] ? vec2(icon_width + 6) : vec2(icon_width),
+                          offset - (m_channel_activity[i] ? vec2(3) : vec2(0)));
             offset += step;
         }
         
         // dmx activity icons
-        offset = vec2(windowSize().x - 290, 160);
+        offset = vec2(gl::window_dimension().x - 290, 160);
         for(int i = 0; i < m_analog_in.size(); i++)
         {
-            gl::drawQuad(gl::Color(.2),
-                         vec2(icon_width, 5 + m_dmx_control[*m_dmx_start_index + 2 * i]), offset);
+            gl::draw_quad(gl::Color(.2), vec2(icon_width,
+                                              5 + m_dmx_control[*m_dmx_start_index + 2 * i]), offset);
             offset += step;
         }
     }
     
     /////////////////////////////////////////////////////////////////
     
-    void resize(int w ,int h)
+    void resize(int w ,int h) override
     {
         ViewerApp::resize(w, h);
         
@@ -342,7 +345,7 @@ public:
     
     /////////////////////////////////////////////////////////////////
     
-    void keyPress(const KeyEvent &e)
+    void keyPress(const KeyEvent &e) override
     {
         ViewerApp::keyPress(e);
         
@@ -389,7 +392,7 @@ public:
     
     /////////////////////////////////////////////////////////////////
     
-    void keyRelease(const KeyEvent &e)
+    void keyRelease(const KeyEvent &e) override
     {
         ViewerApp::keyRelease(e);
 
@@ -413,10 +416,10 @@ public:
     
     /////////////////////////////////////////////////////////////////
     
-    void tearDown()
+    void tearDown() override
     {
         midi_mute_all();
-        LOG_PRINT<<"ciao serialMonitor";
+        LOG_PRINT << "ciao " << name();
     }
     
     /////////////////////////////////////////////////////////////////
@@ -621,9 +624,9 @@ public:
     
     /////////////////////////////////////////////////////////////////
     
-    void updateProperty(const Property::ConstPtr &theProperty)
+    void update_property(const Property::ConstPtr &theProperty) override
     {
-        ViewerApp::updateProperty(theProperty);
+        ViewerApp::update_property(theProperty);
         
         if(theProperty == m_arduino_device_name)
         {
@@ -680,6 +683,6 @@ public:
 int main(int argc, char *argv[])
 {
     App::Ptr theApp(new SerialMonitorSample);
-    LOG_INFO<<"local ip: " << net::local_ip();
+    LOG_INFO << "local ip: " << net::local_ip();
     return theApp->run();
 }

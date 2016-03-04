@@ -67,7 +67,6 @@ namespace kinski
         void touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
-        void got_message(const std::vector<uint8_t> &the_message) override;
         void fileDrop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void tearDown() override;
         void update_property(const Property::ConstPtr &theProperty) override;

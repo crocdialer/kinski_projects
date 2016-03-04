@@ -247,6 +247,27 @@ void GrowthApp::mouseWheel(const MouseEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
+void GrowthApp::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+{
+    
+}
+
+/////////////////////////////////////////////////////////////////
+
+void GrowthApp::touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+{
+    
+}
+
+/////////////////////////////////////////////////////////////////
+
+void GrowthApp::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+{
+    
+}
+
+/////////////////////////////////////////////////////////////////
+
 void GrowthApp::tearDown()
 {
     LOG_PRINT<<"ciao procedural growth";

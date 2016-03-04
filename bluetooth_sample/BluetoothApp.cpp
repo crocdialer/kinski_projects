@@ -18,8 +18,8 @@ using namespace glm;
 void BluetoothApp::setup()
 {
     ViewerApp::setup();
-    observeProperties();
-    create_tweakbar_from_component(shared_from_this());
+    observe_properties();
+    add_tweakbar_for_component(shared_from_this());
     load_settings();
 }
 
@@ -34,8 +34,8 @@ void BluetoothApp::update(float timeDelta)
 
 void BluetoothApp::draw()
 {
-    gl::setMatrices(camera());
-    gl::drawGrid(50, 50);
+    gl::set_matrices(camera());
+    gl::draw_grid(50, 50);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -106,9 +106,23 @@ void BluetoothApp::mouseWheel(const MouseEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::got_message(const std::vector<uint8_t> &the_message)
+void BluetoothApp::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    LOG_INFO<<string(the_message.begin(), the_message.end());
+    
+}
+
+/////////////////////////////////////////////////////////////////
+
+void BluetoothApp::touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+{
+    
+}
+
+/////////////////////////////////////////////////////////////////
+
+void BluetoothApp::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+{
+    
 }
 
 /////////////////////////////////////////////////////////////////
@@ -127,7 +141,7 @@ void BluetoothApp::tearDown()
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::updateProperty(const Property::ConstPtr &theProperty)
+void BluetoothApp::update_property(const Property::ConstPtr &theProperty)
 {
-    ViewerApp::updateProperty(theProperty);
+    ViewerApp::update_property(theProperty);
 }

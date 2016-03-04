@@ -1,12 +1,12 @@
 #include "app/GLFW_App.h"
 
-#include "gl/Material.h"
+#include "gl/Material.hpp"
 
 #include "cv/CVThread.h"
 #include "cv/TextureIO.h"
 #include "SalienceNode.h"
 
-#include "gl/SerializerGL.h"
+#include "gl/SerializerGL.hpp"
 
 using namespace std;
 using namespace kinski;
@@ -46,12 +46,12 @@ public:
         m_activator = Property_<bool>::create("processing", true);
         m_imageIndex = RangedProperty<uint32_t>::create("Image Index", 0, 0, 1);
         
-        registerProperty(m_activator);
-        registerProperty(m_imageIndex);
+        register_property(m_activator);
+        register_property(m_imageIndex);
         
         // add component-props to tweakbar
         //addPropertyListToTweakBar(getPropertyList());
-        create_tweakbar_from_component(shared_from_this());
+        add_tweakbar_for_component(shared_from_this());
         
         // CV stuff
         m_cvThread = CVThread::Ptr(new CVThread());
@@ -64,8 +64,8 @@ public:
         
         if(m_processNode)
         {
-            addPropertyListToTweakBar(m_processNode->getPropertyList());
-            m_processNode->observeProperties();
+            addPropertyListToTweakBar(m_processNode->get_property_list());
+            m_processNode->observe_properties();
             LOG_INFO<<"CVProcessNode: \n"<<m_processNode->getDescription();
         }
         
@@ -73,7 +73,7 @@ public:
         
         try
         {
-            m_material->setShader(gl::createShaderFromFile("applyMap.vert", "applyMap.frag"));
+            m_material->setShader(gl::create_shader_from_file("applyMap.vert", "applyMap.frag"));
             Serializer::loadComponentState(shared_from_this(), "config.json", PropertyIO_GL());
             
         }catch(Exception &e)
@@ -114,12 +114,12 @@ public:
     {
         // draw fullscreen image
         if(*m_activator)
-            gl::drawQuad(m_material, windowSize());
+            gl::draw_quad(m_material, gl::window_dimension());
         else
-            gl::drawTexture(m_material->textures()[*m_imageIndex], windowSize());
+            gl::draw_texture(m_material->textures()[*m_imageIndex], gl::window_dimension());
         
         // draw process-results map(s)
-        float w = (windowSize()/6.f).x;
+        float w = (gl::window_dimension() / 6.f).x;
         glm::vec2 offset(getWidth() - w - 10, 10);
         
         for(int i=0;i<m_cvThread->getImages().size();i++)
@@ -128,7 +128,7 @@ public:
             float h = m_textures[i].getHeight() * w / m_textures[i].getWidth();
             glm::vec2 step(0, h + 10);
             
-            gl::drawTexture(m_textures[i],
+            gl::draw_texture(m_textures[i],
                             glm::vec2(w, h),
                             offset);
             

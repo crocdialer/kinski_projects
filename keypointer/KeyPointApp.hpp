@@ -6,8 +6,7 @@
 //
 //
 
-#ifndef __gl__KeyPointApp__
-#define __gl__KeyPointApp__
+#pragma once
 
 #include "app/ViewerApp.h"
 #include "cv/CVThread.h"
@@ -45,11 +44,8 @@ namespace kinski
         void mouseMove(const MouseEvent &e) override;
         void mouseDrag(const MouseEvent &e) override;
         void mouseWheel(const MouseEvent &e) override;
-        void got_message(const std::vector<uint8_t> &the_message) override;
         void fileDrop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void tearDown() override;
-        void updateProperty(const Property::ConstPtr &theProperty) override;
+        void update_property(const Property::ConstPtr &theProperty) override;
     };
 }// namespace kinski
-
-#endif /* defined(__gl__KeyPointApp__) */

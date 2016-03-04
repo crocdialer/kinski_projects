@@ -235,13 +235,6 @@ void MovieTimeshift::keyPress(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTimeshift::got_message(const std::vector<uint8_t> &the_data)
-{
-    LOG_INFO << string(the_data.begin(), the_data.end());
-}
-
-/////////////////////////////////////////////////////////////////
-
 void MovieTimeshift::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     *m_movie_path = files.back();

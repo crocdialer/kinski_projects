@@ -131,7 +131,6 @@ namespace kinski
         void setup() override;
         void update(float timeDelta) override;
         void draw() override;
-        void got_message(const std::vector<uint8_t> &the_data) override;
         void fileDrop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void tearDown() override;
         void update_property(const Property::ConstPtr &theProperty) override;
