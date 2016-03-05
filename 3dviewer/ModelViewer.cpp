@@ -93,7 +93,7 @@ void ModelViewer::update(float timeDelta)
                                                             gl::ShaderType::UNLIT, false);
             }
 
-            if(!m_normalmap_path->value().empty())
+            if(m_normal_map)
             {
                 LOG_DEBUG << "adding normalmap: '" << m_normalmap_path->value() << "'";
                 shader = gl::create_shader(gl::ShaderType::PHONG_NORMALMAP);
@@ -106,7 +106,7 @@ void ModelViewer::update(float timeDelta)
         {
             if(shader){ mat->setShader(shader); }
             mat->setBlending();
-            if(!m_normalmap_path->value().empty() && m_normal_map && mat->textures().size() < 2)
+            if(m_normal_map && mat->textures().size() < 2)
             {
                 mat->textures().push_back(m_normal_map);
                 mat->setSpecular(gl::COLOR_WHITE);
