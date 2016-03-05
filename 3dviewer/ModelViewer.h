@@ -25,6 +25,7 @@ namespace kinski
         Property_<bool>::Ptr
         m_draw_fps = Property_<bool>::create("draw fps", true),
         m_use_lighting = Property_<bool>::create("use lighting", true),
+        m_use_normal_map = Property_<bool>::create("use normal mapping", true),
         m_use_ground_plane = Property_<bool>::create("use ground plane", true);
         
         Property_<std::string>::Ptr

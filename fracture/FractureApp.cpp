@@ -165,8 +165,6 @@ void FractureApp::draw()
             
         case VIEW_OUTPUT:
             gl::draw_texture(textures()[TEXTURE_SYPHON], gl::window_dimension());
-//            m_dof_material->textures() = { textures()[TEXTURE_SYPHON], m_fbos[0].getDepthTexture() };
-//            gl::drawQuad(m_dof_material, gl::windowDimension());
             break;
             
         default:

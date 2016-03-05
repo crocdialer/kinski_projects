@@ -28,6 +28,7 @@ void ModelViewer::setup()
     register_property(m_draw_fps);
     register_property(m_model_path);
     register_property(m_use_lighting);
+    register_property(m_use_normal_map);
     register_property(m_use_ground_plane);
     register_property(m_use_bones);
     register_property(m_display_bones);
@@ -78,6 +79,7 @@ void ModelViewer::update(float timeDelta)
         m_dirty_shader  = false;
 
         bool use_bones = m_mesh->geometry()->hasBones() && *m_use_bones;
+        bool use_normal_map = *m_use_normal_map && *m_use_lighting && m_normal_map;
         gl::Shader shader;
 
         try
@@ -93,7 +95,7 @@ void ModelViewer::update(float timeDelta)
                                                             gl::ShaderType::UNLIT, false);
             }
 
-            if(m_normal_map)
+            if(use_normal_map)
             {
                 LOG_DEBUG << "adding normalmap: '" << m_normalmap_path->value() << "'";
                 shader = gl::create_shader(gl::ShaderType::PHONG_NORMALMAP);
@@ -106,7 +108,7 @@ void ModelViewer::update(float timeDelta)
         {
             if(shader){ mat->setShader(shader); }
             mat->setBlending();
-            if(m_normal_map && mat->textures().size() < 2)
+            if(use_normal_map && mat->textures().size() < 2)
             {
                 mat->textures().push_back(m_normal_map);
                 mat->setSpecular(gl::COLOR_WHITE);
@@ -339,6 +341,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
             }, true);
         }
     }
+    else if(theProperty == m_use_normal_map){ m_dirty_shader = true; }
     else if(theProperty == m_use_bones){ m_dirty_shader = true; }
     else if(theProperty == m_use_lighting){ m_dirty_shader = true; }
     else if(theProperty == m_wireframe)
