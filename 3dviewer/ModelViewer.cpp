@@ -47,9 +47,11 @@ void ModelViewer::setup()
     {
         light_root->transform() = gl::rotate(light_root->transform(), 0.1f * time_delta, gl::Y_AXIS);
     });
-
-    for (auto l : lights())
+    
+    // rearrange standard lights as carussel
+    for(auto l : lights())
     {
+        scene().removeObject(l);
         light_root->add_child(l);
     }
     scene().addObject(light_root);
@@ -77,7 +79,6 @@ void ModelViewer::update(float timeDelta)
 
         bool use_bones = m_mesh->geometry()->hasBones() && *m_use_bones;
         gl::Shader shader;
-        gl::Texture normal_map;
 
         try
         {
@@ -96,7 +97,7 @@ void ModelViewer::update(float timeDelta)
             {
                 LOG_DEBUG << "adding normalmap: '" << m_normalmap_path->value() << "'";
                 shader = gl::create_shader(gl::ShaderType::PHONG_NORMALMAP);
-                normal_map = gl::create_texture_from_file(*m_normalmap_path, true);
+//                m_normal_map = gl::create_texture_from_file(*m_normalmap_path, true);
             }
         }
         catch (Exception &e){ LOG_ERROR << e.what(); }
@@ -105,9 +106,9 @@ void ModelViewer::update(float timeDelta)
         {
             if(shader){ mat->setShader(shader); }
             mat->setBlending();
-            if(!m_normalmap_path->value().empty() && normal_map && mat->textures().size() < 2)
+            if(!m_normalmap_path->value().empty() && m_normal_map && mat->textures().size() < 2)
             {
-                mat->textures().push_back(normal_map);
+                mat->textures().push_back(m_normal_map);
                 mat->setSpecular(gl::COLOR_WHITE);
                 mat->setShinyness(10.f);
             }
@@ -327,7 +328,16 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_normalmap_path)
     {
-        m_dirty_shader = true;
+        if(!m_normalmap_path->value().empty())
+        {
+            m_normal_map.reset();
+            
+            async_load_texture(*m_normalmap_path, [this](const gl::Texture &t)
+            {
+                m_normal_map = t;
+                m_dirty_shader = true;
+            }, true);
+        }
     }
     else if(theProperty == m_use_bones){ m_dirty_shader = true; }
     else if(theProperty == m_use_lighting){ m_dirty_shader = true; }

@@ -121,11 +121,6 @@ namespace kinski
                                                gl::Texture &the_array_tex,
                                                uint32_t the_index);
         
-        /*!
-         * create a foreground image using a background substraction algorithm (e.g. MOG)
-         */
-//        cv::UMat create_foreground_image(std::vector<uint8_t> &the_data, int width, int height);
-        
     public:
         MovieTimeshift(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;

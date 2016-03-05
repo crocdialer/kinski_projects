@@ -17,7 +17,7 @@ namespace kinski
     private:
         
         gl::MeshPtr m_mesh;
-        gl::Texture m_cube_map;
+        gl::Texture m_cube_map, m_normal_map;
         
         bool m_dirty_shader = true;
         bool m_loading = false;

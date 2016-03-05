@@ -65,10 +65,7 @@ void MovieTimeshift::setup()
         m_syphon_in_index->setRange(0, syphon::Input::get_inputs().size() - 1);
     }
     
-    if(!load_settings())
-    {
-        m_camera->start_capture();
-    }
+    load_settings();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -109,17 +106,8 @@ void MovieTimeshift::update(float timeDelta)
         if(m_camera->copy_frame(m_camera_data, &w, &h))
         {
             LOG_TRACE << "received frame: " << w << " x " << h;
-            textures()[TEXTURE_INPUT].update(&m_camera_data[0], GL_UNSIGNED_BYTE, GL_BGRA, w, h, *m_flip_image);
-            
-            // create a foreground image
-//            cv::UMat fg_image;
-            
-            if(*m_use_bg_substract)
-            {
-//                fg_image = create_foreground_image(m_camera_data, w, h);
-//                gl::TextureIO::updateTexture(textures()[TEXTURE_FG_IMAGE],
-//                                             fg_image.getMat(cv::ACCESS_READ));
-            }
+            textures()[TEXTURE_INPUT].update(&m_camera_data[0], GL_UNSIGNED_BYTE, GL_BGRA, w, h,
+                                             *m_flip_image);
             
             if(m_needs_array_refresh)
             {
@@ -244,7 +232,7 @@ void MovieTimeshift::fileDrop(const MouseEvent &e, const std::vector<std::string
 
 void MovieTimeshift::tearDown()
 {
-    LOG_PRINT << "ciao belgium trash demo";
+    LOG_PRINT << "ciao " << name();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -435,26 +423,26 @@ void MovieTimeshift::update_property(const Property::ConstPtr &theProperty)
         m_noise.set_tex_size(*m_noise_map_size);
         m_noise.set_scale(vec2(*m_noise_scale_x, *m_noise_scale_y));
     }
-    else if(theProperty == m_offscreen_size)
-    {
-        m_offscreen_fbo = gl::Fbo(m_offscreen_size->value().x,
-                                  m_offscreen_size->value().y);
-    }
-    else if(theProperty == m_use_syphon)
-    {
-        m_syphon_out = *m_use_syphon ? syphon::Output(*m_syphon_server_name) : syphon::Output();
-    }
-    else if(theProperty == m_syphon_server_name)
-    {
-        try{m_syphon_out.setName(*m_syphon_server_name);}
-        catch(syphon::SyphonNotRunningException &e){LOG_WARNING<<e.what();}
-    }
-    else if(theProperty == m_cam_id)
-    {
-        m_input_source_changed = true;
-    }
-    else if(theProperty == m_flip_image)
-    {
-        m_needs_array_refresh = true;
-    }
+//    else if(theProperty == m_offscreen_size)
+//    {
+//        m_offscreen_fbo = gl::Fbo(m_offscreen_size->value().x,
+//                                  m_offscreen_size->value().y);
+//    }
+//    else if(theProperty == m_use_syphon)
+//    {
+//        m_syphon_out = *m_use_syphon ? syphon::Output(*m_syphon_server_name) : syphon::Output();
+//    }
+//    else if(theProperty == m_syphon_server_name)
+//    {
+//        try{m_syphon_out.setName(*m_syphon_server_name);}
+//        catch(syphon::SyphonNotRunningException &e){LOG_WARNING<<e.what();}
+//    }
+//    else if(theProperty == m_cam_id)
+//    {
+//        m_input_source_changed = true;
+//    }
+//    else if(theProperty == m_flip_image)
+//    {
+//        m_needs_array_refresh = true;
+//    }
 }
