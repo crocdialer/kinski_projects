@@ -116,10 +116,6 @@ void ModelViewer::update(float timeDelta)
             }
             else if(!mat->textures().empty()){ mat->textures().resize(1); }
         }
-
-        // set animation stuff
-        m_animation_index->notifyObservers();
-        m_animation_speed->notifyObservers();
     }
 }
 
@@ -275,15 +271,13 @@ void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &
 
         switch (get_file_type(f))
         {
-            case FileType::DIRECTORY:
-                *m_cube_map_folder = f;
-                break;
+//            case FileType::DIRECTORY:
+//                *m_cube_map_folder = f;
+//                break;
 
             case FileType::MODEL:
-                *m_model_path = f;
-                break;
-
             case FileType::IMAGE:
+                *m_model_path = f;
                 try
                 {
                     dropped_textures.push_back(gl::create_texture_from_file(f, true, false));
@@ -433,18 +427,22 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
             break;
 
         case FileType::IMAGE:
-
-            try { t = gl::create_texture_from_file(the_path, true, true); }
-            catch (Exception &e) { LOG_WARNING << e.what(); }
-
-            if(t)
+            
+        {
+            auto geom = gl::Geometry::createPlane(1.f, 1.f, 100, 100);
+            auto mat = gl::Material::create();
+            m = gl::Mesh::create(geom, mat);
+            m->transform() = rotate(mat4(), 90.f, gl::Y_AXIS);
+            
+            async_load_texture(the_path, [this, m](const gl::Texture &t)
             {
-                auto geom = gl::Geometry::createPlane(t.getWidth(), t.getHeight(), 100, 100);
-                auto mat = gl::Material::create();
-                mat->addTexture(t);
-                m = gl::Mesh::create(geom, mat);
-                m->transform() = rotate(mat4(), 90.f, gl::Y_AXIS);
-            }
+                m->material()->addTexture(t);
+                m->material()->setTwoSided();
+                gl::vec3 s = m->scale();
+                m->setScale(gl::vec3(s.x * t.getAspectRatio(), s.y, 1.f));
+                m->position().y += m->boundingBox().height() / 2.f;
+            });
+        }
             break;
 
         default:
@@ -466,6 +464,7 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
             gl::AssimpConnector::add_animations_to_mesh(f, m);
         }
         m->set_animation_speed(*m_animation_speed);
+        m->set_animation_index(*m_animation_index);
     }
     return m;
 }
