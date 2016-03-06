@@ -20,7 +20,6 @@ namespace kinski
         gl::Texture m_cube_map, m_normal_map;
         
         bool m_dirty_shader = true;
-        bool m_loading = false;
         
         Property_<bool>::Ptr
         m_draw_fps = Property_<bool>::create("draw fps", true),

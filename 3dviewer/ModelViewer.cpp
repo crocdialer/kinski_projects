@@ -8,7 +8,6 @@
 
 #include "ModelViewer.h"
 #include "AssimpConnector.h"
-//#include "gl/Texture.hpp"
 
 using namespace std;
 using namespace kinski;
@@ -160,7 +159,7 @@ void ModelViewer::draw()
         }
     }
 
-    if(m_loading)
+    if(is_loading())
     {
         gl::draw_text_2D("loading ...", fonts()[0], gl::COLOR_WHITE,
                          gl::vec2(gl::window_dimension().x - 130, 20));
@@ -474,7 +473,7 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
 void ModelViewer::async_load_asset(const std::string &the_path,
                                    std::function<void(gl::MeshPtr)> the_completion_handler)
 {
-    m_loading = true;
+    inc_task();
 
     background_queue().submit([this, the_completion_handler]()
     {
@@ -520,7 +519,7 @@ void ModelViewer::async_load_asset(const std::string &the_path,
                 }
             }
             the_completion_handler(m);
-            m_loading = false;
+            dec_task();
         });
     });
 }
