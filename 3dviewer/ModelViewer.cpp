@@ -410,7 +410,6 @@ void ModelViewer::build_skeleton(gl::BonePtr currentBone, vector<vec3> &points,
 gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
 {
     gl::MeshPtr m;
-    gl::Texture t;
 
     auto asset_dir = get_directory_part(the_path);
     add_search_path(asset_dir);
@@ -473,10 +472,11 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
 void ModelViewer::async_load_asset(const std::string &the_path,
                                    std::function<void(gl::MeshPtr)> the_completion_handler)
 {
-    inc_task();
-
     background_queue().submit([this, the_completion_handler]()
     {
+        // publish our task
+        inc_task();
+        
         // load model on worker thread
         auto m = load_asset(*m_model_path);
 
@@ -519,6 +519,8 @@ void ModelViewer::async_load_asset(const std::string &the_path,
                 }
             }
             the_completion_handler(m);
+            
+            // task done
             dec_task();
         });
     });
