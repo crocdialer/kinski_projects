@@ -50,7 +50,7 @@ void MovieTest::draw()
 {
     if(*m_use_warping){ m_warp->render_output(textures()[TEXTURE_INPUT]); }
     else{ gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension()); }
-    
+
     if(displayTweakBar())
     {
         gl::draw_text_2D(m_movie->get_path() + " : " +
@@ -77,7 +77,7 @@ void MovieTest::keyPress(const KeyEvent &e)
             break;
 
         case Key::_P:
-            m_movie->isPlaying() ? m_movie->pause() : m_movie->play();
+            m_movie->is_playing() ? m_movie->pause() : m_movie->play();
             break;
 
         case Key::_LEFT:
@@ -170,21 +170,21 @@ void MovieTest::mouseWheel(const MouseEvent &e)
 
 void MovieTest::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    
+
 }
 
 /////////////////////////////////////////////////////////////////
 
 void MovieTest::touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    
+
 }
 
 /////////////////////////////////////////////////////////////////
 
 void MovieTest::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    
+
 }
 
 /////////////////////////////////////////////////////////////////
