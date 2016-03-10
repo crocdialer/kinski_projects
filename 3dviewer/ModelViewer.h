@@ -54,6 +54,8 @@ namespace kinski
         void async_load_asset(const std::string &the_path,
                               std::function<void(gl::MeshPtr)> the_completion_handler);
         
+        void update_shader();
+        
     public:
         
         ModelViewer(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};

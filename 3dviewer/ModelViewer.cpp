@@ -72,50 +72,7 @@ void ModelViewer::setup()
 void ModelViewer::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-
-    if(m_mesh && m_dirty_shader)
-    {
-        m_dirty_shader  = false;
-
-        bool use_bones = m_mesh->geometry()->hasBones() && *m_use_bones;
-        bool use_normal_map = *m_use_normal_map && *m_use_lighting && m_normal_map;
-        gl::Shader shader;
-
-        try
-        {
-            if(use_bones)
-            {
-                shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SKIN_SHADOWS :
-                                                            gl::ShaderType::UNLIT_SKIN, false);
-            }
-            else
-            {
-                shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SHADOWS :
-                                                            gl::ShaderType::UNLIT, false);
-            }
-
-            if(use_normal_map)
-            {
-                LOG_DEBUG << "adding normalmap: '" << m_normalmap_path->value() << "'";
-                shader = gl::create_shader(gl::ShaderType::PHONG_NORMALMAP);
-//                m_normal_map = gl::create_texture_from_file(*m_normalmap_path, true);
-            }
-        }
-        catch (Exception &e){ LOG_ERROR << e.what(); }
-
-        for(auto &mat : m_mesh->materials())
-        {
-            if(shader){ mat->setShader(shader); }
-            mat->setBlending();
-            if(use_normal_map && mat->textures().size() < 2)
-            {
-                mat->textures().push_back(m_normal_map);
-                mat->setSpecular(gl::COLOR_WHITE);
-                mat->setShinyness(10.f);
-            }
-            else if(!mat->textures().empty()){ mat->textures().resize(1); }
-        }
-    }
+    update_shader();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -331,7 +288,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
             {
                 m_normal_map = t;
                 m_dirty_shader = true;
-            }, true);
+            }, true, true, 8.f);
         }
     }
     else if(theProperty == m_use_normal_map){ m_dirty_shader = true; }
@@ -512,7 +469,7 @@ void ModelViewer::async_load_asset(const std::string &the_path,
                 {
                     for(const gl::Image &img : mat_img_map.at(mat))
                     {
-                        gl::Texture tex = gl::create_texture_from_image(img, true, true);
+                        gl::Texture tex = gl::create_texture_from_image(img, true, true, 8.f);
                         free(img.data);
                         mat->addTexture(tex);
                     }
@@ -524,4 +481,52 @@ void ModelViewer::async_load_asset(const std::string &the_path,
             dec_task();
         });
     });
+}
+
+/////////////////////////////////////////////////////////////////
+
+void ModelViewer::update_shader()
+{
+    if(m_mesh && m_dirty_shader)
+    {
+        m_dirty_shader  = false;
+        
+        bool use_bones = m_mesh->geometry()->hasBones() && *m_use_bones;
+        bool use_normal_map = *m_use_normal_map && *m_use_lighting && m_normal_map;
+        gl::Shader shader;
+        
+        try
+        {
+            if(use_bones)
+            {
+                shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SKIN_SHADOWS :
+                                           gl::ShaderType::UNLIT_SKIN, false);
+            }
+            else
+            {
+                shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SHADOWS :
+                                           gl::ShaderType::UNLIT, false);
+            }
+            
+            if(use_normal_map)
+            {
+                LOG_DEBUG << "adding normalmap: '" << m_normalmap_path->value() << "'";
+                shader = gl::create_shader(gl::ShaderType::PHONG_NORMALMAP);
+            }
+        }
+        catch (Exception &e){ LOG_ERROR << e.what(); }
+        
+        for(auto &mat : m_mesh->materials())
+        {
+            if(shader){ mat->setShader(shader); }
+            mat->setBlending();
+            if(use_normal_map && mat->textures().size() < 2)
+            {
+                mat->textures().push_back(m_normal_map);
+                mat->setSpecular(gl::COLOR_WHITE);
+                mat->setShinyness(15.f);
+            }
+            else if(!mat->textures().empty()){ mat->textures().resize(1); }
+        }
+    }
 }

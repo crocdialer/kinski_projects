@@ -155,7 +155,8 @@ void MeditationRoom::draw()
         textures()[0] = gl::render_to_texture(m_fbos[0], [this]()
         {
             gl::clear();
-            gl::draw_circle(gl::window_dimension() / 2.f, m_current_circ_radius, true, 48);
+            gl::draw_circle(gl::window_dimension() / 2.f, m_current_circ_radius, gl::COLOR_WHITE,
+                            true, 48);
         });
         
         // apply distortion shader
@@ -399,8 +400,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
         switch(the_state)
         {
             case State::IDLE:
-                animations()[AUDIO_FADE_IN]->start();
-                animations()[LIGHT_FADE_OUT]->start();
+                if(animations()[AUDIO_FADE_IN]) { animations()[AUDIO_FADE_IN]->start(); }
+                if(animations()[LIGHT_FADE_OUT]){ animations()[LIGHT_FADE_OUT]->start(); }
                 m_show_movie = true;
 //                if(m_audio){ m_audio->set_volume(1.f); }
 //                *m_led_color = gl::COLOR_BLACK;
@@ -410,12 +411,15 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 
                 //TODO: fade in here
 //                *m_led_color = gl::COLOR_WHITE;
-                animations()[AUDIO_FADE_IN]->stop();
-                animations()[LIGHT_FADE_OUT]->stop();
-                animations()[LIGHT_FADE_IN]->start();
+                if(animations()[AUDIO_FADE_IN]){ animations()[AUDIO_FADE_IN]->stop(); }
+                if(animations()[LIGHT_FADE_OUT]){ animations()[LIGHT_FADE_OUT]->stop(); }
+                if(animations()[LIGHT_FADE_IN]){ animations()[LIGHT_FADE_IN]->start(); }
                 if(m_movie){ m_movie->pause(); }
                     
-                if(m_current_state == State::IDLE){ animations()[AUDIO_FADE_OUT]->start(); }
+                if((m_current_state == State::IDLE) && animations()[AUDIO_FADE_OUT])
+                {
+                    animations()[AUDIO_FADE_OUT]->start();
+                }
                 else{ *m_volume = 0.f; }
                 
                 m_timer_idle.expires_from_now(*m_timeout_idle);
@@ -425,7 +429,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
             case State::DESC_MOVIE:
                 //TODO: fade out here
 //                *m_led_color = gl::COLOR_BLACK;
-                animations()[LIGHT_FADE_OUT]->start(44.f);
+                if(animations()[LIGHT_FADE_OUT]){ animations()[LIGHT_FADE_OUT]->start(44.f); }
                 m_timer_idle.cancel();
                 
                 if(m_movie)
@@ -442,8 +446,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 
             case State::MEDITATION:
 //                *m_led_color = gl::COLOR_BLACK;
-                animations()[LIGHT_FADE_IN]->stop();
-                animations()[LIGHT_FADE_OUT]->start();
+                if(animations()[LIGHT_FADE_IN]){ animations()[LIGHT_FADE_IN]->stop(); }
+                if(animations()[LIGHT_FADE_OUT]){ animations()[LIGHT_FADE_OUT]->start(); }
                 if(m_movie){ m_movie->pause(); }
                 break;
         }
