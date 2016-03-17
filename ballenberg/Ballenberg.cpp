@@ -41,9 +41,14 @@ void Ballenberg::setup()
     m_timer_motion_reset = Timer(io_service(), [this](){ m_motion_detected = false; });
     
     // warp component
-    m_warp = std::make_shared<WarpComponent>();
-    m_warp->observe_properties();
-    add_tweakbar_for_component(m_warp);
+//    m_warp = std::make_shared<WarpComponent>();
+//    m_warp->observe_properties();
+//    add_tweakbar_for_component(m_warp);
+    
+    m_cap_sense.set_touch_callback([](int i)
+    {
+        LOG_DEBUG << "touched pad: " << i;
+    });
     
     if(!load_assets()){ LOG_ERROR << "could not load assets"; }
     load_settings();
@@ -371,7 +376,7 @@ void Ballenberg::draw_status_info()
     string ms_string = motion_sensor_found ? "ok" : "not found";
     string cs_string = cap_sensor_found ? "ok" : "not found";
     
-    gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched(12)) ? gl::COLOR_GREEN : gl::COLOR_RED;
+    gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched()) ? gl::COLOR_GREEN : gl::COLOR_RED;
     gl::Color motion_col = (motion_sensor_found && m_motion_detected) ?
         gl::COLOR_GREEN : gl::COLOR_RED;
     
@@ -385,13 +390,10 @@ void Ballenberg::draw_status_info()
 
 bool Ballenberg::load_assets()
 {
-    // asset path
-    const std::string asset_base_dir = "~/Desktop/mkb_assets";
+    if(!is_directory(*m_asset_base_dir)){ return false; }
     
-    if(!is_directory(asset_base_dir)){ return false; }
-    
-    auto audio_files = get_directory_entries(asset_base_dir, FileType::AUDIO, true);
-    auto video_files = get_directory_entries(asset_base_dir, FileType::MOVIE, true);
+    auto audio_files = get_directory_entries(*m_asset_base_dir, FileType::AUDIO, true);
+    auto video_files = get_directory_entries(*m_asset_base_dir, FileType::MOVIE, true);
     
     if(!audio_files.empty())
     {
@@ -406,7 +408,6 @@ bool Ballenberg::load_assets()
         // description movie
 //        m_movie->load(video_files.front());
     }
-    
     
     return true;
 }
