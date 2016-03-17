@@ -15,7 +15,7 @@
 // modules
 #include "video/video.h"
 #include "cap_sense/cap_sense.h"
-#include "audio/audio.h"
+//#include "audio/audio.h"
 
 namespace kinski
 {
