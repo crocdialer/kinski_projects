@@ -1,12 +1,12 @@
 //
-//  MovieTest.cpp
+//  MoviePlayer.cpp
 //  gl
 //
 //  Created by Fabian on 29/01/14.
 //
 //
 
-#include "MovieTest.h"
+#include "MoviePlayer.hpp"
 
 using namespace std;
 using namespace kinski;
@@ -15,10 +15,9 @@ using namespace glm;
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::setup()
+void MoviePlayer::setup()
 {
     ViewerApp::setup();
-    set_window_title("movie tester");
 
     register_property(m_movie_path);
     register_property(m_movie_speed);
@@ -36,7 +35,7 @@ void MovieTest::setup()
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::update(float timeDelta)
+void MoviePlayer::update(float timeDelta)
 {
     if(m_camera_control && m_camera_control->is_capturing())
         m_camera_control->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
@@ -46,7 +45,7 @@ void MovieTest::update(float timeDelta)
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::draw()
+void MoviePlayer::draw()
 {
     if(*m_use_warping){ m_warp->render_output(textures()[TEXTURE_INPUT]); }
     else{ gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension()); }
@@ -63,7 +62,7 @@ void MovieTest::draw()
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::keyPress(const KeyEvent &e)
+void MoviePlayer::keyPress(const KeyEvent &e)
 {
     ViewerApp::keyPress(e);
 
@@ -119,91 +118,91 @@ void MovieTest::keyPress(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::resize(int w ,int h)
+void MoviePlayer::resize(int w ,int h)
 {
     ViewerApp::resize(w, h);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::keyRelease(const KeyEvent &e)
+void MoviePlayer::keyRelease(const KeyEvent &e)
 {
     ViewerApp::keyRelease(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::mousePress(const MouseEvent &e)
+void MoviePlayer::mousePress(const MouseEvent &e)
 {
     ViewerApp::mousePress(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::mouseRelease(const MouseEvent &e)
+void MoviePlayer::mouseRelease(const MouseEvent &e)
 {
     ViewerApp::mouseRelease(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::mouseMove(const MouseEvent &e)
+void MoviePlayer::mouseMove(const MouseEvent &e)
 {
     ViewerApp::mouseMove(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::mouseDrag(const MouseEvent &e)
+void MoviePlayer::mouseDrag(const MouseEvent &e)
 {
     ViewerApp::mouseDrag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::mouseWheel(const MouseEvent &e)
+void MoviePlayer::mouseWheel(const MouseEvent &e)
 {
     ViewerApp::mouseWheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+void MoviePlayer::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
 
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+void MoviePlayer::touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
 
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+void MoviePlayer::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
 
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void MoviePlayer::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     *m_movie_path = files.back();
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::tearDown()
+void MoviePlayer::tearDown()
 {
     LOG_PRINT << "ciao " << name();
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTest::update_property(const Property::ConstPtr &theProperty)
+void MoviePlayer::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
 
@@ -228,7 +227,7 @@ void MovieTest::update_property(const Property::ConstPtr &theProperty)
 
 /////////////////////////////////////////////////////////////////
 
-bool MovieTest::save_settings(const std::string &path)
+bool MoviePlayer::save_settings(const std::string &path)
 {
     bool ret = ViewerApp::save_settings(path);
     try
@@ -243,7 +242,7 @@ bool MovieTest::save_settings(const std::string &path)
 
 /////////////////////////////////////////////////////////////////
 
-bool MovieTest::load_settings(const std::string &path)
+bool MoviePlayer::load_settings(const std::string &path)
 {
     bool ret = ViewerApp::load_settings(path);
     try

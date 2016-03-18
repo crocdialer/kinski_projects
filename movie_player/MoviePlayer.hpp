@@ -1,5 +1,5 @@
 //
-//  MovieTest.h
+//  MoviePlayer.h
 //  gl
 //
 //  Created by Fabian on 29/01/14.
@@ -17,7 +17,7 @@
 
 namespace kinski
 {
-    class MovieTest : public ViewerApp
+    class MoviePlayer : public ViewerApp
     {
     private:
 
@@ -35,7 +35,7 @@ namespace kinski
 
     public:
 
-        MovieTest(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
+        MoviePlayer(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;
         void update(float timeDelta) override;
         void draw() override;
