@@ -18,7 +18,8 @@ using namespace glm;
 void MoviePlayer::setup()
 {
     ViewerApp::setup();
-
+    
+    fonts()[1].load(fonts()[0].path(), 28);
     register_property(m_movie_path);
     register_property(m_movie_speed);
     register_property(m_use_warping);
@@ -31,12 +32,21 @@ void MoviePlayer::setup()
 
     remote_control().set_components({ shared_from_this(), m_warp });
     load_settings();
+    
+    // check for command line input
+    if(args().size() > 1 && file_exists(args()[1])){ *m_movie_path = args()[1]; }
 }
 
 /////////////////////////////////////////////////////////////////
 
 void MoviePlayer::update(float timeDelta)
 {
+    if(m_reload_movie)
+    {
+        m_movie->load(*m_movie_path, true, true);
+        m_reload_movie = false;
+    }
+    
     if(m_camera_control && m_camera_control->is_capturing())
         m_camera_control->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
     else
@@ -52,10 +62,10 @@ void MoviePlayer::draw()
 
     if(displayTweakBar())
     {
-        gl::draw_text_2D(m_movie->get_path() + " : " +
-                       kinski::as_string(m_movie->current_time(), 2) + " / " +
-                       kinski::as_string(m_movie->duration(), 2),
-                       fonts()[0]);
+        gl::draw_text_2D(secs_to_time_str(m_movie->current_time()) + " / " +
+                         secs_to_time_str(m_movie->duration()) + " - " +
+                         get_filename_part(m_movie->get_path()),
+                         fonts()[1], gl::COLOR_WHITE, gl::vec2(10));
         draw_textures(textures());
     }
 }
@@ -92,23 +102,6 @@ void MoviePlayer::keyPress(const KeyEvent &e)
 
         case Key::_DOWN:
             m_movie->set_volume(m_movie->volume() - .1f);
-            break;
-
-        case Key::_O:
-        {
-            // auto new_window = GLFW_Window::create(640, 480, "output", false, 0, windows().back()->handle());
-            // add_window(new_window);
-            // new_window->set_draw_function([this]()
-            // {
-            //     static auto mat = gl::Material::create();
-            //     gl::apply_material(mat);
-            //
-            //     gl::clear();
-            //     m_warp->quad_warp().render_output(textures()[0]);
-            //     m_warp->quad_warp().render_grid();
-            //     m_warp->quad_warp().render_control_points();
-            // });
-        }
             break;
 
         default:
@@ -208,11 +201,7 @@ void MoviePlayer::update_property(const Property::ConstPtr &theProperty)
 
     if(theProperty == m_movie_path)
     {
-        m_movie->load(*m_movie_path, true, true);
-        m_movie->set_on_load_callback([this](video::MovieControllerPtr mc)
-        {
-            LOG_DEBUG << mc->get_path() << " loaded";
-        });
+        m_reload_movie = true;
     }
     else if(theProperty == m_movie_speed)
     {
@@ -253,4 +242,12 @@ bool MoviePlayer::load_settings(const std::string &path)
     }
     catch(Exception &e){ LOG_ERROR << e.what(); return false; }
     return ret;
+}
+
+/////////////////////////////////////////////////////////////////
+
+std::string MoviePlayer::secs_to_time_str(float the_secs) const
+{
+    return as_string((int)the_secs / 3600) + ":" + as_string(((int)the_secs / 60) % 60) + ":" +
+               as_string(fmodf(the_secs, 60), 1);
 }

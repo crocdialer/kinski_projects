@@ -27,12 +27,15 @@ namespace kinski
 
         video::MovieControllerPtr m_movie = video::MovieController::create();
         video::CameraControllerPtr m_camera_control = video::CameraController::create();
-
+        bool m_reload_movie = false;
+        
         // properties
         Property_<string>::Ptr m_movie_path = Property_<string>::create("movie path", "");
         Property_<float>::Ptr m_movie_speed = Property_<float>::create("movie speed", 1.f);
         Property_<bool>::Ptr m_use_warping = Property_<bool>::create("use warping", false);
-
+        
+        std::string secs_to_time_str(float the_secs) const;
+        
     public:
 
         MoviePlayer(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
