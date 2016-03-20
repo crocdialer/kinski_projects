@@ -20,7 +20,7 @@ void MeditationRoom::setup()
 {
     ViewerApp::setup();
     
-    fonts()[1].load("Courier New Bold.ttf", 64);
+    fonts()[1].load(fonts()[0].path(), 64);
     
     register_property(m_cap_sense_dev_name);
     register_property(m_motion_sense_dev_name);
@@ -509,10 +509,10 @@ void MeditationRoom::detect_motion()
 void MeditationRoom::read_bio_sensor()
 {
     static std::vector<uint8_t> buf, accum;
-    const size_t num_bytes = sizeof(float);
+//    const size_t num_bytes = sizeof(float);
     buf.resize(32);
     
-    enum SerialCodes{SERIAL_START_CODE = 0x7E, SERIAL_END_CODE = 0xE7};
+    enum SerialCodes{SERIAL_END_CODE = '\n'};
     
     if(m_bio_sense.isInitialized())
     {
@@ -532,24 +532,17 @@ void MeditationRoom::read_bio_sensor()
             switch(byte)
             {
                 case SERIAL_END_CODE:
-                    if(accum.size() >= num_bytes)
-                    {
-                        memcpy(&val, &accum[0], num_bytes);
-                        accum.clear();
-                        reading_complete = true;
-                    }
-                    else{ accum.push_back(byte); }
+                    val = string_as<float>(string(accum.begin(), accum.end()));
+                    accum.clear();
+                    reading_complete = true;
                     break;
-                    
-                case SERIAL_START_CODE:
-                    if(accum.empty()){ break; }
                     
                 default:
                     accum.push_back(byte);
                     break;
             }
         }
-        if(reading_complete){ *m_bio_score = val; }
+        if(reading_complete){ *m_bio_score = clamp(val, 0.f, 5.f); }
     }
 }
 
@@ -600,7 +593,7 @@ void MeditationRoom::draw_status_info()
     string bs_string = bio_sensor_found ? as_string(m_bio_score->value(), 2) : "not found";
     string led_string = led_device_found ? "ok" : "not found";
     
-    gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched(12)) ? gl::COLOR_GREEN : gl::COLOR_RED;
+    gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched()) ? gl::COLOR_GREEN : gl::COLOR_RED;
     gl::Color motion_col = (motion_sensor_found && m_motion_detected) ?
         gl::COLOR_GREEN : gl::COLOR_RED;
     gl::Color bio_col = (bio_sensor_found && *m_bio_score > *m_bio_thresh) ?
