@@ -20,7 +20,7 @@ public:
     m_thresh(RangedProperty<int>::create("Thresh", theThresh, -1, 255))
     {
         set_name("ThreshNode");
-        registerProperty(m_thresh);
+        register_property(m_thresh);
     }
     
     std::vector<cv::Mat> doProcessing(const cv::Mat &img)

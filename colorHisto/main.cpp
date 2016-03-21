@@ -1,5 +1,5 @@
-#include "app/GLFW_App.h"
-#include "gl/Material.h"
+#include "app/ViewerApp.h"
+#include "gl/Material.hpp"
 
 #include "cv/CVThread.h"
 #include "cv/TextureIO.h"
@@ -9,29 +9,26 @@ using namespace std;
 using namespace kinski;
 using namespace glm;
 
-class ColorHistApp : public GLFW_App
+class ColorHistApp : public ViewerApp
 {
 private:
-    
-    gl::Texture m_textures[4];
     
     gl::Material::Ptr m_material;
     
     Property_<bool>::Ptr m_activator;
     
     CVThread::Ptr m_cvThread;
-    
     CVProcessNode::Ptr m_processNode;
     
 public:
     
     void setup()
     {
-        m_material = gl::Material::Ptr(new gl::Material);
+        m_material = gl::Material::create();
         
         try
         {
-            m_material->setShader(gl::createShaderFromFile("applyMap.vert", "applyMap.frag"));
+            m_material->setShader(gl::create_shader_from_file("applyMap.vert", "applyMap.frag"));
             m_material->addTexture(m_textures[0]);
             m_material->addTexture(m_textures[1]);
             m_material->addTexture(m_textures[2]);
@@ -55,7 +52,7 @@ public:
         
         if(m_processNode)
         {
-            create_tweakbar_from_component(m_processNode);
+            add_tweakbar_for_component(m_processNode);
             cout<<"CVProcessNode: \n"<<m_processNode->getDescription()<<"\n";
         }
         
@@ -87,23 +84,23 @@ public:
         // draw fullscreen image
         if(*m_activator)
         {
-            gl::drawQuad(m_material, windowSize());
+            gl::draw_quad(m_material, gl::window_dimension());
         }
         else
         {
-            gl::drawTexture(m_textures[0], windowSize());
+            gl::draw_texture(textures()[0], gl::window_dimension());
         }
         
         // draw process-results map(s)
-        float w = (windowSize()/6.f).x;
-        glm::vec2 offset(getWidth() - w - 10, 10);
+        float w = (gl::window_dimension()/6.f).x;
+        glm::vec2 offset(gl::window_dimension().x - w - 10, 10);
         
         for(int i=0;i<m_cvThread->getImages().size();i++)
         {
             float h = m_textures[i].getHeight() * w / m_textures[i].getWidth();
             glm::vec2 step(0, h + 10);
             
-            gl::drawTexture(m_textures[i],
+            gl::draw_texture(textures()[i],
                             glm::vec2(w, h),
                             offset);
             offset += step;

@@ -6,13 +6,12 @@
 //
 //
 
-#ifndef __gl__BluetoothApp__
-#define __gl__BluetoothApp__
+#pragma once
 
 #include "app/ViewerApp.h"
 
 // module headers
-#include "bluetooth/bluetooth.h"
+#include "bluetooth/bluetooth.hpp"
 
 namespace kinski
 {
@@ -45,5 +44,3 @@ namespace kinski
         void update_property(const Property::ConstPtr &theProperty) override;
     };
 }// namespace kinski
-
-#endif /* defined(__gl__BluetoothApp__) */

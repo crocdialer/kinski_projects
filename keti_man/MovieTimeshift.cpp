@@ -212,7 +212,7 @@ void MovieTimeshift::keyPress(const KeyEvent &e)
     switch (e.getCode())
     {
         case GLFW_KEY_P:
-            if(m_movie->isPlaying()){ m_movie->pause(); }
+            if(m_movie->is_playing()){ m_movie->pause(); }
             else{ m_movie->play(); }
             break;
             
@@ -284,7 +284,7 @@ bool MovieTimeshift::insert_data_into_array_texture(const std::vector<uint8_t> &
     }
     
     // upload to pbo
-    m_pbo.setData(the_data);
+    m_pbo.set_data(the_data);
     
     // bind pbo for reading
     m_pbo.bind(GL_PIXEL_UNPACK_BUFFER);
@@ -316,9 +316,9 @@ bool MovieTimeshift::insert_texture_into_array_texture(const gl::Texture &the_te
     // reserve size
     const uint32_t bytes_per_pixel = 4;
     int num_bytes = the_texture.getWidth() * the_texture.getHeight() * bytes_per_pixel;
-    if(m_pbo.numBytes() != num_bytes)
+    if(m_pbo.num_bytes() != num_bytes)
     {
-        m_pbo.setData(nullptr, num_bytes);
+        m_pbo.set_data(nullptr, num_bytes);
     }
     
     // download texture to pbo

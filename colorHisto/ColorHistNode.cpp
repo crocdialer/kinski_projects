@@ -5,7 +5,6 @@
 //  Created by Fabian Schmidt on 6/25/12.
 //  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
 //
-#include "core/Logger.h"
 #include "ColorHistNode.h"
 
 using namespace cv;
@@ -24,7 +23,7 @@ m_histExtraction(Property_<bool>::create("Extract Histogram", false))
     m_roiWidth = 50;
     
     // properties
-    registerProperty(m_histExtraction);
+    register_property(m_histExtraction);
     
     // testhist
     try

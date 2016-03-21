@@ -20,7 +20,7 @@ void Ballenberg::setup()
 {
     ViewerApp::setup();
     
-    fonts()[1].load("Courier New Bold.ttf", 64);
+    fonts()[1].load(fonts()[0].path(), 64);
     register_property(m_asset_base_dir);
     register_property(m_cap_sense_dev_name);
     register_property(m_motion_sense_dev_name);

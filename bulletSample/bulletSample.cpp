@@ -14,7 +14,7 @@ typedef kinski::ViewerApp BaseAppType;
 #include "DopeRecorder.h"
 #include "FaceFilter.h"
 
-#include "gl/Renderer.h"
+#include "gl/Renderer.hpp"
 
 using namespace std;
 using namespace kinski;

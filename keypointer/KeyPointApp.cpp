@@ -78,13 +78,15 @@ void KeyPointApp::setup()
 void KeyPointApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+    auto width = gl::window_dimension().x;
     
     if(m_cvThread->hasImage())
     {
         vector<cv::Mat> images = m_cvThread->getImages();
         
         float imgAspect = images.front().cols/(float)images.front().rows;
-        set_window_size( vec2(getWidth(), getWidth() / imgAspect) );
+        
+        set_window_size( vec2(width, width / imgAspect) );
         
         
         for(int i = 0; i < images.size(); i++)

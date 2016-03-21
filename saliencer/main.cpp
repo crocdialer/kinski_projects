@@ -120,7 +120,7 @@ public:
         
         // draw process-results map(s)
         float w = (gl::window_dimension() / 6.f).x;
-        glm::vec2 offset(getWidth() - w - 10, 10);
+        glm::vec2 offset(gl::window_dimension().x - w - 10, 10);
         
         for(int i=0;i<m_cvThread->getImages().size();i++)
         {

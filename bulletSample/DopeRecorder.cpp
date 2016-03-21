@@ -21,11 +21,11 @@ namespace kinski
     m_current_blur_index(0)
     {
         set_name("DopeRecorder");
-        registerProperty(m_record);
-        registerProperty(m_buffer_size);
-        registerProperty(m_delay);
-        registerProperty(m_blur_frames);
-        registerProperty(m_randomize);
+        register_property(m_record);
+        register_property(m_buffer_size);
+        register_property(m_delay);
+        register_property(m_blur_frames);
+        register_property(m_randomize);
         m_buffer.resize(buffer_size);
         m_blur_buffer.resize(*m_blur_frames);
         srand(time(0));

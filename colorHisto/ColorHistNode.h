@@ -6,8 +6,7 @@
 //  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
 //
 
-#ifndef _cv_CVNode_included_
-#define _cv_CVNode_included_
+#pragma once
 
 #include "cv/CVNode.h"
 
@@ -51,4 +50,3 @@ namespace kinski
         Property_<bool>::Ptr m_histExtraction;
     };
 }//kinski
-#endif

@@ -2,7 +2,7 @@
 #include "core/Serial.hpp"
 
 #include "RtMidi.h"
-#include "DMXController.h"
+#include "DMXController.hpp"
 
 #include <boost/asio.hpp>
 

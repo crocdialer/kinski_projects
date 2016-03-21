@@ -256,7 +256,7 @@ public:
         {
             // draw opencv maps
             float w = (gl::window_dimension()/8.f).x;
-            glm::vec2 offset(getWidth() - w - 10, 10);
+            glm::vec2 offset(gl::window_dimension().x - w - 10, 10);
             for(int i = 0;i < 2;i++)
             {
                 gl::Texture &t = m_textures[i];
