@@ -23,22 +23,22 @@ void Ballenberg::setup()
     fonts()[1].load(fonts()[0].path(), 64);
     register_property(m_asset_base_dir);
     register_property(m_cap_sense_dev_name);
-    register_property(m_motion_sense_dev_name);
+    register_property(m_motion_sense_dev_name_01);
+    register_property(m_motion_sense_dev_name_02);
     register_property(m_timeout_idle);
     register_property(m_timeout_movie_start);
     register_property(m_timeout_fade);
     register_property(m_volume);
+    register_property(m_cap_sense_thresh_touch);
+    register_property(m_cap_sense_thresh_release);
+    register_property(m_cap_sense_charge_current);
     
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     
-    
-    // init a reasonable serial buffer
-    m_serial_buf.resize(2048);
-    
     // setup timer objects
     m_timer_idle = Timer(io_service(), [this](){ change_state(State::IDLE, true); });
-    m_timer_motion_reset = Timer(io_service(), [this](){ m_motion_detected = false; });
+//    m_timer_motion_reset = Timer(io_service(), [this](){ m_motion_detected = false; });
     
     // warp component
 //    m_warp = std::make_shared<WarpComponent>();
@@ -49,6 +49,9 @@ void Ballenberg::setup()
     {
         LOG_DEBUG << "touched pad: " << i;
     });
+    
+    // enable file logging
+    Logger::get()->set_use_log_file(true);
     
     if(!load_assets()){ LOG_ERROR << "could not load assets"; }
     load_settings();
@@ -71,11 +74,9 @@ void Ballenberg::update(float timeDelta)
     switch (m_current_state)
     {
         case State::IDLE:
-            if(m_motion_detected){ change_state(State::MANDALA_ILLUMINATED); }
             break;
             
         case State::MANDALA_ILLUMINATED:
-            if(m_cap_sense.is_touched(12) && m_show_movie){ change_state(State::DESC_MOVIE); }
             break;
             
         case State::DESC_MOVIE:
@@ -223,21 +224,16 @@ void Ballenberg::update_property(const Property::ConstPtr &theProperty)
     {
         background_queue().submit([this]()
         {
-            m_cap_sense.connect(*m_cap_sense_dev_name);
+            if(m_cap_sense.connect(*m_cap_sense_dev_name))
+            {
+                m_cap_sense.set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
+                m_cap_sense.set_charge_current(*m_cap_sense_charge_current);
+            }
         });
     }
-    else if(theProperty == m_motion_sense_dev_name)
+    else if(theProperty == m_motion_sense_dev_name_01)
     {
-        if(!m_motion_sense_dev_name->value().empty())
-        {
-            background_queue().submit([this]()
-            {
-                m_motion_sense.setup(*m_motion_sense_dev_name, 57600);
-              
-                // finally flush the newly initialized device
-                if(m_motion_sense.isInitialized()){ m_motion_sense.flush(); }
-            });
-        }
+        
     }
     else if(theProperty == m_volume)
     {
@@ -251,6 +247,15 @@ void Ballenberg::update_property(const Property::ConstPtr &theProperty)
         // setup animations
         animations()[AUDIO_FADE_IN] = animation::create(m_volume, 0.f, .4f, *m_timeout_fade);
         animations()[AUDIO_FADE_OUT] = animation::create(m_volume, .4f, .0f, *m_timeout_fade);
+    }
+    else if(theProperty == m_cap_sense_thresh_touch ||
+            theProperty == m_cap_sense_thresh_release)
+    {
+        m_cap_sense.set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
+    }
+    else if(theProperty == m_cap_sense_charge_current)
+    {
+        m_cap_sense.set_charge_current(*m_cap_sense_charge_current);
     }
 }
 
@@ -292,27 +297,10 @@ bool Ballenberg::change_state(State the_state, bool force_change)
         switch(the_state)
         {
             case State::IDLE:
-                if(animations()[AUDIO_FADE_IN]) { animations()[AUDIO_FADE_IN]->start(); }
-                if(animations()[LIGHT_FADE_OUT]){ animations()[LIGHT_FADE_OUT]->start(); }
-                m_show_movie = true;
-//                if(m_audio){ m_audio->set_volume(1.f); }
-//                *m_led_color = gl::COLOR_BLACK;
+                
                 break;
                 
             case State::MANDALA_ILLUMINATED:
-                
-                //TODO: fade in here
-//                *m_led_color = gl::COLOR_WHITE;
-                if(animations()[AUDIO_FADE_IN]){ animations()[AUDIO_FADE_IN]->stop(); }
-                if(animations()[LIGHT_FADE_OUT]){ animations()[LIGHT_FADE_OUT]->stop(); }
-                if(animations()[LIGHT_FADE_IN]){ animations()[LIGHT_FADE_IN]->start(); }
-                    
-                if((m_current_state == State::IDLE) && animations()[AUDIO_FADE_OUT])
-                {
-                    animations()[AUDIO_FADE_OUT]->start();
-                }
-                else{ *m_volume = 0.f; }
-                
                 m_timer_idle.expires_from_now(*m_timeout_idle);
                 
                 break;
@@ -334,29 +322,7 @@ bool Ballenberg::change_state(State the_state, bool force_change)
 
 void Ballenberg::detect_motion()
 {
-    if(m_motion_sense.isInitialized())
-    {
-        size_t bytes_to_read = std::min(m_motion_sense.available(),
-                                        m_serial_buf.size());
-        
-        if(!bytes_to_read)
-        {
-//            m_motion_sense_dev_name->notifyObservers();
-        }
-        
-        uint8_t *buf_ptr = &m_serial_buf[0];
-        m_motion_sense.readBytes(&m_serial_buf[0], bytes_to_read);
-        
-        for(uint32_t i = 0; i < bytes_to_read; i++)
-        {
-            if(*buf_ptr++)
-            {
-                m_motion_detected = true;
-                m_timer_motion_reset.expires_from_now(5.f);
-                break;
-            }
-        }
-    }
+    
 }
 
 /////////////////////////////////////////////////////////////////
@@ -370,15 +336,15 @@ void Ballenberg::draw_status_info()
     gl::draw_text_2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
     offset += step;
     
-    bool motion_sensor_found = m_motion_sense.isInitialized();
+    bool motion_sensor_found = false;//m_motion_sense.isInitialized();
+    
     bool cap_sensor_found = m_cap_sense.is_initialized();
     
     string ms_string = motion_sensor_found ? "ok" : "not found";
     string cs_string = cap_sensor_found ? "ok" : "not found";
     
     gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched()) ? gl::COLOR_GREEN : gl::COLOR_RED;
-    gl::Color motion_col = (motion_sensor_found && m_motion_detected) ?
-        gl::COLOR_GREEN : gl::COLOR_RED;
+    gl::Color motion_col = gl::COLOR_RED;
     
     // motion sensor
     gl::draw_text_2D("motion-sensor: " + ms_string, fonts()[0], motion_col, offset);

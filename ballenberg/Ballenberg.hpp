@@ -12,10 +12,11 @@
 #include "core/Timer.hpp"
 #include "core/Serial.hpp"
 
+#include "MotionSensor.hpp"
+
 // modules
 #include "video/video.h"
 #include "cap_sense/cap_sense.h"
-//#include "audio/audio.h"
 
 namespace kinski
 {
@@ -38,8 +39,7 @@ namespace kinski
         };
         
         State m_current_state = State::IDLE;
-        Timer m_timer_idle, m_timer_motion_reset, m_timer_movie_start;
-        bool m_show_movie = true;
+        Timer m_timer_idle, m_timer_motion_reset;
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
@@ -49,11 +49,15 @@ namespace kinski
         Property_<string>::Ptr
         m_asset_base_dir = Property_<string>::create("asset base directory", "~/Desktop/ballenberg_assets"),
         m_cap_sense_dev_name = Property_<string>::create("touch sensor device"),
-        m_motion_sense_dev_name = Property_<string>::create("motion sensor device");
+        m_motion_sense_dev_name_01 = Property_<string>::create("motion sensor device 1"),
+        m_motion_sense_dev_name_02 = Property_<string>::create("motion sensor device 2");
         
-        Serial m_motion_sense;
-        std::vector<uint8_t> m_serial_buf;
-        bool m_motion_detected = false;
+        Property_<uint32_t>::Ptr
+        m_cap_sense_thresh_touch = Property_<uint32_t>::create("capsense: touch threshold", 12),
+        m_cap_sense_thresh_release = Property_<uint32_t>::create("capsense: release threshold", 6),
+        m_cap_sense_charge_current = Property_<uint32_t>::create("capsense: charge current", 32);
+        
+        MotionSensor m_motion_sense_01, m_motion_sense_02;
         
         Property_<float>::Ptr
         m_volume = Property_<float>::create("volume", 1.f);
