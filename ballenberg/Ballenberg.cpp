@@ -8,6 +8,7 @@
 
 #include "Ballenberg.hpp"
 #include "gl/ShaderLibrary.h"
+#include "core/networking.hpp"
 
 using namespace std;
 using namespace kinski;
@@ -27,8 +28,7 @@ void Ballenberg::setup()
     register_property(m_motion_sense_dev_name_02);
     register_property(m_dmx_dev_name);
     register_property(m_timeout_idle);
-    register_property(m_timeout_movie_start);
-    register_property(m_timeout_fade);
+    register_property(m_duration_lamp_noise);
     register_property(m_volume);
     register_property(m_cap_sense_thresh_touch);
     register_property(m_cap_sense_thresh_release);
@@ -40,7 +40,7 @@ void Ballenberg::setup()
     
     // setup timer objects
     m_timer_idle = Timer(io_service(), [this](){ change_state(State::IDLE, true); });
-//    m_timer_motion_reset = Timer(io_service(), [this](){ m_motion_detected = false; });
+    m_timer_lamp_noise = Timer(io_service());
     
     // warp component
 //    m_warp = std::make_shared<WarpComponent>();
@@ -71,12 +71,74 @@ void Ballenberg::update(float timeDelta)
     m_motion_sense_01.update(timeDelta);
     m_motion_sense_02.update(timeDelta);
     m_cap_sense.update(timeDelta);
+    
+    // motion -> kitchen
+    if(m_motion_sense_01.distance())
+    {
+        // play random recipe movie
+        std::string path = join_paths(*m_asset_base_dir, "movies/kitchen");
+        auto tmp = get_directory_entries(path, FileType::MOVIE, true);
+        std::vector<std::string> paths(tmp.begin(), tmp.end());
+        
+        if(!paths.empty())
+        {
+            uint32_t rnd_idx = kinski::random<uint32_t>(0, tmp.size());
+            
+            net::async_send_tcp(background_queue().io_service(), "play " +
+                                join_paths("/home/pi/ballenberg_assets/movies/kitchen",
+                                           get_filename_part(paths[rnd_idx])),
+                                m_ip_kitchen, 33333);
+        }else{ LOG_WARNING << "could not find a recipe movie"; }
+    }
+    
+    // motion -> living room
+    if(m_motion_sense_02.distance())
+    {
+        // play religion movie #1
+        std::string path = join_paths(*m_asset_base_dir, "movies/living_room");
+        
+        auto tmp = get_directory_entries(path, FileType::MOVIE, true);
+        std::vector<std::string> paths(tmp.begin(), tmp.end());
+        
+        if(!paths.empty())
+        {
+            net::async_send_tcp(background_queue().io_service(), "play " +
+                                join_paths("/home/pi/ballenberg_assets/movies/living_room",
+                                           get_filename_part(paths[0])),
+                                m_ip_living_room, 33333);
+        }else{ LOG_WARNING << "could not find a religion movie"; }
+    }
+    
+    // cap-sense(bottle) -> living room
+    if(m_cap_sense.is_touched())
+    {
+        // play religion movie #2
+        std::string path = join_paths(*m_asset_base_dir, "movies/living_room");
+        
+        auto tmp = get_directory_entries(path, FileType::MOVIE, true);
+        std::vector<std::string> paths(tmp.begin(), tmp.end());
+    
+        m_timer_lamp_noise.expires_from_now(*m_duration_lamp_noise);
+        
+        if(paths.size() > 1)
+        {
+            net::async_send_tcp(background_queue().io_service(), "play " +
+                                join_paths("/home/pi/ballenberg_assets/movies/living_room",
+                                           get_filename_part(paths[1])),
+                                m_ip_living_room, 33333);
+        }else{ LOG_WARNING << "could not find a religion movie"; }
+    }
+
+    // lamp flicker -> set random color
+    if(m_timer_lamp_noise.has_expired()){ *m_spot_color = gl::COLOR_BLACK; }
+    else{ *m_spot_color = glm::linearRand(gl::COLOR_BLACK, gl::COLOR_WHITE);}
 }
 
 /////////////////////////////////////////////////////////////////
 
 void Ballenberg::draw()
 {
+    gl::draw_text_2D("Ballenberg IXDM", fonts()[1], gl::COLOR_WHITE, gl::vec2(50, 10));
     // draw status overlay
     draw_status_info();
     
@@ -226,12 +288,6 @@ void Ballenberg::update_property(const Property::ConstPtr &theProperty)
     {
 
     }
-    else if(theProperty == m_timeout_fade)
-    {
-        // setup animations
-//        animations()[AUDIO_FADE_IN] = animation::create(m_volume, 0.f, .4f, *m_timeout_fade);
-//        animations()[AUDIO_FADE_OUT] = animation::create(m_volume, .4f, .0f, *m_timeout_fade);
-    }
     else if(theProperty == m_cap_sense_thresh_touch ||
             theProperty == m_cap_sense_thresh_release)
     {
@@ -250,6 +306,7 @@ void Ballenberg::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_spot_color)
     {
         //TODO: set dmx values
+        m_dmx[1] = 255 * m_spot_color->value().r;
         m_dmx.update();
     }
 }
@@ -290,12 +347,12 @@ bool Ballenberg::change_state(State the_state, bool force_change)
 
 void Ballenberg::draw_status_info()
 {
-    vec2 offset(50, 50), step(0, 35);
+    vec2 offset(50, 75), step(0, 35);
     
     // display current state
-    auto state_str = "State: " + m_state_string_map[m_current_state];
-    gl::draw_text_2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
-    offset += step;
+//    auto state_str = "State: " + m_state_string_map[m_current_state];
+//    gl::draw_text_2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
+//    offset += step;
     
     bool cap_sensor_found = m_cap_sense.is_initialized();
     string cs_string = cap_sensor_found ? "ok" : "not found";

@@ -31,16 +31,17 @@ namespace kinski
             {State::IDLE, "Idle"}
         };
         
+        std::string m_ip_kitchen = "192.168.69.101", m_ip_living_room = "192.168.69.102";
+        
         State m_current_state = State::IDLE;
-        Timer m_timer_idle, m_timer_motion_reset;
+        Timer m_timer_idle, m_timer_motion_reset, m_timer_lamp_noise;
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
-        m_timeout_movie_start = Property_<float>::create("timeout movie start", 1.f),
-        m_timeout_fade = Property_<float>::create("timeout fade audio/light", 2.f);
+        m_duration_lamp_noise = Property_<float>::create("duration for lamp noise", 10.f);
         
         Property_<string>::Ptr
-        m_asset_base_dir = Property_<string>::create("asset base directory", "~/Desktop/ballenberg_assets"),
+        m_asset_base_dir = Property_<string>::create("asset base directory", "~/ballenberg_assets"),
         m_cap_sense_dev_name = Property_<string>::create("touch sensor device"),
         m_dmx_dev_name = Property_<string>::create("dmx device"),
         m_motion_sense_dev_name_01 = Property_<string>::create("motion sensor device 1"),
