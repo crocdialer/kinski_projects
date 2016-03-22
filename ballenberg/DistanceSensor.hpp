@@ -22,7 +22,7 @@ namespace kinski
         
         bool connect(const std::string &dev_name = "");
         void update(float time_delta);
-        bool motion_detected() const;
+        uint16_t distance() const;
         
         float timeout_reconnect() const;
         void set_timeout_reconnect(float val);

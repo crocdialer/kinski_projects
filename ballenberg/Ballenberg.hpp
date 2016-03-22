@@ -51,6 +51,9 @@ namespace kinski
         m_cap_sense_thresh_release = Property_<uint32_t>::create("capsense: release threshold", 6),
         m_cap_sense_charge_current = Property_<uint32_t>::create("capsense: charge current", 32);
         
+        Property_<gl::Color>::Ptr
+        m_spot_color = Property_<gl::Color>::create("spot color", gl::COLOR_BLACK);
+        
         DistanceSensor m_motion_sense_01, m_motion_sense_02;
         
         DMXController m_dmx;

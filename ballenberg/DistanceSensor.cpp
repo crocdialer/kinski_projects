@@ -12,7 +12,7 @@
 #include "DistanceSensor.hpp"
 
 #define SERIAL_END_CODE '\n'
-#define STD_TIMEOUT_RECONNECT 5.f
+#define STD_TIMEOUT_RECONNECT 0.f
 
 namespace kinski{
     
@@ -21,7 +21,7 @@ namespace kinski{
         Serial m_sensor_device;
         std::string m_device_name;
         std::vector<uint8_t> m_sensor_read_buf, m_sensor_accumulator;
-        bool m_motion_detected = false;
+        uint16_t m_distance = 0;
         float m_last_reading = 0.f;
         float m_timeout_reconnect = STD_TIMEOUT_RECONNECT;
         std::thread m_reconnect_thread;
@@ -61,7 +61,8 @@ namespace kinski{
     {
         size_t bytes_to_read = 0;
         m_impl->m_last_reading += time_delta;
-        bool reading_complete = false, motion_detected = false;
+        bool reading_complete = false;
+        uint16_t distance_val = 0;
         
         if(m_impl->m_sensor_device.isInitialized())
         {
@@ -80,7 +81,7 @@ namespace kinski{
                 switch(byte)
                 {
                     case SERIAL_END_CODE:
-                        motion_detected = string_as<bool>(string(m_impl->m_sensor_accumulator.begin(),
+                        distance_val = string_as<uint16_t>(string(m_impl->m_sensor_accumulator.begin(),
                                                                  m_impl->m_sensor_accumulator.end()));
                         m_impl->m_sensor_accumulator.clear();
                         reading_complete = true;
@@ -93,7 +94,7 @@ namespace kinski{
             }
         }
         
-        m_impl->m_motion_detected = motion_detected;
+        if(reading_complete){ m_impl->m_distance = distance_val; }
         
         if((m_impl->m_timeout_reconnect > 0.f) && m_impl->m_last_reading > m_impl->m_timeout_reconnect)
         {
@@ -105,9 +106,9 @@ namespace kinski{
         }
     }
     
-    bool DistanceSensor::motion_detected() const
+    uint16_t DistanceSensor::distance() const
     {
-        return m_impl->m_motion_detected;
+        return m_impl->m_distance;
     }
     
     void DistanceSensor::set_motion_callback(MotionCallback cb)

@@ -33,6 +33,7 @@ void Ballenberg::setup()
     register_property(m_cap_sense_thresh_touch);
     register_property(m_cap_sense_thresh_release);
     register_property(m_cap_sense_charge_current);
+    register_property(m_spot_color);
     
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
@@ -246,6 +247,11 @@ void Ballenberg::update_property(const Property::ConstPtr &theProperty)
             m_cap_sense.set_charge_current(*m_cap_sense_charge_current);
         }
     }
+    else if(theProperty == m_spot_color)
+    {
+        //TODO: set dmx values
+        m_dmx.update();
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -300,14 +306,18 @@ void Ballenberg::draw_status_info()
     
     // motion sensor 1
     string ms_string_01 = m_motion_sense_01.is_initialized() ? "ok" : "not found";
-    motion_col = m_motion_sense_01.motion_detected() ? gl::COLOR_GREEN : gl::COLOR_WHITE;
-    gl::draw_text_2D("motion-sensor (kitchen): " + ms_string_01, fonts()[0], motion_col, offset);
+    motion_col = m_motion_sense_01.distance() ? gl::COLOR_GREEN : gl::COLOR_WHITE;
+    gl::draw_text_2D("motion-sensor (kitchen): " + (m_motion_sense_01.distance() ?
+                     as_string(m_motion_sense_01.distance()) : ms_string_01), fonts()[0],
+                     motion_col, offset);
     offset += step;
     
     // motion sensor 2
     string ms_string_02 = m_motion_sense_02.is_initialized() ? "ok" : "not found";
-    motion_col = m_motion_sense_02.motion_detected() ? gl::COLOR_GREEN : gl::COLOR_WHITE;
-    gl::draw_text_2D("motion-sensor (living room): " + ms_string_02, fonts()[0], motion_col, offset);
+    motion_col = m_motion_sense_02.distance() ? gl::COLOR_GREEN : gl::COLOR_WHITE;
+    gl::draw_text_2D("motion-sensor (living room): " + (m_motion_sense_02.distance() ?
+                     as_string(m_motion_sense_02.distance()) : ms_string_02), fonts()[0],
+                     motion_col, offset);
     offset += step;
     
     // dmx device
