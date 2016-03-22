@@ -1,5 +1,5 @@
 //
-//  MotionSensor.hpp
+//  DistanceSensor.hpp
 //  kinskiGL
 //
 //  Created by Fabian on 22/03/16.
@@ -12,13 +12,13 @@
 
 namespace kinski
 {
-    class MotionSensor
+    class DistanceSensor
     {
     public:
         
         typedef std::function<void()> MotionCallback;
         
-        MotionSensor();
+        DistanceSensor(const std::string &dev_name = "");
         
         bool connect(const std::string &dev_name = "");
         void update(float time_delta);
@@ -31,7 +31,7 @@ namespace kinski
         bool is_initialized() const;
         
     private:
-        struct MotionSensorImpl;
+        struct DistanceSensorImpl;
         struct Impl;
         std::shared_ptr<Impl> m_impl;
     };

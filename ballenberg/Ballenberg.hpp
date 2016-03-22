@@ -12,11 +12,12 @@
 #include "core/Timer.hpp"
 #include "core/Serial.hpp"
 
-#include "MotionSensor.hpp"
+#include "DistanceSensor.hpp"
 
 // modules
 #include "video/video.h"
 #include "cap_sense/cap_sense.h"
+#include "dmx/dmx.h"
 
 namespace kinski
 {
@@ -24,18 +25,10 @@ namespace kinski
     {
     private:
         
-        enum class State{IDLE, MANDALA_ILLUMINATED, DESC_MOVIE, MEDITATION};
-        
-        enum AnimationEnum{ AUDIO_FADE_IN = 0, AUDIO_FADE_OUT = 1, LIGHT_FADE_IN = 2,
-            LIGHT_FADE_OUT = 3};
-        enum TextureEnum{ TEXTURE_BLANK = 0, TEXTURE_OUTPUT = 1};
-        
+        enum class State{IDLE};
         std::map<State, std::string> m_state_string_map =
         {
-            {State::IDLE, "Idle"},
-            {State::MANDALA_ILLUMINATED, "Mandala Illuminated"},
-            {State::DESC_MOVIE, "Description Movie"},
-            {State::MEDITATION, "Meditation"}
+            {State::IDLE, "Idle"}
         };
         
         State m_current_state = State::IDLE;
@@ -49,6 +42,7 @@ namespace kinski
         Property_<string>::Ptr
         m_asset_base_dir = Property_<string>::create("asset base directory", "~/Desktop/ballenberg_assets"),
         m_cap_sense_dev_name = Property_<string>::create("touch sensor device"),
+        m_dmx_dev_name = Property_<string>::create("dmx device"),
         m_motion_sense_dev_name_01 = Property_<string>::create("motion sensor device 1"),
         m_motion_sense_dev_name_02 = Property_<string>::create("motion sensor device 2");
         
@@ -57,23 +51,16 @@ namespace kinski
         m_cap_sense_thresh_release = Property_<uint32_t>::create("capsense: release threshold", 6),
         m_cap_sense_charge_current = Property_<uint32_t>::create("capsense: charge current", 32);
         
-        MotionSensor m_motion_sense_01, m_motion_sense_02;
+        DistanceSensor m_motion_sense_01, m_motion_sense_02;
+        
+        DMXController m_dmx;
         
         Property_<float>::Ptr
         m_volume = Property_<float>::create("volume", 1.f);
         
-        //! ouput warping
-        WarpComponent::Ptr m_warp;
-        
-        // our content
-//        audio::SoundPtr m_audio;
-        
         CapacitiveSensor m_cap_sense;
         
         bool change_state(State the_the_state, bool force_change = false);
-        
-        //! read our motion sensor, update m_motion_detected member, start timer to reset val
-        void detect_motion();
         
         //! display sensor and application state
         void draw_status_info();

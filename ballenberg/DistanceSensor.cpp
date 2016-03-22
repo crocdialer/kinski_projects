@@ -1,5 +1,5 @@
 //
-//  MotionSensor.cpp
+//  DistanceSensor.cpp
 //  kinskiGL
 //
 //  Created by Fabian on 22/03/16.
@@ -9,14 +9,14 @@
 #include <cstring>
 #include <thread>
 #include "core/Serial.hpp"
-#include "MotionSensor.hpp"
+#include "DistanceSensor.hpp"
 
 #define SERIAL_END_CODE '\n'
 #define STD_TIMEOUT_RECONNECT 5.f
 
 namespace kinski{
     
-    struct MotionSensor::Impl
+    struct DistanceSensor::Impl
     {
         Serial m_sensor_device;
         std::string m_device_name;
@@ -29,13 +29,19 @@ namespace kinski{
         MotionCallback m_motion_callback;
     };
     
-    MotionSensor::MotionSensor():
+    DistanceSensor::DistanceSensor(const std::string &dev_name):
     m_impl(new Impl)
     {
+        m_impl->m_device_name = dev_name;
+        m_impl->m_sensor_read_buf.resize(2048);
         
+        if(!dev_name.empty() && !connect(dev_name))
+        {
+            LOG_ERROR << "unable to connect distance sensor";
+        }
     }
     
-    bool MotionSensor::connect(const std::string &dev_name)
+    bool DistanceSensor::connect(const std::string &dev_name)
     {
         if(dev_name.empty()){}
         else{ m_impl->m_sensor_device.setup(dev_name, 57600); }
@@ -51,7 +57,7 @@ namespace kinski{
         return false;
     }
     
-    void MotionSensor::update(float time_delta)
+    void DistanceSensor::update(float time_delta)
     {
         size_t bytes_to_read = 0;
         m_impl->m_last_reading += time_delta;
@@ -99,22 +105,27 @@ namespace kinski{
         }
     }
     
-    void MotionSensor::set_motion_callback(MotionCallback cb)
+    bool DistanceSensor::motion_detected() const
+    {
+        return m_impl->m_motion_detected;
+    }
+    
+    void DistanceSensor::set_motion_callback(MotionCallback cb)
     {
         m_impl->m_motion_callback = cb;
     }
     
-    float MotionSensor::timeout_reconnect() const
+    float DistanceSensor::timeout_reconnect() const
     {
         return m_impl->m_timeout_reconnect;
     }
     
-    void MotionSensor::set_timeout_reconnect(float val)
+    void DistanceSensor::set_timeout_reconnect(float val)
     {
         m_impl->m_timeout_reconnect = std::max(val, 0.f);
     }
     
-    bool MotionSensor::is_initialized() const
+    bool DistanceSensor::is_initialized() const
     {
         return m_impl->m_sensor_device.isInitialized();
     }

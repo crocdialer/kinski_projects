@@ -25,6 +25,7 @@ void Ballenberg::setup()
     register_property(m_cap_sense_dev_name);
     register_property(m_motion_sense_dev_name_01);
     register_property(m_motion_sense_dev_name_02);
+    register_property(m_dmx_dev_name);
     register_property(m_timeout_idle);
     register_property(m_timeout_movie_start);
     register_property(m_timeout_fade);
@@ -66,35 +67,15 @@ void Ballenberg::update(float timeDelta)
     ViewerApp::update(timeDelta);
     
     // update sensor status
-    detect_motion();
+    m_motion_sense_01.update(timeDelta);
+    m_motion_sense_02.update(timeDelta);
     m_cap_sense.update(timeDelta);
-    
-    // update according to current state
-    
-    switch (m_current_state)
-    {
-        case State::IDLE:
-            break;
-            
-        case State::MANDALA_ILLUMINATED:
-            break;
-            
-        case State::DESC_MOVIE:
-            
-            break;
-            
-        case State::MEDITATION:
-            break;
-    }
 }
 
 /////////////////////////////////////////////////////////////////
 
 void Ballenberg::draw()
 {
-    // draw final result
-    gl::draw_texture(textures()[TEXTURE_OUTPUT], gl::window_dimension());
-    
     // draw status overlay
     draw_status_info();
     
@@ -115,8 +96,6 @@ void Ballenberg::keyPress(const KeyEvent &e)
     ViewerApp::keyPress(e);
     
     int next_state = -1;
-    std::vector<State> states = {State::IDLE, State::MANDALA_ILLUMINATED, State::DESC_MOVIE,
-        State::MEDITATION};
     
     if(!displayTweakBar())
     {
@@ -133,8 +112,7 @@ void Ballenberg::keyPress(const KeyEvent &e)
                 break;
         }
     }
-    
-    if(next_state >= 0){ change_state(states[next_state], e.isShiftDown()); }
+    if(next_state >= 0){ change_state(State::IDLE, e.isShiftDown()); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -233,29 +211,40 @@ void Ballenberg::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_motion_sense_dev_name_01)
     {
-        
+        m_motion_sense_01.connect(*m_motion_sense_dev_name_01);
+    }
+    else if(theProperty == m_motion_sense_dev_name_02)
+    {
+        m_motion_sense_02.connect(*m_motion_sense_dev_name_02);
+    }
+    else if(theProperty == m_dmx_dev_name)
+    {
+        m_dmx.connect(*m_dmx_dev_name);
     }
     else if(theProperty == m_volume)
     {
-//        if(m_audio)
-//        {
-//            m_audio->set_volume(*m_volume);
-//        }
+
     }
     else if(theProperty == m_timeout_fade)
     {
         // setup animations
-        animations()[AUDIO_FADE_IN] = animation::create(m_volume, 0.f, .4f, *m_timeout_fade);
-        animations()[AUDIO_FADE_OUT] = animation::create(m_volume, .4f, .0f, *m_timeout_fade);
+//        animations()[AUDIO_FADE_IN] = animation::create(m_volume, 0.f, .4f, *m_timeout_fade);
+//        animations()[AUDIO_FADE_OUT] = animation::create(m_volume, .4f, .0f, *m_timeout_fade);
     }
     else if(theProperty == m_cap_sense_thresh_touch ||
             theProperty == m_cap_sense_thresh_release)
     {
-        m_cap_sense.set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
+        if(m_cap_sense.is_initialized())
+        {
+            m_cap_sense.set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
+        }
     }
     else if(theProperty == m_cap_sense_charge_current)
     {
-        m_cap_sense.set_charge_current(*m_cap_sense_charge_current);
+        if(m_cap_sense.is_initialized())
+        {
+            m_cap_sense.set_charge_current(*m_cap_sense_charge_current);
+        }
     }
 }
 
@@ -269,60 +258,26 @@ bool Ballenberg::change_state(State the_state, bool force_change)
     switch(m_current_state)
     {
         case State::IDLE:
-            ret = the_state == State::MANDALA_ILLUMINATED;
             break;
             
-        case State::MANDALA_ILLUMINATED:
-            ret =   (the_state == State::IDLE) || (the_state == State::DESC_MOVIE) ||
-                    (the_state == State::MEDITATION);
-            break;
-            
-        case State::DESC_MOVIE:
-            ret = the_state == State::MANDALA_ILLUMINATED;
-            break;
-            
-        case State::MEDITATION:
-            ret = the_state == State::MANDALA_ILLUMINATED;
+        default:
             break;
     }
     
-    if (!ret){ LOG_DEBUG << "invalid state change requested"; }
-    if (force_change){ LOG_DEBUG << "forced state change"; }
+    if(!ret){ LOG_DEBUG << "invalid state change requested"; }
+    if(force_change){ LOG_DEBUG << "forced state change"; }
     
     if(ret || force_change)
     {
-        textures()[TEXTURE_OUTPUT].reset();
-        
-        //TODO: handle state transition
         switch(the_state)
         {
             case State::IDLE:
-                
-                break;
-                
-            case State::MANDALA_ILLUMINATED:
-                m_timer_idle.expires_from_now(*m_timeout_idle);
-                
-                break;
-                
-            case State::DESC_MOVIE:
-                break;
-                
-            case State::MEDITATION:
-
                 break;
         }
         m_current_state = the_state;
     }
     
     return ret;
-}
-
-/////////////////////////////////////////////////////////////////
-
-void Ballenberg::detect_motion()
-{
-    
 }
 
 /////////////////////////////////////////////////////////////////
@@ -336,22 +291,31 @@ void Ballenberg::draw_status_info()
     gl::draw_text_2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
     offset += step;
     
-    bool motion_sensor_found = false;//m_motion_sense.isInitialized();
-    
     bool cap_sensor_found = m_cap_sense.is_initialized();
-    
-    string ms_string = motion_sensor_found ? "ok" : "not found";
     string cs_string = cap_sensor_found ? "ok" : "not found";
+    string dmx_string = m_dmx.is_initialized() ? "ok" : "not found";
     
-    gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched()) ? gl::COLOR_GREEN : gl::COLOR_RED;
-    gl::Color motion_col = gl::COLOR_RED;
+    gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched()) ? gl::COLOR_GREEN : gl::COLOR_WHITE;
+    gl::Color motion_col = gl::COLOR_WHITE;
     
-    // motion sensor
-    gl::draw_text_2D("motion-sensor: " + ms_string, fonts()[0], motion_col, offset);
-    
-    // chair sensor
+    // motion sensor 1
+    string ms_string_01 = m_motion_sense_01.is_initialized() ? "ok" : "not found";
+    motion_col = m_motion_sense_01.motion_detected() ? gl::COLOR_GREEN : gl::COLOR_WHITE;
+    gl::draw_text_2D("motion-sensor (kitchen): " + ms_string_01, fonts()[0], motion_col, offset);
     offset += step;
-    gl::draw_text_2D("cap-sensor: " + cs_string, fonts()[0], cap_col, offset);
+    
+    // motion sensor 2
+    string ms_string_02 = m_motion_sense_02.is_initialized() ? "ok" : "not found";
+    motion_col = m_motion_sense_02.motion_detected() ? gl::COLOR_GREEN : gl::COLOR_WHITE;
+    gl::draw_text_2D("motion-sensor (living room): " + ms_string_02, fonts()[0], motion_col, offset);
+    offset += step;
+    
+    // dmx device
+    gl::draw_text_2D("dmx (living room): " + dmx_string, fonts()[0], gl::COLOR_WHITE, offset);
+    offset += step;
+    
+    // cap sensor
+    gl::draw_text_2D("cap-sensor (living room): " + cs_string, fonts()[0], cap_col, offset);
 }
 
 bool Ballenberg::load_assets()
@@ -363,16 +327,12 @@ bool Ballenberg::load_assets()
     
     if(!audio_files.empty())
     {
-        // background chanting audio
-//        m_audio.reset(new audio::Fmod_Sound(audio_files.front()));
-//        m_audio->set_loop(true);
-//        m_audio->play();
+
     }
     
     if(!video_files.empty())
     {
-        // description movie
-//        m_movie->load(video_files.front());
+        
     }
     
     return true;
