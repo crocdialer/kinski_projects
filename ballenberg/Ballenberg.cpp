@@ -77,7 +77,7 @@ void Ballenberg::update(float timeDelta)
     if(m_motion_sense_01.distance() && m_timer_motion_reset.has_expired())
     {
         // TODO: find better solution like movie callback
-        m_timer_motion_reset.expires_from_now(20.f);
+        m_timer_motion_reset.expires_from_now(45.f);
         
         // play random recipe movie
         std::string path = join_paths(*m_asset_base_dir, "movies/kitchen");
@@ -169,7 +169,7 @@ void Ballenberg::keyPress(const KeyEvent &e)
         switch (e.getCode())
         {
             case Key::_1:
-                m_timer_motion_reset.cancel();
+//                m_timer_motion_reset.cancel();
                 net::async_send_tcp(background_queue().io_service(), "play",
                                     m_ip_kitchen, 33333);
                 
