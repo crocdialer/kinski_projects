@@ -73,8 +73,10 @@ void Ballenberg::update(float timeDelta)
     m_cap_sense.update(timeDelta);
     
     // motion -> kitchen
-    if(m_motion_sense_01.distance())
+    if(m_motion_sense_01.distance() && m_timer_motion_reset.has_expired())
     {
+        m_timer_motion_reset.expires_from_now(20.f);
+        
         // play random recipe movie
         std::string path = join_paths(*m_asset_base_dir, "movies/kitchen");
         auto tmp = get_directory_entries(path, FileType::MOVIE, true);
@@ -165,7 +167,17 @@ void Ballenberg::keyPress(const KeyEvent &e)
         switch (e.getCode())
         {
             case Key::_1:
+                m_timer_motion_reset.cancel();
+                net::async_send_tcp(background_queue().io_service(), "seek_to_time 0.0",
+                                    m_ip_kitchen, 33333);
+                net::async_send_tcp(background_queue().io_service(), "pause",
+                                    m_ip_kitchen, 33333);
+                
             case Key::_2:
+                net::async_send_tcp(background_queue().io_service(), "seek_to_time 0.0",
+                                    m_ip_living_room, 33333);
+                net::async_send_tcp(background_queue().io_service(), "pause",
+                                    m_ip_living_room, 33333);
             case Key::_3:
             case Key::_4:
                 next_state = e.getCode() - Key::_1;
