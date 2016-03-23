@@ -34,7 +34,7 @@ namespace kinski
         std::string m_ip_kitchen = "192.168.69.101", m_ip_living_room = "192.168.69.102";
         
         State m_current_state = State::IDLE;
-        Timer m_timer_idle, m_timer_motion_reset, m_timer_lamp_noise;
+        Timer m_timer_idle, m_timer_motion_reset, m_timer_lamp_noise, m_timer_movie_reset;
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),

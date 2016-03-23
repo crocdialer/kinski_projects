@@ -170,18 +170,28 @@ void Ballenberg::keyPress(const KeyEvent &e)
                 m_timer_motion_reset.cancel();
                 net::async_send_tcp(background_queue().io_service(), "play",
                                     m_ip_kitchen, 33333);
-                net::async_send_tcp(background_queue().io_service(), "seek_to_time 0.0",
-                                    m_ip_kitchen, 33333);
-                net::async_send_tcp(background_queue().io_service(), "pause",
-                                    m_ip_kitchen, 33333);
+                
+                m_timer_movie_reset = Timer(background_queue().io_service(),[this]()
+                {
+                    net::async_send_tcp(background_queue().io_service(), "seek_to_time 0.0",
+                                        m_ip_kitchen, 33333);
+                    net::async_send_tcp(background_queue().io_service(), "pause",
+                                        m_ip_kitchen, 33333);
+                });
+                m_timer_movie_reset.expires_from_now(3.5f);
                 
             case Key::_2:
                 net::async_send_tcp(background_queue().io_service(), "play",
                                     m_ip_living_room, 33333);
-                net::async_send_tcp(background_queue().io_service(), "seek_to_time 0.0",
-                                    m_ip_living_room, 33333);
-                net::async_send_tcp(background_queue().io_service(), "pause",
-                                    m_ip_living_room, 33333);
+                m_timer_movie_reset = Timer(background_queue().io_service(),[this]()
+                {
+                    net::async_send_tcp(background_queue().io_service(), "seek_to_time 0.0",
+                                        m_ip_living_room, 33333);
+                    net::async_send_tcp(background_queue().io_service(), "pause",
+                                        m_ip_living_room, 33333);
+                });
+                m_timer_movie_reset.expires_from_now(3.5f);
+                
             case Key::_3:
             case Key::_4:
                 next_state = e.getCode() - Key::_1;
