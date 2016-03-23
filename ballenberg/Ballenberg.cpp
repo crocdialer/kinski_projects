@@ -41,6 +41,7 @@ void Ballenberg::setup()
     // setup timer objects
     m_timer_idle = Timer(io_service(), [this](){ change_state(State::IDLE, true); });
     m_timer_lamp_noise = Timer(io_service());
+    m_timer_motion_reset = Timer(io_service());
     
     // warp component
 //    m_warp = std::make_shared<WarpComponent>();
