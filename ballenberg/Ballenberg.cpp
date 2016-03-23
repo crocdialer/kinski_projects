@@ -168,12 +168,16 @@ void Ballenberg::keyPress(const KeyEvent &e)
         {
             case Key::_1:
                 m_timer_motion_reset.cancel();
+                net::async_send_tcp(background_queue().io_service(), "play",
+                                    m_ip_kitchen, 33333);
                 net::async_send_tcp(background_queue().io_service(), "seek_to_time 0.0",
                                     m_ip_kitchen, 33333);
                 net::async_send_tcp(background_queue().io_service(), "pause",
                                     m_ip_kitchen, 33333);
                 
             case Key::_2:
+                net::async_send_tcp(background_queue().io_service(), "play",
+                                    m_ip_living_room, 33333);
                 net::async_send_tcp(background_queue().io_service(), "seek_to_time 0.0",
                                     m_ip_living_room, 33333);
                 net::async_send_tcp(background_queue().io_service(), "pause",
