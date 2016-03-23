@@ -73,9 +73,9 @@ void Ballenberg::update(float timeDelta)
     m_cap_sense.update(timeDelta);
     
     // motion -> kitchen
-    if(m_motion_sense_01.distance() /*&& m_timer_motion_reset.has_expired()*/)
+    if(m_motion_sense_01.distance() && m_timer_motion_reset.has_expired())
     {
-//        m_timer_motion_reset.expires_from_now(20.f);
+        m_timer_motion_reset.expires_from_now(20.f);
         
         // play random recipe movie
         std::string path = join_paths(*m_asset_base_dir, "movies/kitchen");
