@@ -75,6 +75,7 @@ void Ballenberg::update(float timeDelta)
     // motion -> kitchen
     if(m_motion_sense_01.distance() && m_timer_motion_reset.has_expired())
     {
+        // TODO: find better solution like movie callback
         m_timer_motion_reset.expires_from_now(20.f);
         
         // play random recipe movie
