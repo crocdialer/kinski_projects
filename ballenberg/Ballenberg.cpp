@@ -179,6 +179,7 @@ void Ballenberg::keyPress(const KeyEvent &e)
                                         m_ip_kitchen, 33333);
                 });
                 m_timer_movie_reset.expires_from_now(7.f);
+                break;
                 
             case Key::_2:
                 net::async_send_tcp(background_queue().io_service(), "play",
@@ -191,6 +192,7 @@ void Ballenberg::keyPress(const KeyEvent &e)
                                         m_ip_living_room, 33333);
                 });
                 m_timer_movie_reset.expires_from_now(7.f);
+                break;
                 
             case Key::_3:
             case Key::_4:
