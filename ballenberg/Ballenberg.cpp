@@ -178,7 +178,7 @@ void Ballenberg::keyPress(const KeyEvent &e)
                     net::async_send_tcp(background_queue().io_service(), "pause",
                                         m_ip_kitchen, 33333);
                 });
-                m_timer_movie_reset.expires_from_now(3.5f);
+                m_timer_movie_reset.expires_from_now(7.f);
                 
             case Key::_2:
                 net::async_send_tcp(background_queue().io_service(), "play",
@@ -190,7 +190,7 @@ void Ballenberg::keyPress(const KeyEvent &e)
                     net::async_send_tcp(background_queue().io_service(), "pause",
                                         m_ip_living_room, 33333);
                 });
-                m_timer_movie_reset.expires_from_now(3.5f);
+                m_timer_movie_reset.expires_from_now(7.f);
                 
             case Key::_3:
             case Key::_4:
