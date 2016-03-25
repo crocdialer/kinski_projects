@@ -21,6 +21,13 @@ void BluetoothApp::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     load_settings();
+    
+    m_central.set_peripheral_discovered_cb([this](const bluetooth::Peripheral &p,
+                                                  bluetooth::UUID uuid,
+                                                  float the_rssi)
+    {
+        LOG_DEBUG << p.name << " - " << the_rssi << " (" << uuid.data << ")";
+    });
 }
 
 /////////////////////////////////////////////////////////////////
