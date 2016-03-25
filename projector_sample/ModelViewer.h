@@ -12,7 +12,7 @@
 #include "app/LightComponent.h"
 #include "gl/Fbo.hpp"
 
-#include "video/MovieController.h"
+#include "video/video.h"
 
 namespace kinski
 {

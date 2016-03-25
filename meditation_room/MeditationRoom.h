@@ -13,7 +13,7 @@
 #include "core/Serial.hpp"
 
 // modules
-#include "video/video.h"
+#include "media/media.h"
 #include "cap_sense/cap_sense.h"
 #include "audio/audio.h"
 
@@ -85,7 +85,7 @@ namespace kinski
         
         // our content
         audio::SoundPtr m_audio;
-        video::MovieControllerPtr m_movie = video::MovieController::create();
+        media::MovieControllerPtr m_movie = media::MovieController::create();
         
         CapacitiveSensor m_cap_sense;
         

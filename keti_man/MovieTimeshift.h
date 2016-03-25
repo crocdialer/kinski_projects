@@ -12,8 +12,7 @@
 #include "gl/Noise.hpp"
 #include "app/ViewerApp.h"
 
-#include "video/MovieController.h"
-#include "video/CameraController.h"
+#include "media/media.h"
 #include "syphon/SyphonConnector.h"
 
 #include "gl/Fbo.hpp"
@@ -43,7 +42,7 @@ namespace kinski
         RangedProperty<int>::Ptr
         m_input_source = RangedProperty<int>::create("input source", 0, 0, 3);
         
-        video::MovieControllerPtr m_movie = video::MovieController::create();
+        media::MovieControllerPtr m_movie = media::MovieController::create();
         video::CameraControllerPtr m_camera = video::CameraController::create();
         
         bool m_needs_movie_refresh = false;

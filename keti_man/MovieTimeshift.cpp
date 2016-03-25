@@ -82,7 +82,7 @@ void MovieTimeshift::update(float timeDelta)
     if(*m_input_source == INPUT_MOVIE && m_needs_movie_refresh)
     {
         m_needs_movie_refresh = false;
-        m_movie = video::MovieController::create(*m_movie_path);
+        m_movie = media::MovieController::create(*m_movie_path);
         
         Stopwatch t;
         t.start();

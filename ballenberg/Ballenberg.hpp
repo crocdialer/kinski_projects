@@ -15,7 +15,7 @@
 #include "DistanceSensor.hpp"
 
 // modules
-#include "video/video.h"
+#include "media/media.h"
 #include "cap_sense/cap_sense.h"
 #include "dmx/dmx.h"
 

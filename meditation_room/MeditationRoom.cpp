@@ -436,7 +436,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 {
                     LOG_DEBUG << "starting movie in " << m_timeout_movie_start->value() <<" secs";
                     m_timer_movie_start.expires_from_now(*m_timeout_movie_start);
-                    m_movie->set_movie_ended_callback([this](video::MovieControllerPtr)
+                    m_movie->set_media_ended_callback([this](media::MovieControllerPtr)
                     {
                         m_show_movie = false;
                         change_state(State::MANDALA_ILLUMINATED);

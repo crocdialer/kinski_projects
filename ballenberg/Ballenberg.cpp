@@ -44,11 +44,6 @@ void Ballenberg::setup()
     m_timer_movie_kitchen = Timer(io_service());
     m_timer_movie_living_room = Timer(io_service());
     
-    // warp component
-//    m_warp = std::make_shared<WarpComponent>();
-//    m_warp->observe_properties();
-//    add_tweakbar_for_component(m_warp);
-    
     m_cap_sense.set_touch_callback([](int i)
     {
         LOG_DEBUG << "touched pad: " << i;
@@ -87,7 +82,7 @@ void Ballenberg::update(float timeDelta)
         
         if(!paths.empty())
         {
-            uint32_t rnd_idx = kinski::random<uint32_t>(0, tmp.size());
+            auto rnd_idx = kinski::random_int<uint32_t>(0, tmp.size() - 1);
             
             net::async_send_tcp(background_queue().io_service(), "play " +
                                 join_paths("/home/pi/ballenberg_assets/movies/kitchen",

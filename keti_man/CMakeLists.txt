@@ -1,4 +1,4 @@
 #set(LIBS ${LIBS} "cv")
-set(MODULES video syphon)
+set(MODULES media syphon)
 KINSKI_ADD_SAMPLE(${itemName} ${folderItem} "${MODULES}")
 
