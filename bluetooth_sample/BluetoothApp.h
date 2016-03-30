@@ -19,8 +19,6 @@ namespace kinski
     {
     private:
         
-        gl::Font m_font;
-        
         bluetooth::Central m_central;
         
     public:

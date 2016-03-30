@@ -18,15 +18,17 @@ using namespace glm;
 void BluetoothApp::setup()
 {
     ViewerApp::setup();
+    fonts()[1].load(fonts()[0].path(), 44);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     load_settings();
     
-    m_central.set_peripheral_discovered_cb([this](const bluetooth::Peripheral &p,
+    m_central.set_peripheral_discovered_cb([this](const bluetooth::Central &c,
+                                                  const bluetooth::Peripheral &p,
                                                   bluetooth::UUID uuid,
                                                   float the_rssi)
     {
-        LOG_DEBUG << p.name << " - " << the_rssi << " (" << uuid.data << ")";
+        LOG_DEBUG << p.name << " - " << the_rssi /*<< " (" << uuid.data << ")"*/;
     });
 }
 
@@ -35,14 +37,17 @@ void BluetoothApp::setup()
 void BluetoothApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+    
 }
 
 /////////////////////////////////////////////////////////////////
 
 void BluetoothApp::draw()
 {
-    gl::set_matrices(camera());
-    gl::draw_grid(50, 50);
+//    gl::set_matrices(camera());
+//    gl::draw_grid(50, 50);
+    
+    gl::draw_text_2D(name(), fonts()[1], gl::COLOR_WHITE, vec2(15));
 }
 
 /////////////////////////////////////////////////////////////////
@@ -143,7 +148,7 @@ void BluetoothApp::fileDrop(const MouseEvent &e, const std::vector<std::string> 
 
 void BluetoothApp::tearDown()
 {
-    LOG_PRINT<<"ciao empty sample";
+    LOG_PRINT<<"ciao " << name();
 }
 
 /////////////////////////////////////////////////////////////////

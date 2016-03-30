@@ -15,8 +15,7 @@
 
 // module
 #include "opencl/ParticleSystem.hpp"
-#include "video/CameraController.h"
-#include "video/MovieController.h"
+#include "media/media.h"
 #include "openni/OpenNIConnector.h"
 #include "syphon/SyphonConnector.h"
 
@@ -34,7 +33,7 @@ namespace kinski
         
         gl::OpenNIConnector::Ptr m_open_ni;
         
-        video::MovieControllerPtr m_movie;
+        media::MovieControllerPtr m_movie;
         
         LightComponent::Ptr m_light_component;
         
@@ -101,6 +100,7 @@ namespace kinski
         
     public:
         
+        BlockbusterApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;
         void update(float timeDelta) override;
         void draw() override;

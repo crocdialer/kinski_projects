@@ -261,7 +261,7 @@ void BlockbusterApp::fileDrop(const MouseEvent &e, const std::vector<std::string
 
 void BlockbusterApp::tearDown()
 {
-    LOG_PRINT<<"ciao blockbuster";
+    LOG_PRINT<<"ciao " << name();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -272,7 +272,7 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_media_path)
     {
-        m_movie = video::MovieController::create(*m_media_path, true, true);
+        m_movie = media::MovieController::create(*m_media_path, true, true);
         textures()[TEXTURE_MOVIE] = gl::Texture();
     }
     else if(theProperty == m_block_length)
