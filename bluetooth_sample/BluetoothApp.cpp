@@ -12,6 +12,7 @@ using namespace std;
 using namespace kinski;
 using namespace glm;
 
+#define SERIAL_END_CODE '\n'
 
 /////////////////////////////////////////////////////////////////
 
@@ -23,12 +24,35 @@ void BluetoothApp::setup()
     add_tweakbar_for_component(shared_from_this());
     load_settings();
     
-    m_central.set_peripheral_discovered_cb([this](const bluetooth::Central &c,
-                                                  const bluetooth::Peripheral &p,
-                                                  bluetooth::UUID uuid,
-                                                  float the_rssi)
+    m_bt_serial.setup();
+    m_bt_serial.set_receive_cb([this](bluetooth::Bluetooth_UART &bt_serial,
+                                      const std::vector<uint8_t> &the_data)
     {
-        LOG_DEBUG << p.name << " - " << the_rssi /*<< " (" << uuid.data << ")"*/;
+        std::string reading_str;
+        bool reading_complete = false;
+        
+        for(uint8_t byte : the_data)
+        {
+            switch(byte)
+            {
+                case SERIAL_END_CODE:
+                    reading_str = string(m_accumulator.begin(), m_accumulator.end());
+                    m_accumulator.clear();
+                    reading_complete = true;
+                    break;
+                    
+                default:
+                    m_accumulator.push_back(byte);
+                    break;
+            }
+            
+            if(reading_complete)
+            {
+                reading_complete = false;
+                LOG_DEBUG << reading_str;
+            }
+        }
+        
     });
 }
 
@@ -65,8 +89,16 @@ void BluetoothApp::keyPress(const KeyEvent &e)
     
     switch (e.getCode())
     {
-        case GLFW_KEY_D:
-            m_central.scan_for_peripherals();
+        case Key::_D:
+            if(m_bt_serial.is_initialized()){ m_bt_serial.close(); }
+            else { m_bt_serial.setup(); }
+            break;
+            
+        case Key::_B:
+            if(m_bt_serial.is_initialized())
+            {
+                m_bt_serial.write(string("lalala der obstmostkelterer ist da\n"));
+            }
             break;
             
         default:

@@ -11,7 +11,8 @@
 #include "app/ViewerApp.h"
 
 // module headers
-#include "bluetooth/bluetooth.hpp"
+//#include "bluetooth/bluetooth.hpp"
+#include "bluetooth/Bluetooth_UART.hpp"
 
 namespace kinski
 {
@@ -19,7 +20,11 @@ namespace kinski
     {
     private:
         
-        bluetooth::Central m_central;
+        bluetooth::Bluetooth_UART m_bt_serial;
+        std::vector<uint8_t> m_accumulator;
+        
+//        bluetooth::CentralPtr m_central = bluetooth::Central::create();
+//        bluetooth::PeripheralPtr m_peripheral;
         
     public:
         BluetoothApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};

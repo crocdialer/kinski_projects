@@ -47,7 +47,7 @@ namespace kinski{
         else{ m_impl->m_sensor_device.setup(dev_name, 57600); }
         
         // finally flush the newly initialized device
-        if(m_impl->m_sensor_device.isInitialized())
+        if(m_impl->m_sensor_device.is_initialized())
         {
             m_impl->m_device_name = dev_name;
             m_impl->m_sensor_device.flush();
@@ -64,7 +64,7 @@ namespace kinski{
         bool reading_complete = false;
         uint16_t distance_val = 0;
         
-        if(m_impl->m_sensor_device.isInitialized())
+        if(m_impl->m_sensor_device.is_initialized())
         {
             bytes_to_read = std::min(m_impl->m_sensor_device.available(),
                                      m_impl->m_sensor_read_buf.size());
@@ -72,7 +72,7 @@ namespace kinski{
             if(bytes_to_read){ m_impl->m_last_reading = 0.f; }
             
             uint8_t *buf_ptr = &m_impl->m_sensor_read_buf[0];
-            m_impl->m_sensor_device.readBytes(&m_impl->m_sensor_read_buf[0], bytes_to_read);
+            m_impl->m_sensor_device.read_bytes(&m_impl->m_sensor_read_buf[0], bytes_to_read);
             
             for(uint32_t i = 0; i < bytes_to_read; i++)
             {
@@ -128,6 +128,6 @@ namespace kinski{
     
     bool DistanceSensor::is_initialized() const
     {
-        return m_impl->m_sensor_device.isInitialized();
+        return m_impl->m_sensor_device.is_initialized();
     }
 }
