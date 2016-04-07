@@ -33,7 +33,7 @@ namespace kinski
         m_ip_adresses = Property_<std::vector<std::string>>::create("ip adresses",
         {
             "localhost",
-            "trombone.local",
+//            "trombone.local",
             "cheese.local"
         }),
         m_movie_library = Property_<std::vector<std::string>>::create("movie library");
@@ -47,7 +47,7 @@ namespace kinski
         
         Property_<bool>::Ptr
         m_loop = Property_<bool>::create("loop", false),
-        m_auto_play = Property_<bool>::create("autoplay", true);
+        m_auto_play = Property_<bool>::create("autoplay", false);
         
         Property_<float>::Ptr
         m_movie_speed = Property_<float>::create("movie speed", 1.f),

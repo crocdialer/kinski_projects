@@ -36,6 +36,7 @@ void MediaPlayer::setup()
     register_property(m_loop);
     register_property(m_auto_play);
     register_property(m_movie_speed);
+    register_property(m_movie_delay);
     register_property(m_use_warping);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
@@ -215,6 +216,7 @@ void MediaPlayer::fileDrop(const MouseEvent &e, const std::vector<std::string> &
 
 void MediaPlayer::tearDown()
 {
+    stop_playback();
     LOG_PRINT << "ciao " << name();
 }
 
@@ -238,6 +240,7 @@ void MediaPlayer::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_movie_directory)
     {
         search_movies();
+        add_search_path(*m_movie_directory);
     }
     else if(theProperty == m_loop)
     {
@@ -317,13 +320,14 @@ void MediaPlayer::start_playback(const std::string &the_path)
     for(uint8_t i = 0; i < m_movie_start_timers.size(); ++i)
     {
         // load movies
-        net::async_send_tcp(main_queue().io_service(), "load " + the_path,
+        net::async_send_tcp(main_queue().io_service(), "load " + get_filename_part(the_path),
                             ip_adresses[i], g_remote_port);
         
         m_movie_start_timers[i] = Timer(background_queue().io_service(), [this, ip_adresses, i]()
         {
             net::async_send_tcp(background_queue().io_service(), "play", ip_adresses[i],
                                 g_remote_port);
+            m_movie->play();
         });
         
         m_movie_start_timers[i].expires_from_now(i * abs_delay + m_delay_static);
@@ -356,7 +360,12 @@ void MediaPlayer::setup_rpc_interface()
     remote_control().add_command("play");
     register_function("play", [this](const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ *m_movie_path = rpc_args.front(); }
+        if(!rpc_args.empty())
+        {
+            std::string p; for(const auto &arg : rpc_args){ p += arg + " "; }
+            p = p.substr(0, p.size() - 1);
+            *m_movie_path = p;
+        }
         else{ m_movie->play(); }
     });
     remote_control().add_command("pause");
@@ -367,7 +376,12 @@ void MediaPlayer::setup_rpc_interface()
     remote_control().add_command("load");
     register_function("load", [this](const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ *m_movie_path = rpc_args.front(); }
+        if(!rpc_args.empty())
+        {
+            std::string p; for(const auto &arg : rpc_args){ p += arg + " "; }
+            p = p.substr(0, p.size() - 1);
+            *m_movie_path = p;
+        }
     });
     remote_control().add_command("unload");
     register_function("unload", [this](const std::vector<std::string> &rpc_args)
