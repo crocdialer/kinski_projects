@@ -97,7 +97,7 @@ void BluetoothApp::keyPress(const KeyEvent &e)
         case Key::_B:
             if(m_bt_serial.is_initialized())
             {
-                m_bt_serial.write(string("lalala der obstmostkelterer ist da\n"));
+                m_bt_serial.write("lalala der obstmostkelterer ist da\n");
             }
             break;
             
