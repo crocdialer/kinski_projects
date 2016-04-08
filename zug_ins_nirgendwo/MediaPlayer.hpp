@@ -32,17 +32,18 @@ namespace kinski
         Property_<std::vector<std::string>>::Ptr
         m_ip_adresses = Property_<std::vector<std::string>>::create("ip adresses",
         {
-            "localhost",
-//            "trombone.local",
-            "cheese.local"
+            "localhost",// vellocet.local
+            "synthemesc.local",
+            "drencrome.local"
         }),
         m_movie_library = Property_<std::vector<std::string>>::create("movie library");
         Property_<int>::Ptr m_movie_index = Property_<int>::create("movie index", -1);
         
+        bool m_initiated = false;
         float m_delay_static = 3.f;
         
         Property_<string>::Ptr
-        m_movie_directory = Property_<string>::create("movie directory", "~/Movies"),
+        m_movie_directory = Property_<string>::create("movie directory", "/mnt/movies"),
         m_movie_path = Property_<string>::create("movie path", "");
         
         Property_<bool>::Ptr
@@ -51,7 +52,7 @@ namespace kinski
         
         Property_<float>::Ptr
         m_movie_speed = Property_<float>::create("movie speed", 1.f),
-        m_movie_delay = Property_<float>::create("movie delay", 1.f),
+        m_movie_delay = Property_<float>::create("movie delay", 0.f),
         m_movie_volume = Property_<float>::create("movie volume", 0.f);
         
         Property_<bool>::Ptr m_use_warping = Property_<bool>::create("use warping", false);
