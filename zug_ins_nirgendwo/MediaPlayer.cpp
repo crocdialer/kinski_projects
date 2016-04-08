@@ -89,13 +89,15 @@ void MediaPlayer::draw()
     // background text
     gl::draw_text_2D(name(), fonts()[1], gl::COLOR_WHITE, vec2(35, 55));
     
-    if(*m_use_warping){ m_warp->render_output(textures()[TEXTURE_INPUT]); }
-    else{ gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension()); }
-    
     if(!m_movie_start_timers.empty() && !m_movie_start_timers[0].has_expired())
     {
         gl::draw_text_2D(as_string(m_movie_start_timers[0].expires_from_now(), 1), fonts()[1],
                          gl::COLOR_WHITE, gl::window_dimension() / 2.f - vec2(50));
+    }
+    else
+    {
+        if(*m_use_warping){ m_warp->render_output(textures()[TEXTURE_INPUT]); }
+        else{ gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension()); }
     }
     
     if(displayTweakBar())
