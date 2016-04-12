@@ -403,7 +403,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 if(animations()[AUDIO_FADE_IN]) { animations()[AUDIO_FADE_IN]->start(); }
                 if(animations()[LIGHT_FADE_OUT]){ animations()[LIGHT_FADE_OUT]->start(); }
                 m_show_movie = true;
-//                if(m_audio){ m_audio->set_volume(1.f); }
+                if(m_audio){ m_audio->set_volume(1.f); }
 //                *m_led_color = gl::COLOR_BLACK;
                 break;
                 
@@ -632,9 +632,7 @@ bool MeditationRoom::load_assets()
     if(!audio_files.empty())
     {
         // background chanting audio
-        m_audio.reset(new audio::Fmod_Sound(audio_files.front()));
-        m_audio->set_loop(true);
-        m_audio->play();
+        m_audio->load(audio_files.front(), true, true);
     }
     
     auto video_files = get_directory_entries(asset_base_dir, FileType::MOVIE, true);

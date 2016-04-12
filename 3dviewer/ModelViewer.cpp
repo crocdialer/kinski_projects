@@ -469,7 +469,7 @@ void ModelViewer::async_load_asset(const std::string &the_path,
                 {
                     for(const gl::Image &img : mat_img_map.at(mat))
                     {
-                        gl::Texture tex = gl::create_texture_from_image(img, true, true, 8.f);
+                        gl::Texture tex = gl::create_texture_from_image(img, true, true);
                         free(img.data);
                         mat->addTexture(tex);
                     }

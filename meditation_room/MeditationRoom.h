@@ -15,7 +15,6 @@
 // modules
 #include "media/media.h"
 #include "cap_sense/cap_sense.h"
-#include "audio/audio.h"
 
 namespace kinski
 {
@@ -84,8 +83,9 @@ namespace kinski
         void output_switch();
         
         // our content
-        audio::SoundPtr m_audio;
-        media::MovieControllerPtr m_movie = media::MovieController::create();
+        media::MediaControllerPtr
+        m_movie = media::MediaController::create(),
+        m_audio = media::MediaController::create();
         
         CapacitiveSensor m_cap_sense;
         
