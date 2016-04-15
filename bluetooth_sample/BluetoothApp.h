@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "app/ViewerApp.h"
+#include "app/ViewerApp.hpp"
 
 // module headers
 //#include "bluetooth/bluetooth.hpp"

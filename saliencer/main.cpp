@@ -1,5 +1,4 @@
-#include "app/GLFW_App.h"
-
+#include "app/GLFW_App.hpp"
 #include "gl/Material.hpp"
 
 #include "cv/CVThread.h"

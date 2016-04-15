@@ -9,9 +9,9 @@
 #ifndef __gl__BlockbusterApp__
 #define __gl__BlockbusterApp__
 
-#include "app/ViewerApp.h"
-#include "app/RemoteControl.h"
-#include "app/LightComponent.h"
+#include "app/ViewerApp.hpp"
+#include "app/RemoteControl.hpp"
+#include "app/LightComponent.hpp"
 
 // module
 #include "opencl/ParticleSystem.hpp"

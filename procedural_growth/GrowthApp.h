@@ -9,7 +9,7 @@
 #ifndef __gl__GrowthApp__
 #define __gl__GrowthApp__
 
-#include "app/ViewerApp.h"
+#include "app/ViewerApp.hpp"
 #include "l_system/LSystem.h"
 
 namespace kinski

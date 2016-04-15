@@ -7,9 +7,7 @@
 //
 
 #include "KeyPointApp.hpp"
-
-#include "video/MovieController.h"
-#include "video/CameraController.h"
+#include "media/media.h"
 
 using namespace std;
 using namespace kinski;

@@ -8,15 +8,15 @@
 
 #pragma once
 
-#include "app/ViewerApp.h"
-#include "app/LightComponent.h"
+#include "app/ViewerApp.hpp"
+#include "app/LightComponent.hpp"
 
 #include "gl/Fbo.hpp"
 
 // module headers
 #include "physics/physics_context.h"
 #include "syphon/SyphonConnector.h"
-#include "video/MovieController.h"
+#include "media/media.h"
 
 namespace kinski
 {
@@ -29,7 +29,7 @@ namespace kinski
         
         gl::MeshPtr m_mesh;
         physics::physics_context m_physics;
-        video::MovieControllerPtr m_movie, m_crosshair_movie;
+        media::MovieControllerPtr m_movie, m_crosshair_movie;
         LightComponent::Ptr m_light_component;
         
         Property_<std::string>::Ptr

@@ -7,8 +7,8 @@
 //
 #pragma once
 
-#include "app/ViewerApp.h"
-#include "app/WarpComponent.h"
+#include "app/ViewerApp.hpp"
+#include "app/WarpComponent.hpp"
 #include "gl/Texture.hpp"
 
 #include "media/media.h"

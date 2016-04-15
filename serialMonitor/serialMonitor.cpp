@@ -1,4 +1,4 @@
-#include "app/ViewerApp.h"
+#include "app/ViewerApp.hpp"
 #include "core/Serial.hpp"
 
 #include "RtMidi.h"
@@ -224,7 +224,7 @@ public:
         ViewerApp::update(timeDelta);
         
         // parse arduino input
-        if(m_serial.isInitialized())
+        if(m_serial.is_initialized())
         {
             for(string line : m_serial.read_lines())
             {

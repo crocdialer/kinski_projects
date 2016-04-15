@@ -9,13 +9,12 @@
 #pragma once
 
 #include "core/Timer.hpp"
+#include "gl/Fbo.hpp"
 #include "gl/Noise.hpp"
-#include "app/ViewerApp.h"
+#include "app/ViewerApp.hpp"
 
 #include "media/media.h"
 #include "syphon/SyphonConnector.h"
-
-#include "gl/Fbo.hpp"
 
 namespace kinski
 {

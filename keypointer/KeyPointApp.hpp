@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "app/ViewerApp.h"
+#include "app/ViewerApp.hpp"
 #include "cv/CVThread.h"
 #include "cv/TextureIO.h"
 #include "KeyPointNode.h"

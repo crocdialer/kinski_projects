@@ -1,4 +1,4 @@
-#include "app/ViewerApp.h"
+#include "app/ViewerApp.hpp"
 #include "gl/Material.hpp"
 
 #include "cv/CVThread.h"

@@ -330,7 +330,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
         auto ft = get_file_type(*m_crosshair_path);
         if(ft == FileType::MOVIE)
         {
-            m_crosshair_movie = video::MovieController::create(*m_crosshair_path, true, true);
+            m_crosshair_movie = media::MovieController::create(*m_crosshair_path, true, true);
         }
         else if(ft == FileType::IMAGE)
         {
@@ -353,7 +353,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
                 catch (Exception &e) { LOG_WARNING << e.what(); }
             }else if(get_file_type(f) == FileType::MOVIE)
             {
-                m_movie = video::MovieController::create(f, true, true);
+                m_movie = media::MovieController::create(f, true, true);
             }
         }
         if(tex_array.size() > 0){ textures()[TEXTURE_OUTER] = tex_array[0]; }

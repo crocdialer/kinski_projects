@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "app/ViewerApp.h"
-#include "app/LightComponent.h"
+#include "app/ViewerApp.hpp"
+#include "app/LightComponent.hpp"
 #include "gl/Fbo.hpp"
 
-#include "video/video.h"
+#include "media/media.h"
 
 namespace kinski
 {
@@ -32,7 +32,7 @@ namespace kinski
         
         gl::PerspectiveCamera::Ptr m_projector;
         gl::MeshPtr m_projector_mesh;
-        video::MovieControllerPtr m_movie = video::MovieController::create();
+        media::MovieControllerPtr m_movie = media::MovieController::create();
         
         gl::MaterialPtr m_draw_depth_mat;
         

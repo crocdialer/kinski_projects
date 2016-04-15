@@ -1,5 +1,5 @@
-#include "app/ViewerApp.h"
-#include "app/LightComponent.h"
+#include "app/ViewerApp.hpp"
+#include "app/LightComponent.hpp"
 
 // module headers
 #include "cl_context.h"
