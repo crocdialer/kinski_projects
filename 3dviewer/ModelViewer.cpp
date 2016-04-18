@@ -227,22 +227,13 @@ void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &
 
         switch (get_file_type(f))
         {
-//            case FileType::DIRECTORY:
-//                *m_cube_map_folder = f;
-//                break;
-
             case FileType::MODEL:
             case FileType::IMAGE:
                 *m_model_path = f;
-                try
-                {
-                    dropped_textures.push_back(gl::create_texture_from_file(f, true, false));
-                }
-                catch (Exception &e) { LOG_WARNING << e.what();}
-                if(scene().pick(gl::calculate_ray(camera(), vec2(e.getX(), e.getY()))))
-                {
-                    LOG_INFO << "texture drop on model";
-                }
+//                if(scene().pick(gl::calculate_ray(camera(), vec2(e.getX(), e.getY()))))
+//                {
+//                    LOG_INFO << "texture drop on model";
+//                }
                 break;
             default:
                 break;
@@ -437,14 +428,14 @@ void ModelViewer::async_load_asset(const std::string &the_path,
         // load model on worker thread
         auto m = load_asset(*m_model_path);
 
-        std::map<gl::MaterialPtr, std::vector<gl::Image>> mat_img_map;
+        std::map<gl::MaterialPtr, std::vector<gl::ImagePtr>> mat_img_map;
 
         if(m)
         {
             // load and decode images on worker thread
             for(auto &mat : m->materials())
             {
-                std::vector<gl::Image> tex_imgs;
+                std::vector<gl::ImagePtr> tex_imgs;
 
                 for(const auto &p : mat->load_queue_textures())
                 {
@@ -467,10 +458,9 @@ void ModelViewer::async_load_asset(const std::string &the_path,
             {
                 for(auto &mat : m->materials())
                 {
-                    for(const gl::Image &img : mat_img_map.at(mat))
+                    for(const gl::ImagePtr &img : mat_img_map.at(mat))
                     {
                         gl::Texture tex = gl::create_texture_from_image(img, true, true);
-                        free(img.data);
                         mat->addTexture(tex);
                     }
                 }
