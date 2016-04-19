@@ -27,6 +27,7 @@ namespace kinski
         video::CameraControllerPtr m_camera_control = video::CameraController::create();
         bool m_reload_movie = false;
         std::vector<Timer> m_movie_start_timers;
+        Timer m_timer_movie_search;
         
         // properties
         Property_<std::vector<std::string>>::Ptr

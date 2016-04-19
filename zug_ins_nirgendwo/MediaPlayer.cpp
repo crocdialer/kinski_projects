@@ -54,6 +54,12 @@ void MediaPlayer::setup()
     // scan for movie files
     search_movies();
     
+    // schedule rescan every 5 secs
+    m_timer_movie_search = Timer(background_queue().io_service(),
+                                 std::bind(&MediaPlayer::search_movies, this));
+    m_timer_movie_search.set_periodic(true);
+    m_timer_movie_search.expires_from_now(10.f);
+    
     remote_control().set_components({ shared_from_this(), m_warp });
     load_settings();
     
