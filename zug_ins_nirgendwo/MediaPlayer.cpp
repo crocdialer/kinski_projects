@@ -97,7 +97,7 @@ void MediaPlayer::update(float timeDelta)
 void MediaPlayer::draw()
 {
     // background text
-    gl::draw_text_2D(name(), fonts()[1], gl::COLOR_WHITE, vec2(55, 55));
+    gl::draw_text_2D(name(), fonts()[1], gl::COLOR_WHITE, vec2(75, 55));
     
     if(!m_movie_start_timers.empty() && !m_movie_start_timers[0].has_expired())
     {
