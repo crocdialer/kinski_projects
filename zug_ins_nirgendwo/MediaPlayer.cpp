@@ -54,7 +54,7 @@ void MediaPlayer::setup()
     // scan for movie files
     search_movies();
     
-    // schedule rescan every 5 secs
+    // schedule rescan every 10 secs
     m_timer_movie_search = Timer(background_queue().io_service(),
                                  std::bind(&MediaPlayer::search_movies, this));
     m_timer_movie_search.set_periodic(true);
@@ -76,10 +76,14 @@ void MediaPlayer::update(float timeDelta)
 {
     if(m_reload_movie)
     {
-        m_movie->load(*m_movie_path, *m_auto_play, *m_loop);
-        m_movie->set_rate(*m_movie_speed);
-        m_movie->set_volume(*m_movie_volume);
         m_reload_movie = false;
+        
+        background_queue().submit([this]()
+        {
+            m_movie->load(*m_movie_path, *m_auto_play, *m_loop);
+            m_movie->set_rate(*m_movie_speed);
+            m_movie->set_volume(*m_movie_volume);
+        });
     }
     
     if(m_camera_control && m_camera_control->is_capturing())

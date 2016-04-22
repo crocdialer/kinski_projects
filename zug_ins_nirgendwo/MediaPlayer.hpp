@@ -33,7 +33,7 @@ namespace kinski
         Property_<std::vector<std::string>>::Ptr
         m_ip_adresses = Property_<std::vector<std::string>>::create("ip adresses",
         {
-            "localhost",// vellocet.local
+            "vellocet.local",
             "synthemesc.local",
             "drencrome.local"
         }),
