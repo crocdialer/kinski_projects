@@ -78,12 +78,12 @@ void MediaPlayer::update(float timeDelta)
     {
         m_reload_movie = false;
         
-        background_queue().submit([this]()
-        {
+//        background_queue().submit([this]()
+//        {
             m_movie->load(*m_movie_path, *m_auto_play, *m_loop);
             m_movie->set_rate(*m_movie_speed);
             m_movie->set_volume(*m_movie_volume);
-        });
+//        });
     }
     
     if(m_camera_control && m_camera_control->is_capturing())
