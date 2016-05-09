@@ -22,7 +22,7 @@ void UriTerminal::setup()
     register_property(m_img_url);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
-    m_downloader.set_io_service(io_service());
+    m_downloader.set_io_service(main_queue().io_service());
     load_settings();
     
     fonts()[FONT_LARGE].load("Courier New Bold.ttf", 72);

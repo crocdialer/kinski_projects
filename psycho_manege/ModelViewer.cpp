@@ -25,7 +25,7 @@ void s_midi_callback(double timeStamp, std::vector<unsigned char> *message, void
     ModelViewer* app = static_cast<ModelViewer*>(userData);
     
     // schedule on main queue
-    app->thread_pool().submit(std::bind(&ModelViewer::midi_callback, app, timeStamp, *message));
+    app->main_queue().submit(std::bind(&ModelViewer::midi_callback, app, timeStamp, *message));
 }
 
 /////////////////////////////////////////////////////////////////
@@ -118,7 +118,7 @@ void ModelViewer::setup()
     m_select_indicator->material()->setWireframe();
     
     // init timers
-    m_timer_select_enable = Timer(io_service());
+    m_timer_select_enable = Timer(main_queue().io_service());
     
     // init midi
     size_t num_midi_ports = m_midi_in->getPortCount();

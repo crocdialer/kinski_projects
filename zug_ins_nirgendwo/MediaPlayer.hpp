@@ -24,7 +24,7 @@ namespace kinski
         WarpComponent::Ptr m_warp;
 
         media::MediaControllerPtr m_movie = media::MovieController::create();
-        video::CameraControllerPtr m_camera_control = video::CameraController::create();
+        media::CameraControllerPtr m_camera_control = media::CameraController::create();
         bool m_reload_movie = false;
         std::vector<Timer> m_movie_start_timers;
         Timer m_timer_movie_search;

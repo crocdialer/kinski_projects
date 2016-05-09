@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "app/ViewerApp.h"
-#include "app/LightComponent.h"
-#include "app/RemoteControl.h"
+#include "app/ViewerApp.hpp"
+#include "app/LightComponent.hpp"
+#include "app/RemoteControl.hpp"
 
 #include "gl/Noise.hpp"
 
@@ -202,6 +202,7 @@ namespace kinski
         
     public:
         
+        ModelViewer(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup();
         void update(float timeDelta);
         void draw();
