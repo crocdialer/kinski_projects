@@ -42,7 +42,7 @@ namespace kinski
         m_input_source = RangedProperty<int>::create("input source", 0, 0, 3);
         
         media::MovieControllerPtr m_movie = media::MovieController::create();
-        video::CameraControllerPtr m_camera = video::CameraController::create();
+        media::CameraControllerPtr m_camera = media::CameraController::create();
         
         bool m_needs_movie_refresh = false;
         bool m_needs_array_refresh = true;

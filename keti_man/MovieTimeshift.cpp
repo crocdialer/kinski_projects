@@ -364,7 +364,7 @@ bool MovieTimeshift::set_input_source(InputSource the_src)
             break;
             
         case INPUT_CAMERA:
-            m_camera = video::CameraController::create(*m_cam_id);
+            m_camera = media::CameraController::create(*m_cam_id);
             m_camera->start_capture();
             break;
             

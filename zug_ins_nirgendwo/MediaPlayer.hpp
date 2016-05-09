@@ -33,9 +33,7 @@ namespace kinski
         Property_<std::vector<std::string>>::Ptr
         m_ip_adresses = Property_<std::vector<std::string>>::create("ip adresses",
         {
-            "vellocet.local",
-            "synthemesc.local",
-            "drencrome.local"
+            "localhost"
         }),
         m_movie_library = Property_<std::vector<std::string>>::create("movie library");
         Property_<int>::Ptr m_movie_index = Property_<int>::create("movie index", -1);
