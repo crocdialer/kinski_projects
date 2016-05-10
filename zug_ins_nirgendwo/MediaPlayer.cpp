@@ -84,12 +84,22 @@ void MediaPlayer::update(float timeDelta)
             m_movie->set_rate(*m_movie_speed);
             m_movie->set_volume(*m_movie_volume);
 //        });
+        
+        m_movie->set_media_ended_callback([this](media::MediaControllerPtr the_movie)
+        {
+            if(*m_loop)
+            {
+                // restart movies
+                for(const auto &ip : m_ip_adresses->value())
+                {
+                    net::async_send_tcp(background_queue().io_service(), "restart",
+                                        ip, g_remote_port);
+                }
+            }
+        });
     }
     
-    if(m_camera_control && m_camera_control->is_capturing())
-        m_camera_control->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
-    else
-        m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
+    m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -400,6 +410,11 @@ void MediaPlayer::setup_rpc_interface()
     register_function("pause", [this](const std::vector<std::string> &rpc_args)
     {
         m_movie->pause();
+    });
+    remote_control().add_command("restart", [this](net::tcp_connection_ptr con,
+                                                   const std::vector<std::string> &rpc_args)
+    {
+        m_movie->restart();
     });
     remote_control().add_command("load");
     register_function("load", [this](const std::vector<std::string> &rpc_args)
