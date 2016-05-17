@@ -12,11 +12,11 @@
 #include "core/Timer.hpp"
 #include "core/Serial.hpp"
 
-#include "DistanceSensor.hpp"
+#include "sensors/DistanceSensor.hpp"
 
 // modules
 #include "media/media.h"
-#include "cap_sense/cap_sense.h"
+#include "sensors/CapacitiveSensor.hpp"
 #include "dmx/dmx.h"
 
 namespace kinski

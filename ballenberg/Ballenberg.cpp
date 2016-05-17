@@ -39,10 +39,10 @@ void Ballenberg::setup()
     add_tweakbar_for_component(shared_from_this());
     
     // setup timer objects
-    m_timer_idle = Timer(io_service(), [this](){ change_state(State::IDLE, true); });
-    m_timer_lamp_noise = Timer(io_service());
-    m_timer_movie_kitchen = Timer(io_service());
-    m_timer_movie_living_room = Timer(io_service());
+    m_timer_idle = Timer(main_queue().io_service(), [this](){ change_state(State::IDLE, true); });
+    m_timer_lamp_noise = Timer(main_queue().io_service());
+    m_timer_movie_kitchen = Timer(main_queue().io_service());
+    m_timer_movie_living_room = Timer(main_queue().io_service());
     
     m_cap_sense.set_touch_callback([](int i)
     {
