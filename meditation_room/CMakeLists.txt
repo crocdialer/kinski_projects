@@ -1,4 +1,4 @@
 set(LIBS ${LIBS})
-set(MODULES media cap_sense)
+set(MODULES media sensors)
 KINSKI_ADD_SAMPLE(${itemName} ${folderItem} "${MODULES}")
 

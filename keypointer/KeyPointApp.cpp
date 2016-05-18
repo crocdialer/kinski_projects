@@ -31,7 +31,7 @@ public:
     }
     
 private:
-    video::CameraControllerPtr m_camera = video::CameraController::create();
+    media::CameraControllerPtr m_camera = media::CameraController::create();
     std::vector<uint8_t> m_img_buffer;
 };
 

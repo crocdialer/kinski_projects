@@ -56,9 +56,9 @@ void MeditationRoom::setup()
     m_mat_rgb_shift = gl::Material::create(rgb_shader);
     
     // setup timer objects
-    m_timer_idle = Timer(io_service(), [this](){ change_state(State::IDLE, true); });
-    m_timer_motion_reset = Timer(io_service(), [this](){ m_motion_detected = false; });
-    m_timer_movie_start = Timer(io_service(), [this](){ if(m_movie){ m_movie->restart(); } });
+    m_timer_idle = Timer(main_queue().io_service(), [this](){ change_state(State::IDLE, true); });
+    m_timer_motion_reset = Timer(main_queue().io_service(), [this](){ m_motion_detected = false; });
+    m_timer_movie_start = Timer(main_queue().io_service(), [this](){ if(m_movie){ m_movie->restart(); } });
     
     // warp component
     m_warp = std::make_shared<WarpComponent>();

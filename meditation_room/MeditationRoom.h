@@ -14,7 +14,7 @@
 
 // modules
 #include "media/media.h"
-#include "cap_sense/cap_sense.h"
+#include "sensors/sensors.h"
 
 namespace kinski
 {

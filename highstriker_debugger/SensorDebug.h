@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "app/ViewerApp.h"
+#include "app/ViewerApp.hpp"
 #include "core/Serial.hpp"
 #include "core/Measurement.hpp"
 

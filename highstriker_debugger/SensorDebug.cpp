@@ -44,7 +44,7 @@ void SensorDebug::setup()
     m_serial_read_buf.resize(2048);
 
     // setup a recurring timer for sensor-refresh-rate measurement
-    m_timer_sensor_refresh = Timer(io_service(), [this]()
+    m_timer_sensor_refresh = Timer(main_queue().io_service(), [this]()
     {
         *m_sensor_refresh_rate = m_sensor_refresh_count;
         m_sensor_refresh_count = 0;
@@ -52,7 +52,7 @@ void SensorDebug::setup()
     m_timer_sensor_refresh.set_periodic();
     m_timer_sensor_refresh.expires_from_now(1.f);
 
-    m_timer_game_ready = Timer(io_service(), [](){ LOG_DEBUG << "READY"; });
+    m_timer_game_ready = Timer(main_queue().io_service(), [](){ LOG_DEBUG << "READY"; });
 
     if(!load_settings()){ save_settings(); }
 }
@@ -244,7 +244,7 @@ void SensorDebug::update_property(const Property::ConstPtr &theProperty)
         {
             if(m_serial_device_name->value().empty()){ m_serial.setup(0, 57600); }
             else{ m_serial.setup(*m_serial_device_name, 57600); }
-            if(m_serial.isInitialized())
+            if(m_serial.is_initialized())
             {
                 m_serial.flush();
                 m_serial.drain();
@@ -260,12 +260,12 @@ void SensorDebug::update_sensor_values()
     size_t num_bytes = m_sensor_vals.size() * sizeof(m_sensor_vals[0]);
 
     // parse sensor input
-    if(m_serial.isInitialized())
+    if(m_serial.is_initialized())
     {
         size_t bytes_to_read = std::min(m_serial.available(), m_serial_read_buf.size());
         uint8_t *buf_ptr = &m_serial_read_buf[0];
 
-        m_serial.readBytes(&m_serial_read_buf[0], bytes_to_read);
+        m_serial.read_bytes(&m_serial_read_buf[0], bytes_to_read);
 
         for(uint32_t i = 0; i < bytes_to_read; i++)
         {

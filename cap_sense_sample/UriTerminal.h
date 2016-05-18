@@ -12,7 +12,7 @@
 
 // modules
 #include "curl/Downloader.h"
-#include "cap_sense/cap_sense.h"
+#include "sensors/CapacitiveSensor.hpp"
 
 namespace kinski
 {

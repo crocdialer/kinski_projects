@@ -105,7 +105,7 @@ private:
     int m_note_on = 0;
 
     // idle timer
-    boost::asio::deadline_timer m_idle_timer{io_service()}, m_note_off_timer{io_service()};
+    boost::asio::deadline_timer m_idle_timer{main_queue().io_service()}, m_note_off_timer{main_queue().io_service()};
     
     std::vector<gl::Texture> m_textures{4};
     
@@ -135,8 +135,9 @@ public:
         register_property(m_selected_index);
         
         // udp server
-        m_udp_server = net::udp_server(io_service(), std::bind(&SerialMonitorSample::got_message,
-                                                               this, std::placeholders::_1));
+        m_udp_server = net::udp_server(main_queue().io_service(),
+                                       std::bind(&SerialMonitorSample::got_message,
+                                                 this, std::placeholders::_1));
         m_udp_server.start_listen(11111);
         
         // register midi properties
