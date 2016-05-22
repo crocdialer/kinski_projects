@@ -15,6 +15,8 @@ using namespace glm;
 namespace
 {
     uint16_t g_remote_port = 33333;
+    uint16_t g_discovery_listen_port = 55555;
+//    std::mutex m_ip_table_mutex;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -59,6 +61,19 @@ void MediaPlayer::setup()
                                  std::bind(&MediaPlayer::search_movies, this));
     m_timer_movie_search.set_periodic(true);
     m_timer_movie_search.expires_from_now(10.f);
+    
+    // discovery udp-server to receive pings from existing nodes in the network
+    m_udp_server = net::udp_server(background_queue().io_service());
+    m_udp_server.start_listen(g_discovery_listen_port);
+    m_udp_server.set_receive_function([this](const std::vector<uint8_t> &data,
+                                             const std::string &remote_ip, uint16_t remote_port)
+    {
+        LOG_TRACE_1 << string(data.begin(), data.end()) << " " << remote_ip << " (" << remote_port << ")";
+        if(!kinski::is_in(remote_ip, m_ip_adresses->value()))
+        {
+            m_ip_adresses->value().push_back(remote_ip);
+        }
+    });
     
     remote_control().set_components({ shared_from_this(), m_warp });
     load_settings();

@@ -22,7 +22,8 @@ namespace kinski
         enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_OUTPUT = 1};
 
         WarpComponent::Ptr m_warp;
-
+        net::udp_server m_udp_server;
+        
         media::MediaControllerPtr m_movie = media::MovieController::create();
         media::CameraControllerPtr m_camera_control = media::CameraController::create();
         bool m_reload_movie = false;
