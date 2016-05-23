@@ -29,10 +29,11 @@ namespace kinski
         bool m_reload_movie = false;
         std::vector<Timer> m_movie_start_timers;
         Timer m_timer_movie_search;
+        std::vector<std::string> m_ip_adresses_dynamic;
         
         // properties
         Property_<std::vector<std::string>>::Ptr
-        m_ip_adresses = Property_<std::vector<std::string>>::create("ip adresses",
+        m_ip_adresses_static = Property_<std::vector<std::string>>::create("ip adresses",
         {
             "localhost"
         }),
@@ -48,17 +49,20 @@ namespace kinski
         
         Property_<bool>::Ptr
         m_loop = Property_<bool>::create("loop", false),
-        m_auto_play = Property_<bool>::create("autoplay", false);
+        m_auto_play = Property_<bool>::create("autoplay", false),
+        m_use_warping = Property_<bool>::create("use warping", false),
+        m_load_remote_movies = Property_<bool>::create("remote movie loading", false);
         
         Property_<float>::Ptr
         m_movie_speed = Property_<float>::create("movie speed", 1.f),
         m_movie_delay = Property_<float>::create("movie delay", 0.f),
         m_movie_volume = Property_<float>::create("movie volume", 0.f);
         
-        Property_<bool>::Ptr m_use_warping = Property_<bool>::create("use warping", false);
         
         std::string secs_to_time_str(float the_secs) const;
         void setup_rpc_interface();
+        
+        std::vector<std::string> get_remote_adresses() const;
         
     public:
 

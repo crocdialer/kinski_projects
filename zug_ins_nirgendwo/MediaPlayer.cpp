@@ -28,9 +28,9 @@ void MediaPlayer::setup()
 //    Logger::get()->set_use_log_file(true);
     
     m_movie_library->setTweakable(false);
-    m_ip_adresses->setTweakable(false);
+    m_ip_adresses_static->setTweakable(false);
     register_property(m_movie_library);
-    register_property(m_ip_adresses);
+    register_property(m_ip_adresses_static);
     
     register_property(m_movie_directory);
     register_property(m_movie_index);
@@ -39,6 +39,7 @@ void MediaPlayer::setup()
     register_property(m_auto_play);
     register_property(m_movie_speed);
     register_property(m_movie_delay);
+    register_property(m_load_remote_movies);
     register_property(m_use_warping);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
@@ -69,9 +70,9 @@ void MediaPlayer::setup()
                                              const std::string &remote_ip, uint16_t remote_port)
     {
         LOG_TRACE_1 << string(data.begin(), data.end()) << " " << remote_ip << " (" << remote_port << ")";
-        if(!kinski::is_in(remote_ip, m_ip_adresses->value()))
+        if(!kinski::is_in(remote_ip, m_ip_adresses_dynamic))
         {
-            m_ip_adresses->value().push_back(remote_ip);
+            m_ip_adresses_dynamic.push_back(remote_ip);
         }
     });
     
@@ -105,7 +106,7 @@ void MediaPlayer::update(float timeDelta)
             if(*m_loop)
             {
                 // restart movies
-                for(const auto &ip : m_ip_adresses->value())
+                for(const auto &ip : get_remote_adresses())
                 {
                     net::async_send_tcp(background_queue().io_service(), "restart",
                                         ip, g_remote_port);
@@ -352,35 +353,32 @@ void MediaPlayer::start_playback(const std::string &the_path)
 {
     stop_playback();
     
+    auto ip_adresses = get_remote_adresses();
+    
     // cancel timers
     for(auto & t : m_movie_start_timers){ t.cancel(); }
-    m_movie_start_timers.resize(m_ip_adresses->value().size());
-    
-    std::vector<std::string> ip_adresses;
-    
-    if(*m_movie_delay > 0.f)
-    {
-        ip_adresses.assign(m_ip_adresses->value().begin(), m_ip_adresses->value().end());
-    }
-    else
-    {
-        ip_adresses.assign(m_ip_adresses->value().rbegin(), m_ip_adresses->value().rend());
-    }
+    m_movie_start_timers.resize(ip_adresses.size());
     
     float abs_delay = fabs(*m_movie_delay);
     
-    for(uint8_t i = 0; i < m_movie_start_timers.size(); ++i)
+    for(uint8_t i = 0; i < ip_adresses.size(); ++i)
     {
         auto ip = ip_adresses[i];
         
+        string start_cmd = "play";
+        
         // load movies
-        net::async_send_tcp(background_queue().io_service(), "load " + get_filename_part(the_path),
-                            ip, g_remote_port);
-        
-        
-        m_movie_start_timers[i] = Timer(background_queue().io_service(), [this, ip]()
+        if(*m_load_remote_movies)
         {
-            net::async_send_tcp(background_queue().io_service(), "play", ip, g_remote_port);
+            net::async_send_tcp(background_queue().io_service(),
+                                "load " + get_filename_part(the_path),
+                                ip, g_remote_port);
+        }
+        else{ start_cmd = "restart"; }
+        
+        m_movie_start_timers[i] = Timer(background_queue().io_service(), [this, ip, start_cmd]()
+        {
+            net::async_send_tcp(background_queue().io_service(), start_cmd, ip, g_remote_port);
         });
         
         m_movie_start_timers[i].expires_from_now(i * abs_delay + m_delay_static);
@@ -391,10 +389,13 @@ void MediaPlayer::start_playback(const std::string &the_path)
 
 void MediaPlayer::stop_playback()
 {
-    for(const auto &ip : m_ip_adresses->value())
+    if(*m_load_remote_movies)
     {
-        // unload movies
-        net::async_send_tcp(background_queue().io_service(), "unload", ip, g_remote_port);
+        for(const auto &ip : get_remote_adresses())
+        {
+            // unload movies
+            net::async_send_tcp(background_queue().io_service(), "unload", ip, g_remote_port);
+        }
     }
 }
 
@@ -536,4 +537,20 @@ void MediaPlayer::setup_rpc_interface()
     {
         con->send(as_string(m_movie->is_playing()));
     });
+}
+
+std::vector<std::string> MediaPlayer::get_remote_adresses() const
+{
+    std::vector<std::string> ret;
+    
+    if(*m_movie_delay > 0.f)
+    {
+        ret.assign(m_ip_adresses_static->value().begin(), m_ip_adresses_static->value().end());
+    }
+    else
+    {
+        ret.assign(m_ip_adresses_static->value().rbegin(), m_ip_adresses_static->value().rend());
+    }
+    ret.insert(ret.end(), m_ip_adresses_dynamic.begin(), m_ip_adresses_dynamic.end());
+    return ret;
 }
