@@ -69,8 +69,10 @@ void MediaPlayer::setup()
     m_udp_server.set_receive_function([this](const std::vector<uint8_t> &data,
                                              const std::string &remote_ip, uint16_t remote_port)
     {
-        LOG_TRACE_1 << string(data.begin(), data.end()) << " " << remote_ip << " (" << remote_port << ")";
-        if(!kinski::is_in(remote_ip, m_ip_adresses_dynamic))
+        string str(data.begin(), data.end());
+        LOG_TRACE_1 << str << " " << remote_ip << " (" << remote_port << ")";
+        
+        if((str == "media_player") == !kinski::is_in(remote_ip, m_ip_adresses_dynamic))
         {
             m_ip_adresses_dynamic.push_back(remote_ip);
         }
@@ -105,12 +107,13 @@ void MediaPlayer::update(float timeDelta)
         {
             if(*m_loop)
             {
-                // restart movies
-                for(const auto &ip : get_remote_adresses())
-                {
-                    net::async_send_tcp(background_queue().io_service(), "restart",
-                                        ip, g_remote_port);
-                }
+//                // restart movies
+//                for(const auto &ip : get_remote_adresses())
+//                {
+//                    net::async_send_tcp(background_queue().io_service(), "seek_to_time 0",
+//                                        ip, g_remote_port);
+//                }
+                m_movie_index->notifyObservers();
             }
         });
     }

@@ -41,7 +41,7 @@ namespace kinski
         Property_<int>::Ptr m_movie_index = Property_<int>::create("movie index", -1);
         
         bool m_initiated = false;
-        float m_delay_static = 3.f;
+        float m_delay_static = 1.f;
         
         Property_<string>::Ptr
         m_movie_directory = Property_<string>::create("movie directory", "/mnt/movies"),
