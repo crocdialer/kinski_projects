@@ -41,7 +41,6 @@ namespace kinski
         Property_<int>::Ptr m_movie_index = Property_<int>::create("movie index", -1);
         
         bool m_initiated = false;
-        float m_delay_static = 1.f;
         
         Property_<string>::Ptr
         m_movie_directory = Property_<string>::create("movie directory", "/mnt/movies"),
@@ -56,6 +55,7 @@ namespace kinski
         Property_<float>::Ptr
         m_movie_speed = Property_<float>::create("movie speed", 1.f),
         m_movie_delay = Property_<float>::create("movie delay", 0.f),
+        m_movie_delay_static = Property_<float>::create("movie delay static", 1.f),
         m_movie_volume = Property_<float>::create("movie volume", 0.f);
         
         

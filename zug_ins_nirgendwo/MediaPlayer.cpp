@@ -39,6 +39,7 @@ void MediaPlayer::setup()
     register_property(m_auto_play);
     register_property(m_movie_speed);
     register_property(m_movie_delay);
+    register_property(m_movie_delay_static);
     register_property(m_load_remote_movies);
     register_property(m_use_warping);
     observe_properties();
@@ -113,9 +114,13 @@ void MediaPlayer::update(float timeDelta)
 //                    net::async_send_tcp(background_queue().io_service(), "seek_to_time 0",
 //                                        ip, g_remote_port);
 //                }
-                m_movie_index->notifyObservers();
+//                m_movie_index->notifyObservers();
+                
+                start_playback(*m_movie_path);
             }
         });
+        
+        if(!*m_load_remote_movies){ start_playback(*m_movie_path); }
     }
     
     m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
@@ -263,6 +268,7 @@ void MediaPlayer::touch_move(const MouseEvent &e, const std::set<const Touch*> &
 void MediaPlayer::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     start_playback(files.back());
+//    *m_movie_path = files.back();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -356,10 +362,12 @@ void MediaPlayer::start_playback(const std::string &the_path)
 {
     stop_playback();
     
+    add_search_path(get_directory_part(the_path));
+    
     auto ip_adresses = get_remote_adresses();
     
     // cancel timers
-    for(auto & t : m_movie_start_timers){ t.cancel(); }
+    for(auto &t : m_movie_start_timers){ t.cancel(); }
     m_movie_start_timers.resize(ip_adresses.size());
     
     float abs_delay = fabs(*m_movie_delay);
@@ -371,7 +379,7 @@ void MediaPlayer::start_playback(const std::string &the_path)
         string start_cmd = "play";
         
         // load movies
-        if(*m_load_remote_movies)
+        if(*m_load_remote_movies || m_movie_path->value().empty())
         {
             net::async_send_tcp(background_queue().io_service(),
                                 "load " + get_filename_part(the_path),
@@ -384,7 +392,7 @@ void MediaPlayer::start_playback(const std::string &the_path)
             net::async_send_tcp(background_queue().io_service(), start_cmd, ip, g_remote_port);
         });
         
-        m_movie_start_timers[i].expires_from_now(i * abs_delay + m_delay_static);
+        m_movie_start_timers[i].expires_from_now(i * abs_delay + *m_movie_delay_static);
     }
 }
 
