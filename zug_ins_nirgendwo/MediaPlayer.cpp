@@ -100,9 +100,15 @@ void MediaPlayer::update(float timeDelta)
         
 //        background_queue().submit([this]()
 //        {
-            m_movie->load(*m_movie_path, *m_auto_play, *m_loop);
-            m_movie->set_rate(*m_playback_speed);
-            m_movie->set_volume(*m_volume);
+        auto render_target = *m_use_warping ? media::MediaController::RenderTarget::TEXTURE :
+        media::MediaController::RenderTarget::SCREEN;
+        
+        if(render_target == media::MediaController::RenderTarget::SCREEN)
+        { set_clear_color(gl::Color(clear_color().rgb(), 0.f)); }
+        
+        m_movie->load(*m_movie_path, *m_auto_play, *m_loop, render_target);
+        m_movie->set_rate(*m_playback_speed);
+        m_movie->set_volume(*m_volume);
 //        });
         
         m_movie->set_media_ended_callback([this](media::MediaControllerPtr the_movie)
