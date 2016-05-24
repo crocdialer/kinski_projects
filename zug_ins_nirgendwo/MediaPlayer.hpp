@@ -53,10 +53,12 @@ namespace kinski
         m_load_remote_movies = Property_<bool>::create("remote movie loading", false);
         
         Property_<float>::Ptr
-        m_movie_speed = Property_<float>::create("movie speed", 1.f),
         m_movie_delay = Property_<float>::create("movie delay", 0.f),
-        m_movie_delay_static = Property_<float>::create("movie delay static", 1.f),
-        m_movie_volume = Property_<float>::create("movie volume", 0.f);
+        m_movie_delay_static = Property_<float>::create("movie delay static", 1.f);
+        
+        Property_<float>::Ptr
+        m_playback_speed = Property_<float>::create("playback speed", 1.f),
+        m_volume = RangedProperty<float>::create("volume", 1.f, 0.f , 1.f);
         
         
         std::string secs_to_time_str(float the_secs) const;

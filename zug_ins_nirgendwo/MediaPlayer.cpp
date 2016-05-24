@@ -36,8 +36,9 @@ void MediaPlayer::setup()
     register_property(m_movie_index);
     register_property(m_movie_path);
     register_property(m_loop);
+    register_property(m_volume);
     register_property(m_auto_play);
-    register_property(m_movie_speed);
+    register_property(m_playback_speed);
     register_property(m_movie_delay);
     register_property(m_movie_delay_static);
     register_property(m_load_remote_movies);
@@ -100,8 +101,8 @@ void MediaPlayer::update(float timeDelta)
 //        background_queue().submit([this]()
 //        {
             m_movie->load(*m_movie_path, *m_auto_play, *m_loop);
-            m_movie->set_rate(*m_movie_speed);
-            m_movie->set_volume(*m_movie_volume);
+            m_movie->set_rate(*m_playback_speed);
+            m_movie->set_volume(*m_volume);
 //        });
         
         m_movie->set_media_ended_callback([this](media::MediaControllerPtr the_movie)
@@ -306,9 +307,13 @@ void MediaPlayer::update_property(const Property::ConstPtr &theProperty)
     {
         m_movie->set_loop(*m_loop);
     }
-    else if(theProperty == m_movie_speed)
+    else if(theProperty == m_volume)
     {
-        m_movie->set_rate(*m_movie_speed);
+        m_movie->set_volume(*m_volume);
+    }
+    else if(theProperty == m_playback_speed)
+    {
+        m_movie->set_rate(*m_playback_speed);
     }
     else if(theProperty == m_use_warping)
     {
