@@ -29,7 +29,7 @@ namespace kinski
         bool m_reload_movie = false;
         std::vector<Timer> m_movie_start_timers;
         Timer m_timer_movie_search;
-        std::vector<std::string> m_ip_adresses_dynamic;
+        std::unordered_map<std::string, float> m_ip_adresses_dynamic;
         
         // properties
         Property_<std::vector<std::string>>::Ptr

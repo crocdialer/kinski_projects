@@ -16,7 +16,7 @@ namespace
 {
     uint16_t g_remote_port = 33333;
     uint16_t g_discovery_listen_port = 55555;
-//    std::mutex m_ip_table_mutex;
+    std::mutex g_ip_table_mutex;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -74,9 +74,10 @@ void MediaPlayer::setup()
         string str(data.begin(), data.end());
         LOG_TRACE_1 << str << " " << remote_ip << " (" << remote_port << ")";
         
-        if((str == "media_player") == !kinski::is_in(remote_ip, m_ip_adresses_dynamic))
+        if((str == "media_player") /*== !kinski::is_in(remote_ip, m_ip_adresses_dynamic)*/)
         {
-            m_ip_adresses_dynamic.push_back(remote_ip);
+            std::unique_lock<std::mutex> lock(g_ip_table_mutex);
+            m_ip_adresses_dynamic[remote_ip] = getApplicationTime();
         }
     });
     
@@ -574,6 +575,7 @@ std::vector<std::string> MediaPlayer::get_remote_adresses() const
     {
         ret.assign(m_ip_adresses_static->value().rbegin(), m_ip_adresses_static->value().rend());
     }
-    ret.insert(ret.end(), m_ip_adresses_dynamic.begin(), m_ip_adresses_dynamic.end());
+    std::unique_lock<std::mutex> lock(g_ip_table_mutex);
+    for(const auto& pair : m_ip_adresses_dynamic){ ret.push_back(pair.first); }
     return ret;
 }
