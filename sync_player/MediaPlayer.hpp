@@ -50,6 +50,7 @@ namespace kinski
         m_loop = Property_<bool>::create("loop", false),
         m_auto_play = Property_<bool>::create("autoplay", false),
         m_use_warping = Property_<bool>::create("use warping", false),
+        m_force_audio_jack = Property_<bool>::create("force 3.5mm audio-jack", false),
         m_load_remote_movies = Property_<bool>::create("remote movie loading", false);
         
         Property_<float>::Ptr
@@ -65,6 +66,8 @@ namespace kinski
         void setup_rpc_interface();
         
         std::vector<std::string> get_remote_adresses() const;
+        
+        void reload_movie();
         
     public:
 

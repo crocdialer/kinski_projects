@@ -7,6 +7,7 @@
 //
 
 #include "MediaPlayer.hpp"
+#include <mutex>
 
 using namespace std;
 using namespace kinski;
@@ -31,7 +32,6 @@ void MediaPlayer::setup()
     m_ip_adresses_static->setTweakable(false);
     register_property(m_movie_library);
     register_property(m_ip_adresses_static);
-    
     register_property(m_movie_directory);
     register_property(m_movie_index);
     register_property(m_movie_path);
@@ -43,6 +43,7 @@ void MediaPlayer::setup()
     register_property(m_movie_delay_static);
     register_property(m_load_remote_movies);
     register_property(m_use_warping);
+    register_property(m_force_audio_jack);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
 
@@ -95,41 +96,7 @@ void MediaPlayer::setup()
 
 void MediaPlayer::update(float timeDelta)
 {
-    if(m_reload_movie)
-    {
-        m_reload_movie = false;
-        
-//        background_queue().submit([this]()
-//        {
-        auto render_target = *m_use_warping ? media::MediaController::RenderTarget::TEXTURE :
-        media::MediaController::RenderTarget::SCREEN;
-        
-        if(render_target == media::MediaController::RenderTarget::SCREEN)
-        { set_clear_color(gl::Color(clear_color().rgb(), 0.f)); }
-        
-        m_movie->load(*m_movie_path, *m_auto_play, *m_loop, render_target);
-        m_movie->set_rate(*m_playback_speed);
-        m_movie->set_volume(*m_volume);
-//        });
-        
-        m_movie->set_media_ended_callback([this](media::MediaControllerPtr the_movie)
-        {
-            if(*m_loop)
-            {
-//                // restart movies
-//                for(const auto &ip : get_remote_adresses())
-//                {
-//                    net::async_send_tcp(background_queue().io_service(), "seek_to_time 0",
-//                                        ip, g_remote_port);
-//                }
-//                m_movie_index->notifyObservers();
-                
-                start_playback(*m_movie_path);
-            }
-        });
-        
-        if(!*m_load_remote_movies){ start_playback(*m_movie_path); }
-    }
+    if(m_reload_movie){ reload_movie(); }
     
     m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
 }
@@ -578,4 +545,29 @@ std::vector<std::string> MediaPlayer::get_remote_adresses() const
     std::unique_lock<std::mutex> lock(g_ip_table_mutex);
     for(const auto& pair : m_ip_adresses_dynamic){ ret.push_back(pair.first); }
     return ret;
+}
+
+void MediaPlayer::reload_movie()
+{
+    m_reload_movie = false;
+    
+    auto render_target = *m_use_warping ? media::MediaController::RenderTarget::TEXTURE :
+    media::MediaController::RenderTarget::SCREEN;
+    
+    //        if(render_target == media::MediaController::RenderTarget::SCREEN)
+    //        { set_clear_color(gl::Color(clear_color().rgb(), 0.f)); }
+    
+    auto audio_target = *m_force_audio_jack ? media::MediaController::AudioTarget::AUDIO_JACK :
+    media::MediaController::AudioTarget::AUTO;
+    
+    m_movie->load(*m_movie_path, *m_auto_play, *m_loop, render_target, audio_target);
+    m_movie->set_rate(*m_playback_speed);
+    m_movie->set_volume(*m_volume);
+    
+    m_movie->set_media_ended_callback([this](media::MediaControllerPtr the_movie)
+                                      {
+                                          if(*m_loop){ start_playback(*m_movie_path); }
+                                      });
+    
+    if(!*m_load_remote_movies){ start_playback(*m_movie_path); }
 }
