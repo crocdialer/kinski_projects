@@ -297,6 +297,8 @@ bool MediaPlayer::load_settings(const std::string &path)
 
 void MediaPlayer::reload_movie()
 {
+    LOG_DEBUG << "loading: " << *m_movie_path;
+    
     auto render_target = *m_use_warping ? media::MediaController::RenderTarget::TEXTURE :
     media::MediaController::RenderTarget::SCREEN;
     
