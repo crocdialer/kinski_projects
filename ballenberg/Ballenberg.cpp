@@ -490,6 +490,8 @@ void Ballenberg::motor_move(int the_degree)
 {
     if(m_motor_uart && m_motor_uart->is_initialized())
     {
-        m_motor_uart->write(as_string(the_degree) + "\n");
+        auto str = as_string(the_degree) + "\n";
+        std::vector<uint8_t> vec(str.begin(), str.end());
+        m_motor_uart->write_bytes(&vec[0], vec.size());
     }
 }
