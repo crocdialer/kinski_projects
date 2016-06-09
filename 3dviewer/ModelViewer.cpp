@@ -313,12 +313,13 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     {
         if(kinski::is_directory(*m_cube_map_folder))
         {
-          vector<gl::Texture> cube_planes;
-          for(auto &f : kinski::get_directory_entries(*m_cube_map_folder, FileType::IMAGE))
-          {
-              cube_planes.push_back(gl::create_texture_from_file(f));
-          }
-          m_cube_map = gl::create_cube_texture(cube_planes);
+            vector<gl::Texture> cube_planes;
+            
+            for(auto &f : kinski::get_directory_entries(*m_cube_map_folder, FileType::IMAGE))
+            {
+                cube_planes.push_back(gl::create_texture_from_file(f));
+            }
+            m_cube_map = gl::create_cube_texture(cube_planes);
         }
     }
     else if(theProperty == m_use_ground_plane)

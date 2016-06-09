@@ -7,8 +7,6 @@
 //
 
 #include "Ballenberg.hpp"
-#include "gl/ShaderLibrary.h"
-#include "core/networking.hpp"
 
 using namespace std;
 using namespace kinski;
@@ -22,17 +20,23 @@ void Ballenberg::setup()
     ViewerApp::setup();
     
     fonts()[1].load(fonts()[0].path(), 64);
+    register_property(m_ip_kitchen);
+    register_property(m_ip_living_room);
     register_property(m_asset_base_dir);
     register_property(m_cap_sense_dev_name);
     register_property(m_motion_sense_dev_name_01);
     register_property(m_motion_sense_dev_name_02);
+    register_property(m_motion_sense_dev_name_03);
     register_property(m_dmx_dev_name);
+    register_property(m_motor_dev_name_01);
     register_property(m_timeout_idle);
+    register_property(m_timeout_motor_01);
     register_property(m_duration_lamp_noise);
     register_property(m_volume);
     register_property(m_cap_sense_thresh_touch);
     register_property(m_cap_sense_thresh_release);
     register_property(m_cap_sense_charge_current);
+    register_property(m_cap_sense_proxi_multiplier);
     register_property(m_spot_color);
     
     observe_properties();
@@ -43,6 +47,10 @@ void Ballenberg::setup()
     m_timer_lamp_noise = Timer(main_queue().io_service());
     m_timer_movie_kitchen = Timer(main_queue().io_service());
     m_timer_movie_living_room = Timer(main_queue().io_service());
+    m_timer_motor_spense = Timer(main_queue().io_service());
+    
+    // setup remote control
+    remote_control().set_components({shared_from_this()});
     
     m_cap_sense.set_touch_callback([](int i)
     {
@@ -67,7 +75,11 @@ void Ballenberg::update(float timeDelta)
     // update sensor status
     m_motion_sense_01.update(timeDelta);
     m_motion_sense_02.update(timeDelta);
+    m_motion_sense_03.update(timeDelta);
     m_cap_sense.update(timeDelta);
+    
+    m_proxi_val = m_cap_sense.is_initialized() ?
+    clamp<float>((m_cap_sense.proximity_values().size() == 1 ? m_cap_sense.proximity_values()[0] : 0.f) * *m_cap_sense_proxi_multiplier, 0, 1) : 0.f;
     
     // motion -> kitchen
     if(m_motion_sense_01.distance() && m_timer_movie_kitchen.has_expired())
@@ -85,9 +97,9 @@ void Ballenberg::update(float timeDelta)
             auto rnd_idx = kinski::random_int<uint32_t>(0, tmp.size() - 1);
             
             net::async_send_tcp(background_queue().io_service(), "play " +
-                                join_paths("/home/pi/ballenberg_assets/movies/kitchen",
+                                join_paths("movies/kitchen",
                                            get_filename_part(paths[rnd_idx])),
-                                m_ip_kitchen, 33333);
+                                *m_ip_kitchen, 33333);
         }else{ LOG_WARNING << "could not find a recipe movie"; }
     }
     
@@ -105,10 +117,32 @@ void Ballenberg::update(float timeDelta)
         if(!paths.empty())
         {
             net::async_send_tcp(background_queue().io_service(), "play " +
-                                join_paths("/home/pi/ballenberg_assets/movies/living_room",
+                                join_paths("movies/living_room",
                                            get_filename_part(paths[0])),
-                                m_ip_living_room, 33333);
+                                *m_ip_living_room, 33333);
         }else{ LOG_WARNING << "could not find a religion movie"; }
+    }
+    
+    // motion -> spense
+    if(m_motion_sense_03.distance() && m_timer_motor_spense.has_expired())
+    {
+        m_timer_motor_spense.expires_from_now(*m_timeout_motor_01);
+        
+        // move motor randomly
+        int random_num = kinski::random_int(4, 8);
+        float event_time = 0.f;
+        
+        m_motor_move_timers.resize(random_num);
+        
+        for(uint32_t i = 0; i < random_num; ++i)
+        {
+            m_motor_move_timers[i] = Timer(main_queue().io_service(), [this]()
+            {
+                motor_move(random_int(30, 80));
+            });
+            m_motor_move_timers[i].expires_from_now(event_time);
+            event_time += random(0.3f, 1.f);
+        }
     }
     
     // cap-sense(bottle) -> living room
@@ -125,15 +159,19 @@ void Ballenberg::update(float timeDelta)
         if(paths.size() > 1)
         {
             net::async_send_tcp(background_queue().io_service(), "play " +
-                                join_paths("/home/pi/ballenberg_assets/movies/living_room",
+                                join_paths("movies/living_room",
                                            get_filename_part(paths[1])),
-                                m_ip_living_room, 33333);
+                                *m_ip_living_room, 33333);
         }else{ LOG_WARNING << "could not find a religion movie"; }
     }
 
     // lamp flicker -> set random color
     if(m_timer_lamp_noise.has_expired()){ *m_spot_color = gl::COLOR_BLACK; }
-    else{ *m_spot_color = glm::linearRand(gl::COLOR_BLACK, gl::COLOR_WHITE);}
+    else
+    {
+        // TODO: flicker when approaching, set touch threshold relatively high
+        *m_spot_color = glm::linearRand(gl::COLOR_BLACK, gl::COLOR_WHITE);
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -169,27 +207,27 @@ void Ballenberg::keyPress(const KeyEvent &e)
             case Key::_1:
 //                m_timer_motion_reset.cancel();
                 net::async_send_tcp(background_queue().io_service(), "play",
-                                    m_ip_kitchen, 33333);
+                                    *m_ip_kitchen, 33333);
                 
                 m_timer_movie_kitchen = Timer(background_queue().io_service(),[this]()
                 {
                     net::async_send_tcp(background_queue().io_service(), "seek_to_time 0.0",
-                                        m_ip_kitchen, 33333);
+                                        *m_ip_kitchen, 33333);
                     net::async_send_tcp(background_queue().io_service(), "pause",
-                                        m_ip_kitchen, 33333);
+                                        *m_ip_kitchen, 33333);
                 });
                 m_timer_movie_kitchen.expires_from_now(2.f);
                 break;
                 
             case Key::_2:
                 net::async_send_tcp(background_queue().io_service(), "play",
-                                    m_ip_living_room, 33333);
+                                    *m_ip_living_room, 33333);
                 m_timer_movie_kitchen = Timer(background_queue().io_service(),[this]()
                 {
                     net::async_send_tcp(background_queue().io_service(), "seek_to_time 0.0",
-                                        m_ip_living_room, 33333);
+                                        *m_ip_living_room, 33333);
                     net::async_send_tcp(background_queue().io_service(), "pause",
-                                        m_ip_living_room, 33333);
+                                        *m_ip_living_room, 33333);
                 });
                 m_timer_movie_kitchen.expires_from_now(2.f);
                 break;
@@ -308,6 +346,20 @@ void Ballenberg::update_property(const Property::ConstPtr &theProperty)
     {
         m_motion_sense_02.connect(*m_motion_sense_dev_name_02);
     }
+    else if(theProperty == m_motion_sense_dev_name_03)
+    {
+        m_motion_sense_03.connect(*m_motion_sense_dev_name_03);
+    }
+    else if(theProperty == m_motor_dev_name_01)
+    {
+        if(!m_motor_dev_name_01->value().empty())
+        {
+            auto serial = std::make_shared<Serial>();
+            serial->setup(*m_motor_dev_name_01, 9600);
+            m_motor_uart = serial;
+        }
+        else{ m_motor_uart.reset(); }
+    }
     else if(theProperty == m_dmx_dev_name)
     {
         m_dmx.connect(*m_dmx_dev_name);
@@ -377,13 +429,10 @@ void Ballenberg::draw_status_info()
 {
     vec2 offset(50, 75), step(0, 35);
     
-    // display current state
-//    auto state_str = "State: " + m_state_string_map[m_current_state];
-//    gl::draw_text_2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
-//    offset += step;
-    
     bool cap_sensor_found = m_cap_sense.is_initialized();
-    string cs_string = cap_sensor_found ? "ok" : "not found";
+    
+    string cs_string = cap_sensor_found ?
+        as_string(m_proxi_val) : "not found";
     string dmx_string = m_dmx.is_initialized() ? "ok" : "not found";
     
     gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched()) ? gl::COLOR_GREEN : gl::COLOR_WHITE;
@@ -405,12 +454,23 @@ void Ballenberg::draw_status_info()
                      motion_col, offset);
     offset += step;
     
+    // cap sensor
+    gl::draw_text_2D("cap-sensor (living room): " + cs_string, fonts()[0], cap_col, offset);
+    offset += step;
+    
     // dmx device
     gl::draw_text_2D("dmx (living room): " + dmx_string, fonts()[0], gl::COLOR_WHITE, offset);
     offset += step;
     
-    // cap sensor
-    gl::draw_text_2D("cap-sensor (living room): " + cs_string, fonts()[0], cap_col, offset);
+    // motion sensor 3
+    string ms_string_03 = m_motion_sense_03.is_initialized() ? "ok" : "not found";
+    motion_col = m_motion_sense_03.distance() ? gl::COLOR_GREEN : gl::COLOR_WHITE;
+    gl::draw_text_2D("motion-sensor (spense): " + (m_motion_sense_03.distance() ?
+                     as_string(m_motion_sense_03.distance()) : ms_string_03), fonts()[0],
+                     motion_col, offset);
+    offset += step;
+    string motor_string_01 = m_motor_uart && m_motor_uart->is_initialized() ? "ok" : "not found";
+    gl::draw_text_2D("motor-device (spense): " + ms_string_03, fonts()[0], gl::COLOR_WHITE, offset);
 }
 
 bool Ballenberg::load_assets()
@@ -420,15 +480,16 @@ bool Ballenberg::load_assets()
     auto audio_files = get_directory_entries(*m_asset_base_dir, FileType::AUDIO, true);
     auto video_files = get_directory_entries(*m_asset_base_dir, FileType::MOVIE, true);
     
-    if(!audio_files.empty())
-    {
-
-    }
-    
-    if(!video_files.empty())
-    {
-        
-    }
+    if(!audio_files.empty()){}
+    if(!video_files.empty()){}
     
     return true;
+}
+
+void Ballenberg::motor_move(int the_degree)
+{
+    if(m_motor_uart && m_motor_uart->is_initialized())
+    {
+        m_motor_uart->write(as_string(the_degree) + "\n");
+    }
 }
