@@ -52,7 +52,7 @@ void MeditationRoom::setup()
     m_serial_buf.resize(2048);
     
     gl::Shader rgb_shader;
-    rgb_shader.loadFromData(unlit_vert, kinski::read_file("rgb_shift.frag"));
+    rgb_shader.loadFromData(unlit_vert, fs::read_file("rgb_shift.frag"));
     m_mat_rgb_shift = gl::Material::create(rgb_shader);
     
     // setup timer objects
@@ -625,9 +625,9 @@ bool MeditationRoom::load_assets()
     // asset path
     const std::string asset_base_dir = "~/Desktop/mkb_assets";
     
-    if(!is_directory(asset_base_dir)){ return false; }
+    if(!fs::is_directory(asset_base_dir)){ return false; }
     
-    auto audio_files = get_directory_entries(asset_base_dir, FileType::AUDIO, true);
+    auto audio_files = fs::get_directory_entries(asset_base_dir, fs::FileType::AUDIO, true);
     
     if(!audio_files.empty())
     {
@@ -635,7 +635,7 @@ bool MeditationRoom::load_assets()
         m_audio->load(audio_files.front(), true, true);
     }
     
-    auto video_files = get_directory_entries(asset_base_dir, FileType::MOVIE, true);
+    auto video_files = fs::get_directory_entries(asset_base_dir, fs::FileType::MOVIE, true);
     
     if(!video_files.empty())
     {

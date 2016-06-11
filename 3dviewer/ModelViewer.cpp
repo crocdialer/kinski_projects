@@ -8,6 +8,7 @@
 
 #include "ModelViewer.h"
 #include "AssimpConnector.h"
+#include "gl/ShaderLibrary.h"
 
 using namespace std;
 using namespace kinski;
@@ -27,6 +28,7 @@ void ModelViewer::setup()
     register_property(m_draw_fps);
     register_property(m_model_path);
     register_property(m_use_lighting);
+    register_property(m_use_post_process);
     register_property(m_use_normal_map);
     register_property(m_use_ground_plane);
     register_property(m_use_bones);
@@ -35,6 +37,12 @@ void ModelViewer::setup()
     register_property(m_animation_speed);
     register_property(m_normalmap_path);
     register_property(m_cube_map_folder);
+    
+    register_property(m_focal_depth);
+    register_property(m_focal_length);
+    register_property(m_fstop);
+    register_property(m_debug_focus);
+    
     observe_properties();
 
     // create our UI
@@ -73,6 +81,37 @@ void ModelViewer::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
     update_shader();
+    
+    if(*m_use_post_process)
+    {
+        // check fbo
+        if(!m_post_process_fbo || m_post_process_fbo.getSize() != gl::window_dimension())
+        {
+            gl::Fbo::Format fmt;
+//            fmt.setSamples(8);
+            m_post_process_fbo = gl::Fbo(gl::window_dimension(), fmt);
+        }
+        
+        // check material
+        if(!m_post_process_mat)
+        {
+            gl::Shader shader;
+            try
+            {
+                shader.loadFromData(unlit_vert, depth_of_field_frag);
+                m_post_process_mat = gl::Material::create(shader);
+            }catch(Exception &e){ LOG_WARNING << e.what(); }
+        }
+        
+        camera()->setClippingPlanes(0.1f, 1000.f);
+        m_post_process_mat->uniform("u_window_dimension", gl::window_dimension());
+        m_post_process_mat->uniform("u_znear", camera()->near());
+        m_post_process_mat->uniform("u_zfar", camera()->far());
+        m_post_process_mat->uniform("u_focal_depth", *m_focal_depth);
+        m_post_process_mat->uniform("u_focal_length", *m_focal_length);
+        m_post_process_mat->uniform("u_fstop", *m_fstop);
+        m_post_process_mat->uniform("u_debug_focus", *m_debug_focus );
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -86,8 +125,24 @@ void ModelViewer::draw()
     {
         for (auto l : lights()){ gl::draw_light(l); }
     }
-
-    scene().render(camera());
+    
+    if(*m_use_post_process)
+    {
+        auto tex = gl::render_to_texture(scene(), m_post_process_fbo, camera());
+        
+        // draw texture with post-processing
+//        gl::draw_texture(tex, gl::window_dimension());
+        m_post_process_mat->textures() =
+        {
+            m_post_process_fbo.getTexture(),
+            m_post_process_fbo.getDepthTexture()
+        };
+        gl::draw_quad(m_post_process_mat, gl::window_dimension());
+        
+        textures()[TEXTURE_OFFSCREEN] = tex;
+        textures()[1] = m_post_process_fbo.getDepthTexture();
+    }
+    else{ scene().render(camera()); }
 
     if(*m_draw_fps)
     {
@@ -127,7 +182,7 @@ void ModelViewer::draw()
     {
         if(m_mesh)
         {
-            std::vector<gl::Texture> comb_texs;
+            std::vector<gl::Texture> comb_texs = textures();
 
             for(auto &mat : m_mesh->materials())
             {
@@ -225,10 +280,10 @@ void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &
     {
         LOG_INFO << f;
 
-        switch (get_file_type(f))
+        switch (fs::get_file_type(f))
         {
-            case FileType::MODEL:
-            case FileType::IMAGE:
+            case fs::FileType::MODEL:
+            case fs::FileType::IMAGE:
                 *m_model_path = f;
 //                if(scene().pick(gl::calculate_ray(camera(), vec2(e.getX(), e.getY()))))
 //                {
@@ -257,7 +312,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
 
     if(theProperty == m_model_path)
     {
-        add_search_path(get_directory_part(*m_model_path));
+        fs::add_search_path(fs::get_directory_part(*m_model_path));
         async_load_asset(*m_model_path, [this](gl::MeshPtr m)
         {
             if(m)
@@ -311,11 +366,11 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_cube_map_folder)
     {
-        if(kinski::is_directory(*m_cube_map_folder))
+        if(fs::is_directory(*m_cube_map_folder))
         {
             vector<gl::Texture> cube_planes;
             
-            for(auto &f : kinski::get_directory_entries(*m_cube_map_folder, FileType::IMAGE))
+            for(auto &f : fs::get_directory_entries(*m_cube_map_folder, fs::FileType::IMAGE))
             {
                 cube_planes.push_back(gl::create_texture_from_file(f));
             }
@@ -360,20 +415,20 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
 {
     gl::MeshPtr m;
 
-    auto asset_dir = get_directory_part(the_path);
-    add_search_path(asset_dir);
+    auto asset_dir = fs::get_directory_part(the_path);
+    fs::add_search_path(asset_dir);
 
-    switch (get_file_type(the_path))
+    switch (fs::get_file_type(the_path))
     {
-        case FileType::DIRECTORY:
-            for(const auto &p : get_directory_entries(the_path)){ load_asset(p); }
+        case fs::FileType::DIRECTORY:
+            for(const auto &p : fs::get_directory_entries(the_path)){ load_asset(p); }
             break;
 
-        case FileType::MODEL:
+        case fs::FileType::MODEL:
             m = gl::AssimpConnector::loadModel(the_path);
             break;
 
-        case FileType::IMAGE:
+        case fs::FileType::IMAGE:
             
         {
             auto geom = gl::Geometry::createPlane(1.f, 1.f, 100, 100);
@@ -404,9 +459,9 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
         m->setScale(scale_factor);
 
         // look for animations for this mesh
-        auto animation_folder = join_paths(asset_dir, "animations");
+        auto animation_folder = fs::join_paths(asset_dir, "animations");
 
-        for(const auto &f : get_directory_entries(animation_folder, FileType::MODEL))
+        for(const auto &f : get_directory_entries(animation_folder, fs::FileType::MODEL))
         {
             gl::AssimpConnector::add_animations_to_mesh(f, m);
         }
@@ -442,7 +497,7 @@ void ModelViewer::async_load_asset(const std::string &the_path,
                 {
                     try
                     {
-                        auto dataVec = kinski::read_binary_file(p);
+                        auto dataVec = fs::read_binary_file(p);
                         tex_imgs.push_back(gl::decode_image(dataVec));
                     }
                     catch(Exception &e){ LOG_WARNING << e.what(); }

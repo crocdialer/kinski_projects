@@ -88,8 +88,8 @@ void Ballenberg::update(float timeDelta)
         m_timer_movie_kitchen.expires_from_now(45.f);
         
         // play random recipe movie
-        std::string path = join_paths(*m_asset_base_dir, "movies/kitchen");
-        auto tmp = get_directory_entries(path, FileType::MOVIE, true);
+        std::string path = fs::join_paths(*m_asset_base_dir, "movies/kitchen");
+        auto tmp = get_directory_entries(path, fs::FileType::MOVIE, true);
         std::vector<std::string> paths(tmp.begin(), tmp.end());
         
         if(!paths.empty())
@@ -97,8 +97,8 @@ void Ballenberg::update(float timeDelta)
             auto rnd_idx = kinski::random_int<uint32_t>(0, tmp.size() - 1);
             
             net::async_send_tcp(background_queue().io_service(), "play " +
-                                join_paths("movies/kitchen",
-                                           get_filename_part(paths[rnd_idx])),
+                                fs::join_paths("movies/kitchen",
+                                           fs::get_filename_part(paths[rnd_idx])),
                                 *m_ip_kitchen, 33333);
         }else{ LOG_WARNING << "could not find a recipe movie"; }
     }
@@ -109,16 +109,16 @@ void Ballenberg::update(float timeDelta)
         m_timer_movie_living_room.expires_from_now(48.f);
         
         // play religion movie #1
-        std::string path = join_paths(*m_asset_base_dir, "movies/living_room");
+        std::string path = fs::join_paths(*m_asset_base_dir, "movies/living_room");
         
-        auto tmp = get_directory_entries(path, FileType::MOVIE, true);
+        auto tmp = get_directory_entries(path, fs::FileType::MOVIE, true);
         std::vector<std::string> paths(tmp.begin(), tmp.end());
         
         if(!paths.empty())
         {
             net::async_send_tcp(background_queue().io_service(), "play " +
-                                join_paths("movies/living_room",
-                                           get_filename_part(paths[0])),
+                                fs::join_paths("movies/living_room",
+                                           fs::get_filename_part(paths[0])),
                                 *m_ip_living_room, 33333);
         }else{ LOG_WARNING << "could not find a religion movie"; }
     }
@@ -149,9 +149,9 @@ void Ballenberg::update(float timeDelta)
     if(m_cap_sense.is_touched())
     {
         // play religion movie #2
-        std::string path = join_paths(*m_asset_base_dir, "movies/living_room");
+        std::string path = fs::join_paths(*m_asset_base_dir, "movies/living_room");
         
-        auto tmp = get_directory_entries(path, FileType::MOVIE, true);
+        auto tmp = get_directory_entries(path, fs::FileType::MOVIE, true);
         std::vector<std::string> paths(tmp.begin(), tmp.end());
     
         m_timer_lamp_noise.expires_from_now(*m_duration_lamp_noise);
@@ -159,8 +159,8 @@ void Ballenberg::update(float timeDelta)
         if(paths.size() > 1)
         {
             net::async_send_tcp(background_queue().io_service(), "play " +
-                                join_paths("movies/living_room",
-                                           get_filename_part(paths[1])),
+                                fs::join_paths("movies/living_room",
+                                           fs::get_filename_part(paths[1])),
                                 *m_ip_living_room, 33333);
         }else{ LOG_WARNING << "could not find a religion movie"; }
     }
@@ -475,10 +475,10 @@ void Ballenberg::draw_status_info()
 
 bool Ballenberg::load_assets()
 {
-    if(!is_directory(*m_asset_base_dir)){ return false; }
+    if(!fs::is_directory(*m_asset_base_dir)){ return false; }
     
-    auto audio_files = get_directory_entries(*m_asset_base_dir, FileType::AUDIO, true);
-    auto video_files = get_directory_entries(*m_asset_base_dir, FileType::MOVIE, true);
+    auto audio_files = fs::get_directory_entries(*m_asset_base_dir, fs::FileType::AUDIO, true);
+    auto video_files = fs::get_directory_entries(*m_asset_base_dir, fs::FileType::MOVIE, true);
     
     if(!audio_files.empty()){}
     if(!video_files.empty()){}

@@ -171,8 +171,6 @@ public:
     void setup()
     {
         ViewerApp::setup();
-        kinski::add_search_path("/Library/Fonts");
-        kinski::add_search_path("~/Pictures");
         
         m_texturePath = Property_<string>::create("Texture path", "smoketex.png");
         register_property(m_texturePath);
@@ -298,7 +296,7 @@ public:
                 }
             }
             catch(cl::Error &error){LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")";}
-            catch (FileNotFoundException &e){LOG_WARNING << e.what();}
+            catch (fs::FileNotFoundException &e){LOG_WARNING << e.what();}
         }
         else if(theProperty == m_videoPath)
         {

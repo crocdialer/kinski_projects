@@ -199,7 +199,7 @@ void ModelViewer::update(float timeDelta)
     textures()[TEXTURE_NOISE] = m_noise.simplex(getApplicationTime() * *m_displace_velocity);
     
     // update displacement textures in models
-    for(gl::Mesh *m : mv.getObjects())
+    for(gl::Mesh *m : mv.get_objects())
     {
         for(auto &mat : m->materials())
         {
@@ -476,12 +476,12 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_cube_map_folder)
     {
-        if(kinski::is_directory(*m_cube_map_folder))
+        if(fs::is_directory(*m_cube_map_folder))
         {
           vector<gl::Texture> cube_planes;
-          for(auto &f : kinski::get_directory_entries(*m_cube_map_folder))
+          for(auto &f : fs::get_directory_entries(*m_cube_map_folder))
           {
-              if(kinski::get_file_type(f) == FileType::IMAGE)
+              if(fs::get_file_type(f) == fs::FileType::IMAGE)
               {
                   cube_planes.push_back(gl::create_texture_from_file(f));
               }   
@@ -638,20 +638,20 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
     gl::MeshPtr m;
     gl::Texture t;
     
-    auto asset_dir = get_directory_part(the_path);
-    add_search_path(asset_dir);
+    auto asset_dir = fs::get_directory_part(the_path);
+    fs::add_search_path(asset_dir);
     
-    switch (get_file_type(the_path))
+    switch (fs::get_file_type(the_path))
     {
-        case FileType::DIRECTORY:
-            for(const auto &p : get_directory_entries(the_path)){ load_asset(p, the_lvl); }
+        case fs::FileType::DIRECTORY:
+            for(const auto &p : fs::get_directory_entries(the_path)){ load_asset(p, the_lvl); }
             break;
             
-        case FileType::MODEL:
+        case fs::FileType::MODEL:
             m = gl::AssimpConnector::loadModel(the_path);
             break;
             
-        case FileType::IMAGE:
+        case fs::FileType::IMAGE:
             
             try { t = gl::create_texture_from_file(the_path, true, true); }
             catch (Exception &e) { LOG_WARNING << e.what(); }
@@ -692,9 +692,9 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
         m->setScale(scale_factor);
         
         // look for animations for this mesh
-        auto animation_folder = join_paths(asset_dir, "animations");
+        auto animation_folder = fs::join_paths(asset_dir, "animations");
         
-        for(const auto &f : get_directory_entries(animation_folder, FileType::MODEL))
+        for(const auto &f : get_directory_entries(animation_folder, fs::FileType::MODEL))
         {
             gl::AssimpConnector::add_animations_to_mesh(f, m);
         }
@@ -798,7 +798,7 @@ void ModelViewer::toggle_selection(int the_inc)
     {
         gl::SelectVisitor<gl::Mesh> mv;
         scene().root()->accept(mv);
-        auto mesh_list = mv.getObjects();
+        auto mesh_list = mv.get_objects();
         mesh_list.remove(m_select_indicator.get());
         
         std::vector<gl::Mesh*> m_vec(mesh_list.begin(), mesh_list.end());

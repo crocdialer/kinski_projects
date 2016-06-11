@@ -21,8 +21,22 @@ namespace kinski
     {
     private:
         
+        enum TextureEnum{ TEXTURE_OFFSCREEN = 0 };
+        
         gl::MeshPtr m_mesh;
         gl::Texture m_cube_map, m_normal_map;
+        
+        gl::Fbo m_post_process_fbo;
+        gl::MaterialPtr m_post_process_mat;
+        
+        Property_<float>::Ptr
+        m_focal_depth = Property_<float>::create("focal depth", 300.f),
+        m_focal_length = Property_<float>::create("focal length", 50.f),
+        m_fstop = Property_<float>::create("fstop", 1.f);
+        
+        Property_<bool>::Ptr
+        m_debug_focus = Property_<bool>::create("debug focus", false),
+        m_use_post_process = Property_<bool>::create("use post process", true);
         
         bool m_dirty_shader = true;
         

@@ -52,7 +52,7 @@ void MediaPlayer::setup()
     m_warp->observe_properties();
 
     // check for command line input
-    if(args().size() > 1 && file_exists(args()[1])){ *m_movie_path = args()[1]; }
+    if(args().size() > 1 && fs::file_exists(args()[1])){ *m_movie_path = args()[1]; }
     
     // setup our components to receive rpc calls
     setup_rpc_interface();
@@ -124,7 +124,7 @@ void MediaPlayer::draw()
     {
         gl::draw_text_2D(secs_to_time_str(m_movie->current_time()) + " / " +
                          secs_to_time_str(m_movie->duration()) + " - " +
-                         get_filename_part(m_movie->path()),
+                         fs::get_filename_part(m_movie->path()),
                          fonts()[1], gl::COLOR_WHITE, gl::vec2(10));
         draw_textures(textures());
     }
@@ -276,7 +276,7 @@ void MediaPlayer::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_movie_directory)
     {
         search_movies();
-        add_search_path(*m_movie_directory);
+        fs::add_search_path(*m_movie_directory);
     }
     else if(theProperty == m_loop)
     {
@@ -305,7 +305,7 @@ bool MediaPlayer::save_settings(const std::string &path)
     try
     {
         Serializer::saveComponentState(m_warp,
-                                       join_paths(path ,"warp_config.json"),
+                                       fs::join_paths(path ,"warp_config.json"),
                                        PropertyIO_GL());
     }
     catch(Exception &e){ LOG_ERROR << e.what(); return false; }
@@ -320,7 +320,7 @@ bool MediaPlayer::load_settings(const std::string &path)
     try
     {
         Serializer::loadComponentState(m_warp,
-                                       join_paths(path , "warp_config.json"),
+                                       fs::join_paths(path , "warp_config.json"),
                                        PropertyIO_GL());
     }
     catch(Exception &e){ LOG_ERROR << e.what(); return false; }
@@ -342,7 +342,7 @@ void MediaPlayer::start_playback(const std::string &the_path)
 {
     stop_playback();
     
-    add_search_path(get_directory_part(the_path));
+    fs::add_search_path(fs::get_directory_part(the_path));
     
     auto ip_adresses = get_remote_adresses();
     
@@ -362,7 +362,7 @@ void MediaPlayer::start_playback(const std::string &the_path)
         if(*m_load_remote_movies || m_movie_path->value().empty())
         {
             net::async_send_tcp(background_queue().io_service(),
-                                "load " + get_filename_part(the_path),
+                                "load " + fs::get_filename_part(the_path),
                                 ip, g_remote_port);
         }
         else{ start_cmd = "restart"; }
@@ -394,7 +394,7 @@ void MediaPlayer::stop_playback()
 
 void MediaPlayer::search_movies()
 {
-    auto movs = get_directory_entries(*m_movie_directory, FileType::MOVIE, false);
+    auto movs = get_directory_entries(*m_movie_directory, fs::FileType::MOVIE, false);
     m_movie_library->value().assign(movs.begin(), movs.end());
 }
 

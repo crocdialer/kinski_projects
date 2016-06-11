@@ -48,7 +48,7 @@ void KeyPointApp::setup()
     
     // CV stuff
     m_cvThread = std::make_shared<CVThread>();
-    m_processNode = std::make_shared<KeyPointNode>(cv::imread(search_file("kinder.jpg")));
+    m_processNode = std::make_shared<KeyPointNode>(cv::imread(fs::search_file("kinder.jpg")));
     
     // trigger observer callbacks
     m_processNode->observe_properties();
@@ -173,9 +173,9 @@ void KeyPointApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &
     {
         LOG_DEBUG << f;
         
-        switch (get_file_type(f))
+        switch (fs::get_file_type(f))
         {
-            case FileType::IMAGE:
+            case fs::FileType::IMAGE:
                 *m_img_path = f;
                 break;
             default:
@@ -202,7 +202,7 @@ void KeyPointApp::update_property(const Property::ConstPtr &theProperty)
     {
         if(m_processNode)
         {
-            std::dynamic_pointer_cast<KeyPointNode>(m_processNode)->setReferenceImage(cv::imread(search_file(*m_img_path)));
+            std::dynamic_pointer_cast<KeyPointNode>(m_processNode)->setReferenceImage(cv::imread(fs::search_file(*m_img_path)));
         }
     }
 }

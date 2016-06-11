@@ -267,17 +267,17 @@ void FractureApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &
         LOG_INFO << f;
 
         // add path to searchpaths
-        kinski::add_search_path(kinski::get_directory_part(f));
+        fs::add_search_path(fs::get_directory_part(f));
         m_search_paths->value().push_back(f);
         
-        switch (get_file_type(f))
+        switch (fs::get_file_type(f))
         {
-            case FileType::MODEL:
+            case fs::FileType::MODEL:
                 *m_model_path = f;
                 break;
             
-            case FileType::IMAGE:
-            case FileType::MOVIE:
+            case fs::FileType::IMAGE:
+            case fs::FileType::MOVIE:
                 m_texture_paths->value().push_back(f);
                 if(scene().pick(gl::calculate_ray(camera(), vec2(e.getX(), e.getY()))))
                 {
@@ -306,7 +306,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_model_path)
     {
-        add_search_path(get_directory_part(*m_model_path));
+        fs::add_search_path(fs::get_directory_part(*m_model_path));
         gl::MeshPtr m = gl::AssimpConnector::loadModel(*m_model_path);
         
         if(m)
@@ -327,19 +327,19 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_crosshair_path)
     {
-        auto ft = get_file_type(*m_crosshair_path);
-        if(ft == FileType::MOVIE)
+        auto ft = fs::get_file_type(*m_crosshair_path);
+        if(ft == fs::FileType::MOVIE)
         {
             m_crosshair_movie = media::MovieController::create(*m_crosshair_path, true, true);
         }
-        else if(ft == FileType::IMAGE)
+        else if(ft == fs::FileType::IMAGE)
         {
             m_crosshair_movie.reset();
             
             try
             {
                 m_crosshair_tex  = gl::create_texture_from_file(*m_crosshair_path);
-            } catch (FileNotFoundException &e) { LOG_WARNING << e.what(); }
+            } catch (fs::FileNotFoundException &e) { LOG_WARNING << e.what(); }
         }
     }
     else if(theProperty == m_texture_paths)
@@ -347,11 +347,11 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
         std::vector<gl::Texture> tex_array;
         for(const string &f : m_texture_paths->value())
         {
-            if(get_file_type(f) == FileType::IMAGE)
+            if(fs::get_file_type(f) == fs::FileType::IMAGE)
             {
                 try{ tex_array.push_back(gl::create_texture_from_file(f, true, true, 8.f)); }
                 catch (Exception &e) { LOG_WARNING << e.what(); }
-            }else if(get_file_type(f) == FileType::MOVIE)
+            }else if(fs::get_file_type(f) == fs::FileType::MOVIE)
             {
                 m_movie = media::MovieController::create(f, true, true);
             }

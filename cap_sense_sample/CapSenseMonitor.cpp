@@ -251,7 +251,7 @@ void CapSenseMonitor::send_udp_broadcast()
 void CapSenseMonitor::reset_sensors()
 {
     m_sensors.clear();
-    auto device_names = get_directory_entries("/dev");
+    auto device_names = fs::get_directory_entries("/dev");
     device_names.erase(std::remove_if(device_names.begin(), device_names.end(),
                                       [this](const std::string &str)
                                       {

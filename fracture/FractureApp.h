@@ -97,7 +97,7 @@ namespace kinski
         void reset_scene();
         
     public:
-        
+        FractureApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;
         void update(float timeDelta) override;
         void draw() override;

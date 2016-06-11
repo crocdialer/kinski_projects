@@ -76,7 +76,7 @@ void AsteroidField::update(float timeDelta)
     gl::SelectVisitor<gl::Mesh> mv;
     scene().root()->accept(mv);
     
-    for(auto &m : mv.getObjects())
+    for(auto &m : mv.get_objects())
     {
         // translation update
         m->position() += m_velocity->value() * timeDelta;
@@ -229,11 +229,11 @@ void AsteroidField::load_assets()
 {
     m_proto_objects.clear();
     
-    add_search_path(*m_model_folder);
-    add_search_path(*m_texture_folder);
+    fs::add_search_path(*m_model_folder);
+    fs::add_search_path(*m_texture_folder);
     auto shader = gl::create_shader(gl::ShaderType::GOURAUD);
     
-    for (const auto &p : get_directory_entries(*m_model_folder, FileType::MODEL))
+    for (const auto &p : get_directory_entries(*m_model_folder, fs::FileType::MODEL))
     {
         auto mesh = gl::AssimpConnector::loadModel(p);
         if(mesh)
@@ -257,7 +257,7 @@ void AsteroidField::load_assets()
     
     m_proto_textures.clear();
     
-    for(auto &p : get_directory_entries(*m_texture_folder))
+    for(auto &p : fs::get_directory_entries(*m_texture_folder))
     {
         try
         {

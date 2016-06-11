@@ -249,8 +249,8 @@ void BlockbusterApp::fileDrop(const MouseEvent &e, const std::vector<std::string
     {
         LOG_DEBUG << f;
         
-        auto ft = get_file_type(f);
-        if(ft == FileType::IMAGE || ft == FileType::MOVIE)
+        auto ft = fs::get_file_type(f);
+        if(ft == fs::FileType::IMAGE || ft == fs::FileType::MOVIE)
         {
             *m_media_path = f;
         }
@@ -400,11 +400,11 @@ glm::vec3 BlockbusterApp::click_pos_on_ground(const glm::vec2 click_pos)
 
 void BlockbusterApp::init_shaders()
 {    
-    m_block_shader.loadFromData(read_file("geom_prepass.vert"),
+    m_block_shader.loadFromData(fs::read_file("geom_prepass.vert"),
                                 phong_frag,
-                                read_file("points_to_cubes.geom"));
+                                fs::read_file("points_to_cubes.geom"));
     
-    m_block_shader_shadows.loadFromData(read_file("geom_prepass.vert"),
+    m_block_shader_shadows.loadFromData(fs::read_file("geom_prepass.vert"),
                                         phong_shadows_frag,
-                                        read_file("points_to_cubes_shadows.geom"));
+                                        fs::read_file("points_to_cubes_shadows.geom"));
 }

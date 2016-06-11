@@ -61,7 +61,7 @@ void GrowthApp::setup()
         // load shaders
         m_lsystem_shaders[0].loadFromData(geom_prepass_vert,
                                           phong_frag,
-                                          read_file("lines_to_cuboids.geom").c_str());
+                                          fs::read_file("lines_to_cuboids.geom").c_str());
     }
     catch(Exception &e){LOG_ERROR << e.what();}
     
