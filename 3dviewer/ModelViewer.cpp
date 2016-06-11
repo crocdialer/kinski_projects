@@ -95,10 +95,9 @@ void ModelViewer::update(float timeDelta)
         // check material
         if(!m_post_process_mat)
         {
-            gl::Shader shader;
             try
             {
-                shader.loadFromData(unlit_vert, depth_of_field_frag);
+                gl::Shader shader = gl::create_shader(gl::ShaderType::DEPTH_OF_FIELD);
                 m_post_process_mat = gl::Material::create(shader);
             }catch(Exception &e){ LOG_WARNING << e.what(); }
         }
