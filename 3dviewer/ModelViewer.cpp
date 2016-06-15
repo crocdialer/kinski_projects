@@ -492,16 +492,20 @@ void ModelViewer::async_load_asset(const std::string &the_path,
             {
                 std::vector<gl::ImagePtr> tex_imgs;
 
-                for(const auto &p : mat->load_queue_textures())
+                for(auto &p : mat->texture_paths())
                 {
                     try
                     {
-                        auto dataVec = fs::read_binary_file(p);
+                        auto dataVec = fs::read_binary_file(p.first);
                         tex_imgs.push_back(gl::decode_image(dataVec));
+                        p.second = gl::Material::AssetLoadStatus::LOADED;
                     }
-                    catch(Exception &e){ LOG_WARNING << e.what(); }
+                    catch(Exception &e)
+                    {
+                        LOG_WARNING << e.what();
+                        p.second = gl::Material::AssetLoadStatus::NOT_FOUND;
+                    }
                 }
-                mat->load_queue_textures().clear();
                 mat_img_map[mat] = tex_imgs;
             }
         }
