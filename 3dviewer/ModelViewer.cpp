@@ -41,6 +41,10 @@ void ModelViewer::setup()
     register_property(m_focal_depth);
     register_property(m_focal_length);
     register_property(m_fstop);
+    register_property(m_gain);
+    register_property(m_fringe);
+    register_property(m_circle_of_confusion_sz);
+    register_property(m_auto_focus);
     register_property(m_debug_focus);
     
     observe_properties();
@@ -109,7 +113,12 @@ void ModelViewer::update(float timeDelta)
         m_post_process_mat->uniform("u_focal_depth", *m_focal_depth);
         m_post_process_mat->uniform("u_focal_length", *m_focal_length);
         m_post_process_mat->uniform("u_fstop", *m_fstop);
+        m_post_process_mat->uniform("u_gain", *m_gain);
+        m_post_process_mat->uniform("u_fringe", *m_fringe);
         m_post_process_mat->uniform("u_debug_focus", *m_debug_focus );
+        m_post_process_mat->uniform("u_auto_focus", *m_auto_focus );
+        m_post_process_mat->uniform("u_circle_of_confusion_sz", *m_circle_of_confusion_sz);
+        
     }
 }
 

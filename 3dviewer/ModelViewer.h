@@ -32,11 +32,15 @@ namespace kinski
         Property_<float>::Ptr
         m_focal_depth = Property_<float>::create("focal depth", 300.f),
         m_focal_length = Property_<float>::create("focal length", 50.f),
-        m_fstop = Property_<float>::create("fstop", 1.f);
+        m_circle_of_confusion_sz = Property_<float>::create("circle of confusion size", 0.03f),
+        m_fstop = Property_<float>::create("fstop", 1.f),
+        m_gain = Property_<float>::create("gain", 2.f),
+        m_fringe = Property_<float>::create("fringe", .7f);
         
         Property_<bool>::Ptr
         m_debug_focus = Property_<bool>::create("debug focus", false),
-        m_use_post_process = Property_<bool>::create("use post process", true);
+        m_auto_focus = Property_<bool>::create("auto focus", false),
+        m_use_post_process = Property_<bool>::create("use post process", false);
         
         bool m_dirty_shader = true;
         
