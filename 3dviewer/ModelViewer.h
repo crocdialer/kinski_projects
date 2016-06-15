@@ -53,7 +53,7 @@ namespace kinski
         Property_<std::string>::Ptr
         m_model_path = Property_<std::string>::create("Model path", ""),
         m_normalmap_path = Property_<std::string>::create("normalmap path", ""),
-        m_cube_map_folder = Property_<std::string>::create("Cubemap folder", "");
+        m_skybox_path = Property_<std::string>::create("skybox path", "");
         
         Property_<bool>::Ptr
         m_use_bones = Property_<bool>::create("use bones", true);

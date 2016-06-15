@@ -36,7 +36,7 @@ void ModelViewer::setup()
     register_property(m_animation_index);
     register_property(m_animation_speed);
     register_property(m_normalmap_path);
-    register_property(m_cube_map_folder);
+    register_property(m_skybox_path);
     
     register_property(m_focal_depth);
     register_property(m_focal_length);
@@ -73,7 +73,7 @@ void ModelViewer::setup()
                                         gl::Material::create(gl::create_shader(gl::ShaderType::PHONG_SHADOWS)));
     ground_mesh->transform() = glm::rotate(mat4(), -glm::half_pi<float>(), gl::X_AXIS);
     ground_mesh->add_tag(tag_ground_plane);
-
+    
     scene().addObject(ground_mesh);
 
     load_settings();
@@ -372,18 +372,9 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
             m_mesh->set_animation_speed(*m_animation_speed);
         }
     }
-    else if(theProperty == m_cube_map_folder)
+    else if(theProperty == m_skybox_path)
     {
-        if(fs::is_directory(*m_cube_map_folder))
-        {
-            vector<gl::Texture> cube_planes;
-            
-            for(auto &f : fs::get_directory_entries(*m_cube_map_folder, fs::FileType::IMAGE))
-            {
-                cube_planes.push_back(gl::create_texture_from_file(f));
-            }
-            m_cube_map = gl::create_cube_texture(cube_planes);
-        }
+        async_load_texture(*m_skybox_path, [this](const gl::Texture &t){ scene().set_skybox(t); });
     }
     else if(theProperty == m_use_ground_plane)
     {
