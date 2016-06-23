@@ -8,13 +8,13 @@
 #pragma once
 
 #include "app/ViewerApp.hpp"
-#include "app/WarpComponent.hpp"
 #include "core/Timer.hpp"
 #include "core/Serial.hpp"
 
 // modules
 #include "media/media.h"
 #include "sensors/sensors.h"
+#include "gl_post_process/WarpComponent.hpp"
 
 namespace kinski
 {

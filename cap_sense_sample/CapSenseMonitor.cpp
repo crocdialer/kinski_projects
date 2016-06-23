@@ -7,6 +7,7 @@
 //
 
 #include "CapSenseMonitor.hpp"
+#include "core/Serial.hpp"
 #include "bluetooth/Bluetooth_UART.hpp"
 
 using namespace std;
@@ -59,8 +60,8 @@ void CapSenseMonitor::draw()
 {
     if(textures()[0]){ gl::draw_texture(textures()[0], gl::window_dimension()); }
     
-    const int offset_x = 100;
-    const gl::vec2 sz = gl::vec2(80, 35);
+    const int offset_x = 40;
+    const gl::vec2 sz = gl::vec2(60, 35);
     
     gl::draw_text_2D(name(), fonts()[FONT_LARGE], gl::COLOR_WHITE, gl::vec2(25, 20));
 
@@ -75,7 +76,8 @@ void CapSenseMonitor::draw()
             float proxi_val = clamp(*m_cap_sense_proxi_multiplier * s.proximity_values()[i] / 100.f,
                                     0.f, 1.f);
             
-            vec2 pos = offset - sz / 2.f, sz_frac = sz * vec2(1.f, proxi_val);
+            vec2 pos = offset - sz / 2.f,
+            sz_frac = s.is_touched(i) ? vec2(sz) : sz * vec2(1.f, proxi_val);
             
             
             gl::draw_quad(gl::COLOR_ORANGE, sz, pos, false);
@@ -204,7 +206,10 @@ void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_broadcast_frequency)
     {
-        m_broadcast_timer.expires_from_now(1.f / *m_broadcast_frequency);
+        if(*m_broadcast_frequency > 0.f)
+        {
+            m_broadcast_timer.expires_from_now(1.f / *m_broadcast_frequency);
+        }
     }
 }
 
@@ -240,9 +245,31 @@ void CapSenseMonitor::send_udp_broadcast()
     }
     if(!str.empty())
     {
-        LOG_TRACE_2 << "udp-broadcast (" << *m_broadcast_udp_port << "): " << str.substr(0, str.size() - 1);
+//        LOG_TRACE_2 << "udp-broadcast (" << *m_broadcast_udp_port << "): " << str.substr(0, str.size() - 1);
         net::async_send_udp_broadcast(background_queue().io_service(), str,
                                       *m_broadcast_udp_port);
+    }
+}
+
+/////////////////////////////////////////////////////////////////
+
+void CapSenseMonitor::connect_sensor(UART_Ptr the_uart)
+{
+    CapacitiveSensor cs;
+    
+    auto sensor_index = m_sensors.size();
+    
+    if(cs.connect(the_uart))
+    {
+        cs.set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
+        cs.set_charge_current(*m_cap_sense_charge_current);
+        
+        cs.set_touch_callback(std::bind(&CapSenseMonitor::sensor_touch, this,
+                                        std::placeholders::_1, sensor_index));
+        cs.set_release_callback(std::bind(&CapSenseMonitor::sensor_release, this,
+                                          std::placeholders::_1, sensor_index));
+        cs.set_timeout_reconnect(5.f);
+        m_sensors.push_back(cs);
     }
 }
 
@@ -259,31 +286,22 @@ void CapSenseMonitor::reset_sensors()
                                       }),
                        device_names.end());
     
-    int sensor_index = 0;
     
 //    if(!m_uart || !m_uart->is_initialized())
-//    {    
-//        m_uart = std::make_shared<bluetooth::Bluetooth_UART>();
-//        m_uart->setup();
-//    }
+    {
+        auto blue_uart = bluetooth::Bluetooth_UART::create();
+        blue_uart->set_connect_cb([this](bluetooth::Bluetooth_UART_Ptr p)
+        {
+            connect_sensor(p);
+        });
+        blue_uart->setup();
+        m_uart = blue_uart;
+    }
     
     for(const auto &d : device_names)
     {
-        CapacitiveSensor cs;
-        
-//        if(cs.connect(m_uart))
-        if(cs.connect(d))
-        {
-            cs.set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
-            cs.set_charge_current(*m_cap_sense_charge_current);
-          
-            cs.set_touch_callback(std::bind(&CapSenseMonitor::sensor_touch, this,
-                                            std::placeholders::_1, sensor_index));
-            cs.set_release_callback(std::bind(&CapSenseMonitor::sensor_release, this,
-                                              std::placeholders::_1, sensor_index));
-            cs.set_timeout_reconnect(5.f);
-            m_sensors.push_back(cs);
-        }
-        sensor_index++;
+        auto serial_uart = std::make_shared<kinski::Serial>();
+        serial_uart->setup(d, 57600);
+        connect_sensor(serial_uart);
     }
 }

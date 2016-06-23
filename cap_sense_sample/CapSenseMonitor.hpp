@@ -51,8 +51,9 @@ namespace kinski
         m_cap_sense_proxi_multiplier = RangedProperty<float>::create("capsense: proximity multiplier",
                                                                      1.f , 0.f, 100.f);
         
-        void send_udp_broadcast();
+        void connect_sensor(UART_Ptr);
         void reset_sensors();
+        void send_udp_broadcast();
         
     public:
         
