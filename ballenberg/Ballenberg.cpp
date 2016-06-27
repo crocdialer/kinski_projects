@@ -354,7 +354,7 @@ void Ballenberg::update_property(const Property::ConstPtr &theProperty)
     {
         if(!m_motor_dev_name_01->value().empty())
         {
-            auto serial = std::make_shared<Serial>();
+            auto serial = Serial::create();
             serial->setup(*m_motor_dev_name_01, 9600);
             m_motor_uart = serial;
         }
@@ -432,7 +432,7 @@ void Ballenberg::draw_status_info()
     bool cap_sensor_found = m_cap_sense.is_initialized();
     
     string cs_string = cap_sensor_found ?
-        as_string(m_proxi_val) : "not found";
+        to_string(m_proxi_val) : "not found";
     string dmx_string = m_dmx.is_initialized() ? "ok" : "not found";
     
     gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched()) ? gl::COLOR_GREEN : gl::COLOR_WHITE;
@@ -442,7 +442,7 @@ void Ballenberg::draw_status_info()
     string ms_string_01 = m_motion_sense_01.is_initialized() ? "ok" : "not found";
     motion_col = m_motion_sense_01.distance() ? gl::COLOR_GREEN : gl::COLOR_WHITE;
     gl::draw_text_2D("motion-sensor (kitchen): " + (m_motion_sense_01.distance() ?
-                     as_string(m_motion_sense_01.distance()) : ms_string_01), fonts()[0],
+                     to_string(m_motion_sense_01.distance()) : ms_string_01), fonts()[0],
                      motion_col, offset);
     offset += step;
     
@@ -450,7 +450,7 @@ void Ballenberg::draw_status_info()
     string ms_string_02 = m_motion_sense_02.is_initialized() ? "ok" : "not found";
     motion_col = m_motion_sense_02.distance() ? gl::COLOR_GREEN : gl::COLOR_WHITE;
     gl::draw_text_2D("motion-sensor (living room): " + (m_motion_sense_02.distance() ?
-                     as_string(m_motion_sense_02.distance()) : ms_string_02), fonts()[0],
+                     to_string(m_motion_sense_02.distance()) : ms_string_02), fonts()[0],
                      motion_col, offset);
     offset += step;
     
@@ -466,7 +466,7 @@ void Ballenberg::draw_status_info()
     string ms_string_03 = m_motion_sense_03.is_initialized() ? "ok" : "not found";
     motion_col = m_motion_sense_03.distance() ? gl::COLOR_GREEN : gl::COLOR_WHITE;
     gl::draw_text_2D("motion-sensor (spense): " + (m_motion_sense_03.distance() ?
-                     as_string(m_motion_sense_03.distance()) : ms_string_03), fonts()[0],
+                     to_string(m_motion_sense_03.distance()) : ms_string_03), fonts()[0],
                      motion_col, offset);
     offset += step;
     string motor_string_01 = m_motor_uart && m_motor_uart->is_initialized() ? "ok" : "not found";
@@ -490,7 +490,7 @@ void Ballenberg::motor_move(int the_degree)
 {
     if(m_motor_uart && m_motor_uart->is_initialized())
     {
-        auto str = as_string(the_degree) + "\n";
+        auto str = to_string(the_degree) + "\n";
         std::vector<uint8_t> vec(str.begin(), str.end());
         m_motor_uart->write_bytes(&vec[0], vec.size());
     }

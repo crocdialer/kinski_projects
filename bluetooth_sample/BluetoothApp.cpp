@@ -24,8 +24,8 @@ void BluetoothApp::setup()
     add_tweakbar_for_component(shared_from_this());
     load_settings();
     
-    m_bt_serial.setup();
-    m_bt_serial.set_receive_cb([this](bluetooth::Bluetooth_UART &bt_serial,
+    m_bt_serial->setup();
+    m_bt_serial->set_receive_cb([this](bluetooth::Bluetooth_UART_Ptr bt_serial,
                                       const std::vector<uint8_t> &the_data)
     {
         std::string reading_str;
@@ -90,14 +90,14 @@ void BluetoothApp::keyPress(const KeyEvent &e)
     switch (e.getCode())
     {
         case Key::_D:
-            if(m_bt_serial.is_initialized()){ m_bt_serial.close(); }
-            else { m_bt_serial.setup(); }
+            if(m_bt_serial->is_initialized()){ m_bt_serial->close(); }
+            else { m_bt_serial->setup(); }
             break;
             
         case Key::_B:
-            if(m_bt_serial.is_initialized())
+            if(m_bt_serial->is_initialized())
             {
-                m_bt_serial.write("lalala der obstmostkelterer ist da\n");
+                m_bt_serial->write("lalala der obstmostkelterer ist da\n");
             }
             break;
             

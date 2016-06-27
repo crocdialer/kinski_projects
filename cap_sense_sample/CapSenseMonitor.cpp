@@ -82,7 +82,7 @@ void CapSenseMonitor::draw()
             
             gl::draw_quad(gl::COLOR_ORANGE, sz, pos, false);
             gl::draw_quad(color, sz_frac, pos + vec2(0.f, sz.y - sz_frac.y));
-            gl::draw_text_2D(as_string(int(proxi_val * 100.f)) + "%", fonts()[FONT_MEDIUM],
+            gl::draw_text_2D(to_string(int(proxi_val * 100.f)) + "%", fonts()[FONT_MEDIUM],
                              gl::COLOR_WHITE, offset - sz / 4.f);
             offset.x += step.x;
         }
@@ -240,8 +240,8 @@ void CapSenseMonitor::send_udp_broadcast()
         for(int j = 0; j < 3; ++j)
         { vals[j] = clamp(s.proximity_values()[j] * *m_cap_sense_proxi_multiplier / 100.f, 0.f, 1.f); }
         
-        str += as_string(i++) + ": " + as_string(s.touch_state()) + " " +
-        as_string(vals[0], 3) + " " + as_string(vals[1], 3) + " " + as_string(vals[2], 3) + "\n";
+        str += to_string(i++) + ": " + to_string(s.touch_state()) + " " +
+        to_string(vals[0], 3) + " " + to_string(vals[1], 3) + " " + to_string(vals[2], 3) + "\n";
     }
     if(!str.empty())
     {
@@ -256,21 +256,16 @@ void CapSenseMonitor::send_udp_broadcast()
 void CapSenseMonitor::connect_sensor(UART_Ptr the_uart)
 {
     CapacitiveSensor cs;
-    
     auto sensor_index = m_sensors.size();
+    cs.set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
+    cs.set_charge_current(*m_cap_sense_charge_current);
+    cs.set_touch_callback(std::bind(&CapSenseMonitor::sensor_touch, this,
+                                    sensor_index, std::placeholders::_1));
+    cs.set_release_callback(std::bind(&CapSenseMonitor::sensor_release, this,
+                                      sensor_index, std::placeholders::_1));
+    cs.set_timeout_reconnect(5.f);
     
-    if(cs.connect(the_uart))
-    {
-        cs.set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
-        cs.set_charge_current(*m_cap_sense_charge_current);
-        
-        cs.set_touch_callback(std::bind(&CapSenseMonitor::sensor_touch, this,
-                                        std::placeholders::_1, sensor_index));
-        cs.set_release_callback(std::bind(&CapSenseMonitor::sensor_release, this,
-                                          std::placeholders::_1, sensor_index));
-        cs.set_timeout_reconnect(5.f);
-        m_sensors.push_back(cs);
-    }
+    if(cs.connect(the_uart)){ m_sensors.push_back(cs); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -300,7 +295,7 @@ void CapSenseMonitor::reset_sensors()
     
     for(const auto &d : device_names)
     {
-        auto serial_uart = std::make_shared<kinski::Serial>();
+        auto serial_uart = kinski::Serial::create();
         serial_uart->setup(d, 57600);
         connect_sensor(serial_uart);
     }

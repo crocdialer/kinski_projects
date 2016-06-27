@@ -20,7 +20,7 @@ namespace kinski
     {
     private:
         
-        bluetooth::Bluetooth_UART m_bt_serial;
+        bluetooth::Bluetooth_UART_Ptr m_bt_serial = bluetooth::Bluetooth_UART::create();
         std::vector<uint8_t> m_accumulator;
         
 //        bluetooth::CentralPtr m_central = bluetooth::Central::create();

@@ -264,14 +264,14 @@ public:
                 float h = t.getHeight() * w / t.getWidth();
                 glm::vec2 step(0, h + 10);
                 draw_texture(t, vec2(w, h), offset);
-                gl::draw_text_2D(as_string(t.getWidth()) + std::string(" x ") +
-                                 as_string(t.getHeight()), m_font, glm::vec4(1),
+                gl::draw_text_2D(to_string(t.getWidth()) + std::string(" x ") +
+                                 to_string(t.getHeight()), m_font, glm::vec4(1),
                                  offset);
                 offset += step;
             }
             
             // draw fps string
-            gl::draw_text_2D(kinski::as_string(fps()), m_font,
+            gl::draw_text_2D(kinski::to_string(fps()), m_font,
                              vec4(vec3(1) - clear_color().xyz(), 1.f),
                              glm::vec2(gl::window_dimension().x - 115, gl::window_dimension().y - 30));
         }

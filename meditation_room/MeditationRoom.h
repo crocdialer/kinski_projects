@@ -64,7 +64,10 @@ namespace kinski
         m_motion_sense_dev_name = Property_<string>::create("motion sensor device"),
         m_bio_sense_dev_name = Property_<string>::create("bio sensor device");
         
-        Serial m_motion_sense, m_bio_sense, m_led_device;
+        SerialPtr
+        m_motion_sense = Serial::create(),
+        m_bio_sense = Serial::create(), m_led_device = Serial::create();
+        
         std::vector<uint8_t> m_serial_buf;
         bool m_motion_detected = false;
         

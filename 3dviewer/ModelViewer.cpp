@@ -154,7 +154,7 @@ void ModelViewer::draw()
 
     if(*m_draw_fps)
     {
-        gl::draw_text_2D(as_string(fps(), 1), fonts()[0],
+        gl::draw_text_2D(to_string(fps(), 1), fonts()[0],
                          glm::mix(gl::COLOR_OLIVE, gl::COLOR_WHITE,
                                   glm::smoothstep(0.f, 1.f, fps() / max_fps())),
                          gl::vec2(10));

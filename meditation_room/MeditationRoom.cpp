@@ -298,10 +298,10 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
         {
             background_queue().submit([this]()
             {
-                m_motion_sense.setup(*m_motion_sense_dev_name, 57600);
+                m_motion_sense->setup(*m_motion_sense_dev_name, 57600);
               
                 // finally flush the newly initialized device
-                if(m_motion_sense.is_initialized()){ m_motion_sense.flush(); }
+                if(m_motion_sense->is_initialized()){ m_motion_sense->flush(); }
             });
         }
     }
@@ -311,10 +311,10 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
         {
             background_queue().submit([this]()
             {
-                m_bio_sense.setup(*m_bio_sense_dev_name, 57600);
+                m_bio_sense->setup(*m_bio_sense_dev_name, 57600);
                 
                 // finally flush the newly initialized device
-                if(m_bio_sense.is_initialized()){ m_bio_sense.flush(); }
+                if(m_bio_sense->is_initialized()){ m_bio_sense->flush(); }
             });
         }
     }
@@ -324,10 +324,10 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
         {
             background_queue().submit([this]()
             {
-                m_led_device.setup(*m_led_dev_name, 57600);
+                m_led_device->setup(*m_led_dev_name, 57600);
               
                 // finally flush the newly initialized device
-                if(m_led_device.is_initialized()){ m_led_device.flush(); }
+                if(m_led_device->is_initialized()){ m_led_device->flush(); }
             });
         }
     }
@@ -479,9 +479,9 @@ void MeditationRoom::set_fbo_state()
 
 void MeditationRoom::detect_motion()
 {
-    if(m_motion_sense.is_initialized())
+    if(m_motion_sense->is_initialized())
     {
-        size_t bytes_to_read = std::min(m_motion_sense.available(),
+        size_t bytes_to_read = std::min(m_motion_sense->available(),
                                         m_serial_buf.size());
         
         if(!bytes_to_read)
@@ -490,7 +490,7 @@ void MeditationRoom::detect_motion()
         }
         
         uint8_t *buf_ptr = &m_serial_buf[0];
-        m_motion_sense.read_bytes(&m_serial_buf[0], bytes_to_read);
+        m_motion_sense->read_bytes(&m_serial_buf[0], bytes_to_read);
         
         for(uint32_t i = 0; i < bytes_to_read; i++)
         {
@@ -514,16 +514,16 @@ void MeditationRoom::read_bio_sensor()
     
     enum SerialCodes{SERIAL_END_CODE = '\n'};
     
-    if(m_bio_sense.is_initialized())
+    if(m_bio_sense->is_initialized())
     {
-        size_t bytes_to_read = std::min(m_bio_sense.available(), buf.size());
+        size_t bytes_to_read = std::min(m_bio_sense->available(), buf.size());
         
         if(!bytes_to_read){}
         
         float val;
         bool reading_complete = false;
         uint8_t *buf_ptr = &buf[0];
-        m_bio_sense.read_bytes(&buf[0], bytes_to_read);
+        m_bio_sense->read_bytes(&buf[0], bytes_to_read);
         
         for(uint32_t i = 0; i < bytes_to_read; i++)
         {
@@ -532,7 +532,7 @@ void MeditationRoom::read_bio_sensor()
             switch(byte)
             {
                 case SERIAL_END_CODE:
-                    val = string_as<float>(string(accum.begin(), accum.end()));
+                    val = string_to<float>(string(accum.begin(), accum.end()));
                     accum.clear();
                     reading_complete = true;
                     break;
@@ -550,7 +550,7 @@ void MeditationRoom::read_bio_sensor()
 
 void MeditationRoom::set_led_color(const gl::Color &the_color)
 {
-    if(m_led_device.is_initialized())
+    if(m_led_device->is_initialized())
     {
         // create RGBA integer val
 //        uint32_t rgb_val = (static_cast<uint32_t>(the_color.r * 255) << 16) |
@@ -562,8 +562,8 @@ void MeditationRoom::set_led_color(const gl::Color &the_color)
 //        m_led_device.writeByte('\n');
         
         uint8_t c = the_color.r * 255;
-        m_led_device.write_bytes(&c, 1);
-        m_led_device.flush();
+        m_led_device->write_bytes(&c, 1);
+        m_led_device->flush();
     }
     
 }
@@ -578,20 +578,20 @@ void MeditationRoom::draw_status_info()
     auto state_str = "State: " + m_state_string_map[m_current_state];
     if((m_current_state == State::DESC_MOVIE) && m_movie)
     {
-        state_str += " (" + as_string(m_movie->current_time(),1) + "/" +
-            as_string(m_movie->duration(), 1) + ")";
+        state_str += " (" + to_string(m_movie->current_time(),1) + "/" +
+            to_string(m_movie->duration(), 1) + ")";
     }
     gl::draw_text_2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
     offset += step;
     
-    bool motion_sensor_found = m_motion_sense.is_initialized();
+    bool motion_sensor_found = m_motion_sense->is_initialized();
     bool cap_sensor_found = m_cap_sense.is_initialized();
-    bool bio_sensor_found = m_bio_sense.is_initialized();
-    bool led_device_found = m_led_device.is_initialized();
+    bool bio_sensor_found = m_bio_sense->is_initialized();
+    bool led_device_found = m_led_device->is_initialized();
     
     string ms_string = motion_sensor_found ? "ok" : "not found";
     string cs_string = cap_sensor_found ? "ok" : "not found";
-    string bs_string = bio_sensor_found ? as_string(m_bio_score->value(), 2) : "not found";
+    string bs_string = bio_sensor_found ? to_string(m_bio_score->value(), 2) : "not found";
     string led_string = led_device_found ? "ok" : "not found";
     
     gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched()) ? gl::COLOR_GREEN : gl::COLOR_RED;

@@ -1,4 +1,4 @@
 set(LIBS ${LIBS})
-set(MODULES media)
+set(MODULES dmx sensors)
 KINSKI_ADD_SAMPLE(${itemName} ${folderItem} "${MODULES}")
 

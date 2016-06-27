@@ -109,7 +109,7 @@ void GrowthApp::draw()
         draw_textures(textures());
         
         // draw fps string
-        gl::draw_text_2D(kinski::as_string(fps()), fonts()[0],
+        gl::draw_text_2D(kinski::to_string(fps()), fonts()[0],
                        vec4(vec3(1) - clear_color().xyz(), 1.f),
                        glm::vec2(gl::window_dimension().x - 110, gl::window_dimension().y - 70));
     }
