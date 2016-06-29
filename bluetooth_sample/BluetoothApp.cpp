@@ -24,43 +24,43 @@ void BluetoothApp::setup()
     add_tweakbar_for_component(shared_from_this());
     load_settings();
     
-    m_bt_serial->setup();
-    m_bt_serial->set_receive_cb([this](bluetooth::Bluetooth_UART_Ptr bt_serial,
-                                      const std::vector<uint8_t> &the_data)
-    {
-        std::string reading_str;
-        bool reading_complete = false;
-        
-        for(uint8_t byte : the_data)
-        {
-            switch(byte)
-            {
-                case SERIAL_END_CODE:
-                    reading_str = string(m_accumulator.begin(), m_accumulator.end());
-                    m_accumulator.clear();
-                    reading_complete = true;
-                    break;
-                    
-                default:
-                    m_accumulator.push_back(byte);
-                    break;
-            }
-            
-            if(reading_complete)
-            {
-                reading_complete = false;
-                LOG_DEBUG << reading_str;
-            }
-        }
-        
-    });
-    
-//    m_central->set_peripheral_discovered_cb([this](bluetooth::CentralPtr c,
-//                                                   bluetooth::PeripheralPtr p)
+//    m_bt_serial->setup();
+//    m_bt_serial->set_receive_cb([this](bluetooth::Bluetooth_UART_Ptr bt_serial,
+//                                      const std::vector<uint8_t> &the_data)
 //    {
-//        LOG_DEBUG << p->name();
+//        std::string reading_str;
+//        bool reading_complete = false;
+//        
+//        for(uint8_t byte : the_data)
+//        {
+//            switch(byte)
+//            {
+//                case SERIAL_END_CODE:
+//                    reading_str = string(m_accumulator.begin(), m_accumulator.end());
+//                    m_accumulator.clear();
+//                    reading_complete = true;
+//                    break;
+//                    
+//                default:
+//                    m_accumulator.push_back(byte);
+//                    break;
+//            }
+//            
+//            if(reading_complete)
+//            {
+//                reading_complete = false;
+//                LOG_DEBUG << reading_str;
+//            }
+//        }
+//        
 //    });
-//    m_central->discover_peripherals();
+    
+    m_central->set_peripheral_discovered_cb([this](bluetooth::CentralPtr c,
+                                                   bluetooth::PeripheralPtr p)
+    {
+        LOG_DEBUG << p->name();
+    });
+    m_central->discover_peripherals();
 }
 
 /////////////////////////////////////////////////////////////////
