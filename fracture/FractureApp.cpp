@@ -70,13 +70,6 @@ void FractureApp::setup()
     // init joystick crosshairs
     m_crosshair_pos.resize(get_joystick_states().size());
     for(auto &p : m_crosshair_pos){ p = gl::window_dimension() / 2.f; }
-    
-    // dof material
-//    gl::Shader sh; sh.loadFromData(unlit_vert, read_file("~/Desktop/shader_dof.frag").c_str());
-//    m_dof_material = gl::Material::create(sh);
-//    m_dof_material->setDepthTest(false);
-//    m_dof_material->setDepthWrite(false);
-//    m_dof_material->setBlending();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -295,7 +288,7 @@ void FractureApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &
 
 void FractureApp::tearDown()
 {
-    LOG_PRINT<<"ciao model viewer";
+    LOG_PRINT << "ciao " << name();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -435,34 +428,35 @@ void FractureApp::fracture_test(uint32_t num_shards)
     m_physics.init();
     m_gravity->notifyObservers();
     
-    auto phong_shader = gl::create_shader(gl::ShaderType::PHONG);
+    auto phong = gl::create_shader(gl::ShaderType::PHONG);
+    auto phong_shadow = gl::create_shader(gl::ShaderType::PHONG_SHADOWS);
     
 //    m_physics.set_world_boundaries(vec3(100), vec3(0, 100, 100 - .3f));
-    btRigidBody *wall;
+//    btRigidBody *wall;
     {
         // ground plane
-        auto ground_mat = gl::Material::create(phong_shader);
+        auto ground_mat = gl::Material::create(phong_shadow);
 //        ground_mat->setDiffuse(gl::COLOR_BLACK);
         auto ground = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
-        ground->setScale(vec3(100, .3, 100));
-        auto ground_aabb = ground->boundingBox().transform(ground->transform());
+        ground->setScale(vec3(100, 1, 100));
+        auto ground_aabb = ground->boundingBox();
         ground->position().y -= ground_aabb.halfExtents().y;
         auto col_shape = std::make_shared<btBoxShape>(physics::type_cast(ground_aabb.halfExtents()));
-        btRigidBody *rb =m_physics.add_mesh_to_simulation(ground, 0.f, col_shape);
+        btRigidBody *rb = m_physics.add_mesh_to_simulation(ground, 0.f, col_shape);
         rb->setFriction(*m_friction);
         scene().addObject(ground);
         
         // back plane
         auto back = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
         back->setScale(vec3(100, 20, .3));
-        auto back_aabb = back->boundingBox().transform(back->transform());
+        auto back_aabb = back->boundingBox();
         back->position() += vec3(0, back_aabb.halfExtents().y, -2.f * back_aabb.halfExtents().z);
         col_shape = std::make_shared<btBoxShape>(physics::type_cast(back_aabb.halfExtents()));
         
         // stopper
         auto stopper = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
         stopper->setScale(vec3(m_obj_scale->value().x, .1f, .1f));
-        auto stopper_aabb = back->boundingBox().transform(back->transform());
+        auto stopper_aabb = back->boundingBox();
         stopper->position() = vec3(0, 0,  - m_obj_scale->value().z / 2.f);
         col_shape = std::make_shared<btBoxShape>(physics::type_cast(stopper_aabb.halfExtents()));
         m_physics.add_mesh_to_simulation(stopper);
@@ -486,9 +480,9 @@ void FractureApp::fracture_test(uint32_t num_shards)
     
     for(auto &l : lights()){ scene().addObject(l); }
     
-    auto m = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), gl::Material::create(phong_shader));
+    auto m = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), gl::Material::create(phong_shadow));
     m->setScale(*m_obj_scale);
-    auto aabb = m->boundingBox().transform(m->transform());
+    auto aabb = m->boundingBox();
     m->position().y += aabb.halfExtents().y;
     
 //    std::vector<gl::Texture> textures;
@@ -515,7 +509,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
     if(m_needs_refracture || m_voronoi_shards.empty())
     {
         m_voronoi_shards = physics::voronoi_convex_hull_shatter(m, voronoi_points);
-        for(auto &s : m_voronoi_shards){ s.mesh->createVertexArray(); }
+//        for(auto &s : m_voronoi_shards){ s.mesh->createVertexArray(); }
         m_needs_refracture = false;
     }
     
@@ -528,7 +522,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
     float convex_margin = 0.00;
     
     gl::MaterialPtr inner_mat(gl::Material::create()),
-    outer_mat(gl::Material::create(phong_shader));
+    outer_mat(gl::Material::create(phong_shadow));
     
 //    inner_mat->setDiffuse(gl::COLOR_RED);
     inner_mat->setSpecular(gl::COLOR_BLACK);

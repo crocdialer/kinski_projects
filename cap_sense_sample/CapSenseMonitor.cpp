@@ -82,8 +82,12 @@ void CapSenseMonitor::draw()
             
             gl::draw_quad(gl::COLOR_ORANGE, sz, pos, false);
             gl::draw_quad(color, sz_frac, pos + vec2(0.f, sz.y - sz_frac.y));
-            gl::draw_text_2D(to_string(int(proxi_val * 100.f)) + "%", fonts()[FONT_MEDIUM],
-                             gl::COLOR_WHITE, offset - sz / 4.f);
+            
+            if(!i)
+            {
+                gl::draw_text_2D(to_string(int(proxi_val * 100.f)) + "%", fonts()[FONT_MEDIUM],
+                                 gl::COLOR_WHITE, offset - sz / 4.f);
+            }
             offset.x += step.x;
         }
         offset.y += step.y;

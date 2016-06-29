@@ -54,6 +54,13 @@ void BluetoothApp::setup()
         }
         
     });
+    
+//    m_central->set_peripheral_discovered_cb([this](bluetooth::CentralPtr c,
+//                                                   bluetooth::PeripheralPtr p)
+//    {
+//        LOG_DEBUG << p->name();
+//    });
+//    m_central->discover_peripherals();
 }
 
 /////////////////////////////////////////////////////////////////
