@@ -132,8 +132,11 @@ void FractureApp::draw()
             
             for(auto &p : m_crosshair_pos)
             {
-//                gl::drawCircle(p, 15.f, false);
-                gl::draw_texture(m_crosshair_tex, vec2(crosshair_width), p - vec2(crosshair_width) / 2.f);
+                if(m_crosshair_tex)
+                {
+                    gl::draw_texture(m_crosshair_tex, vec2(crosshair_width), p - vec2(crosshair_width) / 2.f);
+                }
+                else{ gl::draw_circle(p, 15.f, false); }
             }
             
         });

@@ -58,7 +58,7 @@ void BluetoothApp::setup()
     m_central->set_peripheral_discovered_cb([this](bluetooth::CentralPtr c,
                                                    bluetooth::PeripheralPtr p)
     {
-        LOG_DEBUG << p->name() << " rssi: " << p->rssi() << " uuid: " << p->uuid().string();
+        LOG_DEBUG_IF(p->connectable()) << p->name() << " rssi: " << p->rssi() << " uuid: " << p->uuid().string();
     });
     m_central->discover_peripherals();
 }
