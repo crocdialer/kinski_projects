@@ -73,7 +73,7 @@ void CapSenseMonitor::draw()
         {
             auto color = s.is_touched(i) ? gl::COLOR_ORANGE : gl::COLOR_GRAY;
             
-            float proxi_val = clamp(*m_cap_sense_proxi_multiplier * s.proximity_values()[i] / 100.f,
+            float proxi_val = clamp(*m_cap_sense_proxi_multiplier * s.proximity_values()[12 - i] / 100.f,
                                     0.f, 1.f);
             
             vec2 pos = offset - sz / 2.f,
@@ -83,10 +83,10 @@ void CapSenseMonitor::draw()
             gl::draw_quad(gl::COLOR_ORANGE, sz, pos, false);
             gl::draw_quad(color, sz_frac, pos + vec2(0.f, sz.y - sz_frac.y));
             
-            if(!i)
+            if(i == 12)
             {
                 gl::draw_text_2D(to_string(int(proxi_val * 100.f)) + "%", fonts()[FONT_MEDIUM],
-                                 gl::COLOR_WHITE, offset - sz / 4.f);
+                                 gl::COLOR_WHITE, offset - sz / 3.f);
             }
             offset.x += step.x;
         }
