@@ -47,22 +47,13 @@ void FractureApp::setup()
     m_light_component->set_lights(lights());
     add_tweakbar_for_component(m_light_component);
     
-    // add lights to scene
-    for (auto l : lights()){ scene().addObject(l ); }
     
     // init physics
     m_physics.init();
-//    m_physics.set_world_boundaries(vec3(100), vec3(0, 100, 0));
     
     // box shooting stuff
     m_box_shape = std::make_shared<btBoxShape>(btVector3(.5f, .5f, .5f));
     m_box_geom = gl::Geometry::createBox(vec3(.5f));
-    
-    
-    load_settings();
-    m_light_component->refresh();
-    
-    fracture_test(*m_num_fracture_shards);
     
     m_gui_cam = gl::OrthographicCamera::create(0, gl::window_dimension().x, gl::window_dimension().y,
                                                0, 0, 1);
@@ -70,6 +61,11 @@ void FractureApp::setup()
     // init joystick crosshairs
     m_crosshair_pos.resize(get_joystick_states().size());
     for(auto &p : m_crosshair_pos){ p = gl::window_dimension() / 2.f; }
+    
+    load_settings();
+    m_light_component->refresh();
+    
+    fracture_test(*m_num_fracture_shards);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -97,13 +93,14 @@ void FractureApp::update(float timeDelta)
         if(m_fbos[0])
         m_crosshair_pos[i] = glm::clamp(m_crosshair_pos[i], vec2(0), m_fbos[0].getSize());
         
-        if(joystick.buttons()[0] && m_fbo_cam && m_time_since_last_shot > 1.f / *m_shots_per_sec)
+        if(joystick.buttons()[11] && m_fbo_cam && m_time_since_last_shot > 1.f / *m_shots_per_sec)
         {
             auto ray = gl::calculate_ray(m_fbo_cam, m_crosshair_pos[i], m_fbos[0].getSize());
             shoot_box(ray, *m_shoot_velocity);
             m_time_since_last_shot = 0.f;
         }
         
+        if(joystick.buttons()[8]){ *m_physics_debug_draw = !*m_physics_debug_draw; }
         if(joystick.buttons()[9]){ fracture_test(*m_num_fracture_shards); break; }
         i++;
     }
@@ -124,7 +121,8 @@ void FractureApp::draw()
         auto tex = gl::render_to_texture(m_fbos[0],[&]
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            scene().render(m_fbo_cam);
+            if(*m_physics_debug_draw){ m_physics.debug_render(m_fbo_cam); }
+            else{ scene().render(m_fbo_cam); }
             
             // gui stuff
             gl::set_matrices(m_gui_cam);
@@ -275,11 +273,8 @@ void FractureApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &
             case fs::FileType::IMAGE:
             case fs::FileType::MOVIE:
                 m_texture_paths->value().push_back(f);
-                if(scene().pick(gl::calculate_ray(camera(), vec2(e.getX(), e.getY()))))
-                {
-                    LOG_DEBUG << "texture drop on model";
-                }
                 break;
+                
             default:
                 break;
         }
@@ -341,6 +336,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_texture_paths)
     {
         std::vector<gl::Texture> tex_array;
+        
         for(const string &f : m_texture_paths->value())
         {
             if(fs::get_file_type(f) == fs::FileType::IMAGE)
@@ -349,7 +345,13 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
                 catch (Exception &e) { LOG_WARNING << e.what(); }
             }else if(fs::get_file_type(f) == fs::FileType::MOVIE)
             {
-                m_movie = media::MovieController::create(f, true, true);
+                m_movie = media::MovieController::create(f, false, true);
+                m_movie->set_on_load_callback([this, tex_array](media::MediaControllerPtr m)
+                {
+                    m_needs_refracture = true;
+                    m->set_volume(0.f);
+                    m->play();
+                });
             }
         }
         if(tex_array.size() > 0){ textures()[TEXTURE_OUTER] = tex_array[0]; }
@@ -407,7 +409,6 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
 void FractureApp::shoot_box(const gl::Ray &the_ray, float the_velocity,
                             const glm::vec3 &the_half_extents)
 {
-//    auto box_shape = std::make_shared<btBoxShape>(physics::type_cast(the_half_extents));
     static gl::Shader phong_shader;
     if(!phong_shader){ phong_shader = gl::create_shader(gl::ShaderType::PHONG); }
     gl::MeshPtr mesh = gl::Mesh::create(m_box_geom, gl::Material::create(phong_shader));
@@ -512,7 +513,6 @@ void FractureApp::fracture_test(uint32_t num_shards)
     if(m_needs_refracture || m_voronoi_shards.empty())
     {
         m_voronoi_shards = physics::voronoi_convex_hull_shatter(m, voronoi_points);
-//        for(auto &s : m_voronoi_shards){ s.mesh->createVertexArray(); }
         m_needs_refracture = false;
     }
     
