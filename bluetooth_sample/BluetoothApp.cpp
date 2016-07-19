@@ -23,14 +23,14 @@ void BluetoothApp::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     load_settings();
-    
+
 //    m_bt_serial->setup();
 //    m_bt_serial->set_receive_cb([this](bluetooth::Bluetooth_UART_Ptr bt_serial,
 //                                      const std::vector<uint8_t> &the_data)
 //    {
 //        std::string reading_str;
 //        bool reading_complete = false;
-//        
+//
 //        for(uint8_t byte : the_data)
 //        {
 //            switch(byte)
@@ -40,25 +40,35 @@ void BluetoothApp::setup()
 //                    m_accumulator.clear();
 //                    reading_complete = true;
 //                    break;
-//                    
+//
 //                default:
 //                    m_accumulator.push_back(byte);
 //                    break;
 //            }
-//            
+//
 //            if(reading_complete)
 //            {
 //                reading_complete = false;
 //                LOG_DEBUG << reading_str;
 //            }
 //        }
-//        
+//
 //    });
-    
+
     m_central->set_peripheral_discovered_cb([this](bluetooth::CentralPtr c,
                                                    bluetooth::PeripheralPtr p)
     {
-        LOG_DEBUG_IF(p->connectable()) << p->name() << " rssi: " << p->rssi();
+        LOG_DEBUG << p->name() << " rssi: " << p->rssi();
+
+        if(p->connectable()){ c->connect_peripheral(p); }
+    });
+
+    m_central->set_peripheral_connected_cb([this](bluetooth::CentralPtr c,
+                                                  bluetooth::PeripheralPtr p)
+    {
+        m_peripheral = p;
+        c->stop_scanning();
+        p->discover_services();
     });
     m_central->discover_peripherals();
 }
@@ -68,7 +78,7 @@ void BluetoothApp::setup()
 void BluetoothApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    
+
 }
 
 /////////////////////////////////////////////////////////////////
@@ -77,7 +87,7 @@ void BluetoothApp::draw()
 {
 //    gl::set_matrices(camera());
 //    gl::draw_grid(50, 50);
-    
+
     gl::draw_text_2D(name(), fonts()[1], gl::COLOR_WHITE, vec2(15));
 }
 
@@ -93,19 +103,21 @@ void BluetoothApp::resize(int w ,int h)
 void BluetoothApp::keyPress(const KeyEvent &e)
 {
     ViewerApp::keyPress(e);
-    
+
     switch (e.getCode())
     {
         case Key::_D:
-            if(m_bt_serial->is_initialized()){ m_bt_serial->close(); }
-            else { m_bt_serial->setup(); }
+            // if(m_bt_serial->is_initialized()){ m_bt_serial->close(); }
+            // else { m_bt_serial->setup(); }
+            m_central->disconnect_all();
+            m_central->discover_peripherals();
             break;
-            
+
         case Key::_B:
-            if(m_bt_serial->is_initialized())
-            {
-                m_bt_serial->write("lalala der obstmostkelterer ist da\n");
-            }
+            // if(m_bt_serial->is_initialized())
+            // {
+            //     m_bt_serial->write("lalala der obstmostkelterer ist da\n");
+            // }
             break;
             
         default:
@@ -159,21 +171,21 @@ void BluetoothApp::mouseWheel(const MouseEvent &e)
 
 void BluetoothApp::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    
+
 }
 
 /////////////////////////////////////////////////////////////////
 
 void BluetoothApp::touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    
+
 }
 
 /////////////////////////////////////////////////////////////////
 
 void BluetoothApp::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    
+
 }
 
 /////////////////////////////////////////////////////////////////
