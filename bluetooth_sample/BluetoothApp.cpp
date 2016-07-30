@@ -24,37 +24,6 @@ void BluetoothApp::setup()
     add_tweakbar_for_component(shared_from_this());
     load_settings();
 
-//    m_bt_serial->setup();
-//    m_bt_serial->set_receive_cb([this](bluetooth::Bluetooth_UART_Ptr bt_serial,
-//                                      const std::vector<uint8_t> &the_data)
-//    {
-//        std::string reading_str;
-//        bool reading_complete = false;
-//
-//        for(uint8_t byte : the_data)
-//        {
-//            switch(byte)
-//            {
-//                case SERIAL_END_CODE:
-//                    reading_str = string(m_accumulator.begin(), m_accumulator.end());
-//                    m_accumulator.clear();
-//                    reading_complete = true;
-//                    break;
-//
-//                default:
-//                    m_accumulator.push_back(byte);
-//                    break;
-//            }
-//
-//            if(reading_complete)
-//            {
-//                reading_complete = false;
-//                LOG_DEBUG << reading_str;
-//            }
-//        }
-//
-//    });
-
     m_central->set_peripheral_discovered_cb([this](bluetooth::CentralPtr c,
                                                    bluetooth::PeripheralPtr p)
     {
@@ -85,9 +54,6 @@ void BluetoothApp::update(float timeDelta)
 
 void BluetoothApp::draw()
 {
-//    gl::set_matrices(camera());
-//    gl::draw_grid(50, 50);
-
     gl::draw_text_2D(name(), fonts()[1], gl::COLOR_WHITE, vec2(15));
 }
 
@@ -107,8 +73,6 @@ void BluetoothApp::keyPress(const KeyEvent &e)
     switch (e.getCode())
     {
         case Key::_D:
-            // if(m_bt_serial->is_initialized()){ m_bt_serial->close(); }
-            // else { m_bt_serial->setup(); }
             m_central->disconnect_all();
             m_central->discover_peripherals();
             break;
@@ -199,7 +163,7 @@ void BluetoothApp::fileDrop(const MouseEvent &e, const std::vector<std::string> 
 
 void BluetoothApp::tearDown()
 {
-    LOG_PRINT<<"ciao " << name();
+    LOG_PRINT << "ciao " << name();
 }
 
 /////////////////////////////////////////////////////////////////

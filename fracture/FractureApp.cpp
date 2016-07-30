@@ -43,11 +43,6 @@ void FractureApp::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     
-    m_light_component = std::make_shared<LightComponent>();
-    m_light_component->set_lights(lights());
-    add_tweakbar_for_component(m_light_component);
-    
-    
     // init physics
     m_physics.init();
     
@@ -63,7 +58,7 @@ void FractureApp::setup()
     for(auto &p : m_crosshair_pos){ p = gl::window_dimension() / 2.f; }
     
     load_settings();
-    m_light_component->refresh();
+//    m_light_component->refresh();
     
     fracture_test(*m_num_fracture_shards);
 }
