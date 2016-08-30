@@ -90,7 +90,7 @@ void KeyPointApp::update(float timeDelta)
         for(int i = 0; i < images.size(); i++)
             gl::TextureIO::updateTexture(m_textures[i], images[i]);
         
-        m_imageIndex->setRange(0, images.size() - 1);
+        m_imageIndex->set_range(0, images.size() - 1);
     }
     
     // trigger processing

@@ -21,7 +21,7 @@ void FractureApp::setup()
 {
     ViewerApp::setup();
     
-    m_texture_paths->setTweakable(false);
+    m_texture_paths->set_tweakable(false);
     
     register_property(m_view_type);
     register_property(m_model_path);
@@ -58,9 +58,8 @@ void FractureApp::setup()
     for(auto &p : m_crosshair_pos){ p = gl::window_dimension() / 2.f; }
     
     load_settings();
-//    m_light_component->refresh();
     
-    fracture_test(*m_num_fracture_shards);
+//    fracture_test(*m_num_fracture_shards);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -71,6 +70,7 @@ void FractureApp::update(float timeDelta)
     
     m_time_since_last_shot += timeDelta;
     
+    if(m_needs_refracture){ fracture_test(*m_num_fracture_shards); }
     if(*m_physics_running){ m_physics.step_simulation(timeDelta); }
     
     // update joystick positions
@@ -274,7 +274,7 @@ void FractureApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &
                 break;
         }
     }
-    m_texture_paths->notifyObservers();
+    m_texture_paths->notify_observers();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -425,7 +425,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
 {
     scene().clear();
     m_physics.init();
-    m_gravity->notifyObservers();
+    m_gravity->notify_observers();
     
     auto phong = gl::create_shader(gl::ShaderType::PHONG);
     auto phong_shadow = gl::create_shader(gl::ShaderType::PHONG_SHADOWS);

@@ -194,7 +194,7 @@ public:
         //m_pointMaterial->addTexture(gl::createTextureFromFile("smoketex.png"));
         float vals[2];
         glGetFloatv(GL_POINT_SIZE_RANGE, vals);
-        m_point_size->setRange(vals[0], vals[1]);
+        m_point_size->set_range(vals[0], vals[1]);
         m_pointMaterial->setPointSize(*m_point_size);
         m_pointMaterial->setPointAttenuation(0.f, 0.01f, 0.f);
         m_pointMaterial->uniform("u_pointRadius", 50.f);

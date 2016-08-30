@@ -28,8 +28,8 @@ void MediaPlayer::setup()
     fonts()[1].load(fonts()[0].path(), 44);
 //    Logger::get()->set_use_log_file(true);
     
-    m_movie_library->setTweakable(false);
-    m_ip_adresses_static->setTweakable(false);
+    m_movie_library->set_tweakable(false);
+    m_ip_adresses_static->set_tweakable(false);
     register_property(m_movie_library);
     register_property(m_ip_adresses_static);
     register_property(m_movie_directory);

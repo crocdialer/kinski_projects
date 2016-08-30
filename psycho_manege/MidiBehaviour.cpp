@@ -33,43 +33,53 @@ void ModelViewer::midi_callback(double time_stamp, const std::vector<uint8_t> &t
                 ////////////////////////////// Line Faders /////////////////////////////////////////////////
                 
             case 1:
-                m_rotation_lvl_1->getRange(min, max);
+                min = m_rotation_lvl_1->range().first;
+                max = m_rotation_lvl_1->range().second;
                 *m_rotation_lvl_1 = map_value<float>(value, 0, 127, min, max);
                 break;
             case 2:
-                m_rotation_lvl_2->getRange(min, max);
+                min = m_rotation_lvl_2->range().first;
+                max = m_rotation_lvl_2->range().second;
                 *m_rotation_lvl_2 = map_value<float>(value, 0, 127, min, max);
                 break;
             case 3:
-                m_rotation_lvl_3->getRange(min, max);
+                min = m_rotation_lvl_3->range().first;
+                max = m_rotation_lvl_3->range().second;
                 *m_rotation_lvl_3 = map_value<float>(value, 0, 127, min, max);
                 break;
             case 4:
-                m_animation_speed->getRange(min, max);
+                min = m_animation_speed->range().first;
+                max = m_animation_speed->range().second;
                 *m_animation_speed = map_value<float>(value, 0, 127, min, max);
                 break;
             case 5:
-                m_displace_factor->getRange(min, max);
+                min = m_displace_factor->range().first;
+                max = m_displace_factor->range().second;
                 *m_displace_factor = map_value<float>(value, 0, 127, min, max);
                 break;
             case 6:
-                m_displace_res->getRange(min, max);
+                min = m_displace_res->range().first;
+                max = m_displace_res->range().second;
                 *m_displace_res = map_value<float>(value, 0, 127, min, max);
                 break;
             case 7:
-                m_obj_scale->getRange(min, max);
+                min = m_obj_scale->range().first;
+                max = m_obj_scale->range().second;
                 *m_obj_scale = map_value<float>(value, 0, 127, min, max);
                 break;
             case 8:
-                m_obj_audio_react_low->getRange(min, max);
+                min = m_obj_audio_react_low->range().first;
+                max = m_obj_audio_react_low->range().second;
                 *m_obj_audio_react_low = map_value<float>(value, 0, 127, min, max);
                 break;
             case 9:
-                m_obj_audio_auto_rotate->getRange(min, max);
+                min = m_obj_audio_auto_rotate->range().first;
+                max = m_obj_audio_auto_rotate->range().second;
                 *m_obj_audio_auto_rotate = map_value<float>(value, 0, 127, min, max);
                 break;
             case 10:
-                m_obj_audio_react_hi->getRange(min, max);
+                min = m_obj_audio_react_hi->range().first;
+                max = m_obj_audio_react_hi->range().second;
                 *m_obj_audio_react_hi = map_value<float>(value, 0, 127, min, max);
                 break;
             default:

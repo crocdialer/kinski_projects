@@ -372,7 +372,7 @@ void SensorDebug::update_sensor_values(float time_delta)
     if((m_last_sensor_reading > m_sensor_timeout) && (m_sensor_timeout > 0.f))
     {
         m_last_sensor_reading = 0.f;
-        m_device_name_sensor->notifyObservers();
+        m_device_name_sensor->notify_observers();
     }
 }
 

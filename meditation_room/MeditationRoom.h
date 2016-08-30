@@ -76,6 +76,7 @@ namespace kinski
         
         Property_<float>::Ptr
         m_volume = Property_<float>::create("volume", 1.f),
+        m_volume_max = Property_<float>::create("volume max", 1.f),
         m_bio_score = Property_<float>::create("bio score", 0.f);
         
         gl::MaterialPtr m_mat_rgb_shift;
@@ -110,6 +111,8 @@ namespace kinski
         void draw_status_info();
         
         bool load_assets();
+        
+        void create_animations();
         
     public:
         MeditationRoom(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};

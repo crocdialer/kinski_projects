@@ -30,7 +30,6 @@ namespace kinski
         gl::MeshPtr m_mesh;
         physics::physics_context m_physics;
         media::MovieControllerPtr m_movie, m_crosshair_movie;
-        LightComponent::Ptr m_light_component;
         
         Property_<std::string>::Ptr
         m_model_path = Property_<std::string>::create("Model path", ""),

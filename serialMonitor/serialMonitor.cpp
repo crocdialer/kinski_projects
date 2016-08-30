@@ -22,7 +22,7 @@ private:
     gl::Font m_font_large, m_font_small;
     
     // Serial communication with Arduino device
-    Serial m_serial;
+    SerialPtr m_serial = Serial::create();
     
     net::udp_server m_udp_server;
     Property_<uint32_t>::Ptr m_local_udp_port = Property_<uint32_t>::create("udp port", 11111);
@@ -111,6 +111,9 @@ private:
     
 public:
     
+    SerialMonitorSample(int argc = 0, char *argv[] = nullptr) :
+    ViewerApp(argc, argv){}
+    
     /////////////////////////////////////////////////////////////////
     
     void setup() override
@@ -175,8 +178,8 @@ public:
         displayTweakBar(false);
         
         // drain the serial buffer before we start
-        m_serial.drain();
-        m_serial.flush();
+        m_serial->drain();
+        m_serial->flush();
         
         m_ortho_cam = gl::OrthographicCamera::create(0, gl::window_dimension().x, 0,
                                                      gl::window_dimension().y, 0, 1);
@@ -225,9 +228,9 @@ public:
         ViewerApp::update(timeDelta);
         
         // parse arduino input
-        if(m_serial.is_initialized())
+        if(m_serial->is_initialized())
         {
-            for(string line : m_serial.read_lines())
+            for(string line : m_serial->read_lines())
             {
                 parse_line(line);
             }
@@ -301,13 +304,13 @@ public:
 //                     vec2(80, measured_val / 2),
 //                     vec2(gl::window_dimension().x - 100, gl::window_dimension().y - measured_val / 2));
         
-        gl::draw_text_2D(measure.description() + " (" + as_string(m_selected_index->value()) +"): " +
-                            as_string(volt_value, 2) + " V",
+        gl::draw_text_2D(measure.description() + " (" + to_string(m_selected_index->value()) +"): " +
+                            to_string(volt_value, 2) + " V",
                        m_font_large,
                        gl::COLOR_BLACK, glm::vec2(30, 30));
         
-        gl::draw_text_2D(" (" + as_string(measure.min()) +
-                       " - " + as_string(measure.max()) + ")",
+        gl::draw_text_2D(" (" + to_string(measure.min()) +
+                       " - " + to_string(measure.max()) + ")",
                        m_font_small,
                        gl::COLOR_BLACK, glm::vec2(50, 110));
         
@@ -354,7 +357,7 @@ public:
         switch (e.getCode())
         {
             case GLFW_KEY_C:
-                m_arduino_device_name->notifyObservers();
+                m_arduino_device_name->notify_observers();
                 break;
                 
             case GLFW_KEY_R:
@@ -369,7 +372,7 @@ public:
             case GLFW_KEY_6:
             case GLFW_KEY_7:
             case GLFW_KEY_8:
-                number = string_as<int>(as_string(e.getChar())) - 1;
+                number = string_to<int>(to_string(e.getChar())) - 1;
                 if(e.isAltDown())
                 {
 //                    m_idle_active = false;
@@ -435,12 +438,12 @@ public:
         // return if number of tokens doesn´t match or our prefix is not found
         if(tokens.size() < 2 || tokens[0].find(m_input_prefix) == string::npos) return;
         
-        parsed_index = string_as<int>(tokens[0].substr(m_input_prefix.size()));
+        parsed_index = string_to<int>(tokens[0].substr(m_input_prefix.size()));
         
         // return if parsed index is out of bounds
         if(parsed_index < 0 || parsed_index >= m_analog_in.size()) return;
         
-        m_analog_in[parsed_index].push(string_as<int>(tokens[1]));
+        m_analog_in[parsed_index].push(string_to<int>(tokens[1]));
     }
     
     /////////////////////////////////////////////////////////////////
@@ -632,9 +635,9 @@ public:
         if(theProperty == m_arduino_device_name)
         {
             if(m_arduino_device_name->value().empty())
-                m_serial.setup(0, 115200);
+                m_serial->setup(0, 115200);
             else
-                m_serial.setup(*m_arduino_device_name, 115200);
+                m_serial->setup(*m_arduino_device_name, 115200);
         }
         else if (theProperty == m_midi_autoplay)
         {
@@ -650,7 +653,7 @@ public:
         }
         else if (theProperty == m_dmx_min_val || theProperty == m_dmx_max_val)
         {
-            try{m_dmx_idle_max_val->setRange(*m_dmx_min_val, *m_dmx_max_val);}
+            try{m_dmx_idle_max_val->set_range(*m_dmx_min_val, *m_dmx_max_val);}
             catch(Exception &e){LOG_ERROR<<e.what();}
         }
         else if (theProperty == m_dmx_start_index)
@@ -683,7 +686,7 @@ public:
 
 int main(int argc, char *argv[])
 {
-    App::Ptr theApp(new SerialMonitorSample);
+    App::Ptr theApp(new SerialMonitorSample(argc, argv));
     LOG_INFO << "local ip: " << net::local_ip();
     return theApp->run();
 }

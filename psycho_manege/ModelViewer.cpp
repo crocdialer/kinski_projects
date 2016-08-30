@@ -80,7 +80,7 @@ void ModelViewer::setup()
     register_property(m_freq_mid_high);
     register_property(m_freq_high);
     
-    m_asset_paths->setTweakable(false);
+    m_asset_paths->set_tweakable(false);
     register_property(m_cube_map_folder);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
@@ -175,8 +175,7 @@ void ModelViewer::update(float timeDelta)
     
     if(audio_low > 0.f)
     {
-        float min, max;
-        m_displace_factor->getRange(min, max);
+        float max = m_displace_factor->range().second;
         
         // LOWS
         *m_displace_factor = audio_low * max;
@@ -186,8 +185,7 @@ void ModelViewer::update(float timeDelta)
     if(audio_hi > 0.f)
     {
         // HIGHS
-        float min, max;
-        m_obj_scale->getRange(min, max);
+        float max = m_obj_scale->range().second;
         
         // LOWS
         *m_displace_res = audio_hi * max;

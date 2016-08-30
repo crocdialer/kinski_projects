@@ -62,7 +62,7 @@ void MovieTimeshift::setup()
     }
     if(!syphon::Input::get_inputs().empty())
     {
-        m_syphon_in_index->setRange(0, syphon::Input::get_inputs().size() - 1);
+        m_syphon_in_index->set_range(0, syphon::Input::get_inputs().size() - 1);
     }
     
     load_settings();

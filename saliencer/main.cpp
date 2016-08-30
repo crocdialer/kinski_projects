@@ -101,7 +101,7 @@ public:
                 m_material->textures().push_back(m_textures[i]);
             }
             
-            m_imageIndex->setRange(0, images.size() - 1);
+            m_imageIndex->set_range(0, images.size() - 1);
         }
         
         // trigger processing

@@ -377,5 +377,5 @@ void GrowthApp::refresh_lsystem()
     }
     
     uint32_t min = 0, max = m_entries.front().num_indices - 1;
-    m_max_index->setRange(min, max);
+    m_max_index->set_range(min, max);
 }
