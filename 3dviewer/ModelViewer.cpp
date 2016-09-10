@@ -63,10 +63,10 @@ void ModelViewer::setup()
     // rearrange standard lights as carussel
     for(auto l : lights())
     {
-        scene().removeObject(l);
+        scene()->removeObject(l);
         light_root->add_child(l);
     }
-    scene().addObject(light_root);
+    scene()->addObject(light_root);
 
     // add groundplane
     auto ground_mesh = gl::Mesh::create(gl::Geometry::createPlane(400, 400),
@@ -74,7 +74,7 @@ void ModelViewer::setup()
     ground_mesh->transform() = glm::rotate(mat4(), -glm::half_pi<float>(), gl::X_AXIS);
     ground_mesh->add_tag(tag_ground_plane);
     
-    scene().addObject(ground_mesh);
+    scene()->addObject(ground_mesh);
 
     load_settings();
 }
@@ -150,7 +150,7 @@ void ModelViewer::draw()
         textures()[TEXTURE_OFFSCREEN] = tex;
         textures()[1] = m_post_process_fbo.getDepthTexture();
     }
-    else{ scene().render(camera()); }
+    else{ scene()->render(camera()); }
 
     if(*m_draw_fps)
     {
@@ -325,9 +325,9 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
         {
             if(m)
             {
-                scene().removeObject(m_mesh);
+                scene()->removeObject(m_mesh);
                 m_mesh = m;
-                scene().addObject(m_mesh);
+                scene()->addObject(m_mesh);
                 m_dirty_shader = true;
             }
         });
@@ -374,11 +374,11 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_skybox_path)
     {
-        async_load_texture(*m_skybox_path, [this](const gl::Texture &t){ scene().set_skybox(t); });
+        async_load_texture(*m_skybox_path, [this](const gl::Texture &t){ scene()->set_skybox(t); });
     }
     else if(theProperty == m_use_ground_plane)
     {
-        auto objs = scene().get_objects_by_tag(tag_ground_plane);
+        auto objs = scene()->get_objects_by_tag(tag_ground_plane);
 
         for(auto &o : objs)
         {
