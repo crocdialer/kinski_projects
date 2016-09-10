@@ -34,7 +34,7 @@ namespace kinski
         //! timer for periodic udp broadcasts
         Timer m_broadcast_timer;
         
-        gl::Scene m_gui_scene;
+        gl::ScenePtr m_gui_scene = gl::Scene::create();
         
         Property_<string>::Ptr
         m_device_prefix = Property_<string>::create("device prefix", "tty.usb"),
