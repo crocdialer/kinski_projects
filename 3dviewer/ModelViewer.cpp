@@ -6,6 +6,7 @@
 //
 //
 
+#include "core/Image.hpp"
 #include "ModelViewer.h"
 #include "AssimpConnector.h"
 #include "gl/ShaderLibrary.h"
@@ -483,21 +484,21 @@ void ModelViewer::async_load_asset(const std::string &the_path,
         // load model on worker thread
         auto m = load_asset(*m_model_path);
 
-        std::map<gl::MaterialPtr, std::vector<gl::ImagePtr>> mat_img_map;
+        std::map<gl::MaterialPtr, std::vector<ImagePtr>> mat_img_map;
 
         if(m)
         {
             // load and decode images on worker thread
             for(auto &mat : m->materials())
             {
-                std::vector<gl::ImagePtr> tex_imgs;
+                std::vector<ImagePtr> tex_imgs;
 
                 for(auto &p : mat->texture_paths())
                 {
                     try
                     {
                         auto dataVec = fs::read_binary_file(p.first);
-                        tex_imgs.push_back(gl::decode_image(dataVec));
+                        tex_imgs.push_back(decode_image(dataVec));
                         p.second = gl::Material::AssetLoadStatus::LOADED;
                     }
                     catch(Exception &e)
@@ -517,7 +518,7 @@ void ModelViewer::async_load_asset(const std::string &the_path,
             {
                 for(auto &mat : m->materials())
                 {
-                    for(const gl::ImagePtr &img : mat_img_map.at(mat))
+                    for(const ImagePtr &img : mat_img_map.at(mat))
                     {
                         gl::Texture tex = gl::create_texture_from_image(img, true, true);
                         mat->addTexture(tex);
