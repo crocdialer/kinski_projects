@@ -497,9 +497,13 @@ void ModelViewer::async_load_asset(const std::string &the_path,
                 {
                     try
                     {
-                        auto dataVec = fs::read_binary_file(p.first);
-                        tex_imgs.push_back(decode_image(dataVec));
-                        p.second = gl::Material::AssetLoadStatus::LOADED;
+                        auto img = create_image_from_file(p.first);
+                        
+                        if(img)
+                        {
+                            tex_imgs.push_back(img);
+                            p.second = gl::Material::AssetLoadStatus::LOADED;
+                        }
                     }
                     catch(Exception &e)
                     {
