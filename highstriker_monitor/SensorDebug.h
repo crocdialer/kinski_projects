@@ -53,9 +53,9 @@ namespace kinski
         m_device_name_nixie = Property_<string>::create("nixie device", ""),
         m_device_name_dmx = Property_<string>::create("dmx device", "");
         
-        Property_<int>::Ptr
-        m_sensor_refresh_rate = Property_<int>::create("sensor refresh rate", 0),
-        m_sensor_hist_size = RangedProperty<int>::create("sensor history size", 150, 1, 500);
+        Property_<uint32_t>::Ptr
+        m_sensor_refresh_rate = Property_<uint32_t>::create("sensor refresh rate", 0),
+        m_sensor_hist_size = RangedProperty<uint32_t>::create("sensor history size", 150, 1, 500);
         
         RangedProperty<float>::Ptr
         m_timeout_game_ready = RangedProperty<float>::create("timeout game_ready", 1.f, 0.f, 60.f),

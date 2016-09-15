@@ -360,7 +360,6 @@ void SensorDebug::update_sensor_values(float time_delta)
                 auto v = clamp(*m_force_multiplier * string_to<float>(splits[i]) / 16.f, 0.f, 1.f);
                 m_measurements[i].push_back(v);
                 while(m_measurements[i].size() > *m_sensor_hist_size){ m_measurements[i].pop_front(); }
-//                m_current_value = v;
                 m_sensor_last_max = std::max(m_sensor_last_max, v);
             }
         }
