@@ -106,8 +106,8 @@ void SensorDebug::draw()
 
     for(size_t i = 0; i < m_measurements.size(); i++)
     {
-        float val = (float) m_measurements[i].back();
-        // if(!m_sensor_vals[i]){ continue; }
+        std::vector<float> tmp_array(m_measurements[i].begin(), m_measurements[i].end());
+        float val = tmp_array.back();
 
         // rectangle for current value
         gl::draw_quad(gl::COLOR_GRAY, vec2(val * w, h), offset);
@@ -121,16 +121,16 @@ void SensorDebug::draw()
         auto &verts = m_line_mesh->geometry()->vertices();
         auto &colors = m_line_mesh->geometry()->colors();
         
-        verts.resize(m_measurements[i].capacity() * 2, gl::vec3(0));
+        verts.resize(m_measurements[i].size() * 2);
         colors.resize(verts.size(), gl::COLOR_WHITE);
         m_line_mesh->geometry()->texCoords().resize(verts.size(), gl::vec2(0));
         
-        for (size_t j = 0, sz = m_measurements[i].size() * 2; j < sz; j += 2)
+        for (size_t j = 0, sz = verts.size(); j < sz; j += 2)
         {
             float x_val = offset.x + j / (float) sz * w;
             float y_val = gl::window_dimension().y - offset.y - h;
             
-            float hist_val = m_measurements[i][j / 2];
+            float hist_val = tmp_array[j / 2];
             verts[sz - 1 - j] = vec3(x_val, y_val, 0.f);
             verts[sz - 2 - j] = vec3(x_val, y_val + std::max(h * hist_val, 1.f), 0.f);
             colors[sz - 1 - j] = colors[sz - 2 - j] =
@@ -348,17 +348,20 @@ void SensorDebug::update_sensor_values(float time_delta)
         if(reading_complete)
         {
             auto splits = split(reading_str, ' ');
+            
             if(m_measurements.size() < splits.size())
             {
-                m_measurements.resize(std::min<size_t>(splits.size(), 4),
-                                      CircularBuffer<double>(*m_sensor_hist_size));
+                m_measurements.resize(std::min<size_t>(splits.size(), 4));
             }
             
             for(size_t i = 0; i < m_measurements.size(); i++)
             {
-                double v = clamp<double>(*m_force_multiplier * string_to<float>(splits[i]) /16.0, 0.f, 1.f);
-                m_measurements[i].push(v);
-                m_sensor_last_max = std::max<double>(m_sensor_last_max, v);
+                
+                auto v = clamp(*m_force_multiplier * string_to<float>(splits[i]) / 16.f, 0.f, 1.f);
+                m_measurements[i].push_back(v);
+                while(m_measurements[i].size() > *m_sensor_hist_size){ m_measurements[i].pop_front(); }
+//                m_current_value = v;
+                m_sensor_last_max = std::max(m_sensor_last_max, v);
             }
         }
     }
@@ -438,7 +441,6 @@ bool SensorDebug::change_gamestate(GameState the_state)
                 m_current_gamestate = IMPACT;
                 LOG_DEBUG << "new state: " << m_gamestate_names[m_current_gamestate];
                 return change_gamestate(SCORE);
-
             }
             break;
 
