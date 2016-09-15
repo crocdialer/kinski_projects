@@ -10,7 +10,7 @@
 
 #include "app/ViewerApp.hpp"
 #include "core/Serial.hpp"
-#include "core/Measurement.hpp"
+#include "core/CircularBuffer.hpp"
 
 // module includes
 #include "dmx/dmx.h"
@@ -35,9 +35,8 @@ namespace kinski
         DMXController m_dmx;
         
         //////////////////////// sensor input ///////////////////////////////////
-        
-        std::vector<float> m_sensor_vals;
-        std::vector<Measurement<float>> m_measurements;
+
+        std::vector<CircularBuffer<double>> m_measurements;
         
         std::vector<uint8_t> m_serial_accumulator, m_serial_read_buf;
         

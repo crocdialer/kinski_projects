@@ -74,7 +74,7 @@ void AsteroidField::update(float timeDelta)
     
     // fetch all model-objects in scene
     gl::SelectVisitor<gl::Mesh> mv;
-    scene().root()->accept(mv);
+    scene()->root()->accept(mv);
     
     for(auto &m : mv.get_objects())
     {
@@ -117,7 +117,7 @@ void AsteroidField::draw()
     gl::set_matrices(camera());
     if(*m_draw_grid){ gl::draw_grid(50, 50); }
     
-    scene().render(camera());
+    scene()->render(camera());
 }
 
 /////////////////////////////////////////////////////////////////
@@ -269,10 +269,10 @@ void AsteroidField::load_assets()
 
 void AsteroidField::create_scene(int num_objects)
 {
-    scene().clear();
+    scene()->clear();
     
     // add lights to scene
-    for (auto l : lights()){ scene().addObject(l ); }
+    for (auto l : lights()){ scene()->addObject(l ); }
     m_light_component->set_lights(lights());
     
     int m = 0;
@@ -298,6 +298,6 @@ void AsteroidField::create_scene(int num_objects)
         {
             test_mesh->transform() = glm::rotate(test_mesh->transform(), rot_speed * t, rot_vec);
         });
-        scene().addObject(test_mesh);
+        scene()->addObject(test_mesh);
     }
 }

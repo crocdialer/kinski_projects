@@ -106,14 +106,14 @@ void SensorDebug::draw()
 
     for(size_t i = 0; i < m_measurements.size(); i++)
     {
-        float val = (float) m_measurements[i].last_value();
+        float val = (float) m_measurements[i].back();
         // if(!m_sensor_vals[i]){ continue; }
 
         // rectangle for current value
         gl::draw_quad(gl::COLOR_GRAY, vec2(val * w, h), offset);
 
         gl::draw_text_2D(to_string(100.f * val, 1) + "%", fonts()[FONT_MEDIUM], gl::COLOR_WHITE,
-                       offset + vec2(val * w, 0));
+                         offset + vec2(val * w, 0));
 
         ////////////////////////////// measure history ///////////////////////////
 
@@ -121,11 +121,11 @@ void SensorDebug::draw()
         auto &verts = m_line_mesh->geometry()->vertices();
         auto &colors = m_line_mesh->geometry()->colors();
         
-        verts.resize(m_measurements[i].history_size() * 2);
+        verts.resize(m_measurements[i].capacity() * 2, gl::vec3(0));
         colors.resize(verts.size(), gl::COLOR_WHITE);
         m_line_mesh->geometry()->texCoords().resize(verts.size(), gl::vec2(0));
         
-        for (size_t j = 0, sz = verts.size(); j < sz; j += 2)
+        for (size_t j = 0, sz = m_measurements[i].size() * 2; j < sz; j += 2)
         {
             float x_val = offset.x + j / (float) sz * w;
             float y_val = gl::window_dimension().y - offset.y - h;
@@ -159,8 +159,6 @@ void SensorDebug::draw()
     {
         auto color_ready = gl::COLOR_GREEN; color_ready.a = .3f;
         gl::draw_quad(color_ready, vec2(75), vec2(gl::window_dimension().x - 100, 25));
-//        gl::draw_text_2D("go", fonts()[FONT_LARGE],
-//                         gl::COLOR_WHITE, vec2(gl::window_dimension().x - 97, 40));
     }
 }
 
@@ -350,20 +348,17 @@ void SensorDebug::update_sensor_values(float time_delta)
         if(reading_complete)
         {
             auto splits = split(reading_str, ' ');
-            m_sensor_vals.resize(splits.size());
             if(m_measurements.size() < splits.size())
             {
                 m_measurements.resize(std::min<size_t>(splits.size(), 4),
-                                      Measurement<float>(*m_sensor_hist_size));
+                                      CircularBuffer<double>(*m_sensor_hist_size));
             }
             
-            for(size_t i = 0; i < m_sensor_vals.size(); i++)
+            for(size_t i = 0; i < m_measurements.size(); i++)
             {
-                m_sensor_vals[i] = string_to<float>(splits[i]);
-                
-                auto v = clamp(*m_force_multiplier * m_sensor_vals[i] / 16.f, 0.f, 1.f);
+                double v = clamp<double>(*m_force_multiplier * string_to<float>(splits[i]) /16.0, 0.f, 1.f);
                 m_measurements[i].push(v);
-                m_sensor_last_max = std::max(m_sensor_last_max, v);
+                m_sensor_last_max = std::max<double>(m_sensor_last_max, v);
             }
         }
     }
