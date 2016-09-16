@@ -66,7 +66,7 @@ void GrowthApp::setup()
     catch(Exception &e){LOG_ERROR << e.what();}
     
     // add lights to scene
-    for (auto l : lights()){ scene().addObject(l ); }
+    for (auto l : lights()){ scene()->addObject(l ); }
     
     load_settings();
 }
@@ -93,7 +93,7 @@ void GrowthApp::draw()
     }
     
     // draw our scene
-    scene().render(camera());
+    scene()->render(camera());
     
     // our bounding mesh
     if(wireframe())
@@ -352,11 +352,11 @@ void GrowthApp::refresh_lsystem()
     else{ m_lsystem.set_position_check(LSystem::PositionCheckFunctor()); }
     
     // create a mesh from our lsystem geometry
-    scene().removeObject(m_mesh);
+    scene()->removeObject(m_mesh);
     m_mesh = m_lsystem.create_mesh();
     m_entries = m_mesh->entries();
     
-    scene().addObject(m_mesh);
+    scene()->addObject(m_mesh);
     
     // add our shader
     for (auto &m : m_mesh->materials())

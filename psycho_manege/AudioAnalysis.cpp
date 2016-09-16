@@ -29,7 +29,7 @@ float ModelViewer::get_volume_for_subspectrum(float from_freq, float to_freq)
     
     // sum values
     float sum = 0;
-    for(int i = from_bin; i < to_bin; i++){ sum += m_sound_values[i].last_value(); }
+    for(int i = from_bin; i < to_bin; i++){ sum += m_sound_values[i].back(); }
     
     // return arithmetic average
     return sum / (to_bin - from_bin);
@@ -65,13 +65,13 @@ void ModelViewer::init_audio()
     m_sound_spectrum.resize(num_freq_bands);
     m_sound_values.resize(num_freq_bands);
     
-    for(auto &measure : m_sound_values)
-    {
-        auto filter = std::make_shared<FalloffFilter<float>>();
-        filter->set_increase_speed(inc_speed);
-        filter->set_decrease_speed(dec_speed);
-        measure.set_filter(filter);
-    }
+//    for(auto &measure : m_sound_values)
+//    {
+//        auto filter = std::make_shared<FalloffFilter<float>>();
+//        filter->set_increase_speed(inc_speed);
+//        filter->set_decrease_speed(dec_speed);
+//        measure.set_filter(filter);
+//    }
 }
 
 void ModelViewer::update_audio()

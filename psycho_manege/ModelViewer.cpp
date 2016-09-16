@@ -90,7 +90,7 @@ void ModelViewer::setup()
     add_tweakbar_for_component(m_light_component);
     
     // add lights to scene
-    for (auto l : lights()){ scene().addObject(l ); }
+    for (auto l : lights()){ scene()->addObject(l ); }
     
     // roots for our scene
     m_roots.resize(NUM_LVLS);
@@ -99,7 +99,7 @@ void ModelViewer::setup()
     for(auto &r : m_roots)
     {
         r = gl::Object3D::create();
-        scene().addObject(r);
+        scene()->addObject(r);
     }
     
     // pre-create our shaders
@@ -150,7 +150,7 @@ void ModelViewer::update(float timeDelta)
     
     // fetch all meshes in scenegraph
     gl::SelectVisitor<gl::Mesh> mv;
-    scene().root()->accept(mv);
+    scene()->root()->accept(mv);
     
     //////////////////////////////// Parallax Lvls /////////////////////////////////////////
     
@@ -235,9 +235,9 @@ void ModelViewer::draw()
     }
     
     // render scene and debug elements
-    scene().render(camera());
+    scene()->render(camera());
     
-    m_debug_scene.render(camera());
+    m_debug_scene->render(camera());
     
     if(*m_use_syphon)
     {
@@ -569,7 +569,7 @@ void ModelViewer::build_skeleton(gl::BonePtr currentBone, vector<vec3> &points,
 void ModelViewer::setup_offscreen_cameras(int num_screens, bool as_circle)
 {
     // remove old objects
-    for(auto &m : m_offscreen_meshes){ m_debug_scene.removeObject(m); }
+    for(auto &m : m_offscreen_meshes){ m_debug_scene->removeObject(m); }
     
     m_offscreen_cams.resize(num_screens);
     m_offscreen_meshes.resize(num_screens);
@@ -586,7 +586,7 @@ void ModelViewer::setup_offscreen_cameras(int num_screens, bool as_circle)
         // create debug mesh
         m_offscreen_meshes[i] = gl::create_frustum_mesh(m_offscreen_cams[i]);
         m_offscreen_meshes[i]->material()->setDiffuse(m_cam_colors[i]);
-        m_debug_scene.addObject(m_offscreen_meshes[i]);
+        m_debug_scene->addObject(m_offscreen_meshes[i]);
     }
     
     // create our FBO
@@ -622,7 +622,7 @@ gl::Texture ModelViewer::create_offscreen_texture()
             gl::set_window_dimension(vec2(screen_width, screen_height), vec2(i * screen_width, 0));
             
             if(*m_use_test_pattern){ gl::draw_quad(m_cam_colors[i], gl::window_dimension()); }
-            else{ scene().render(m_offscreen_cams[i]); }
+            else{ scene()->render(m_offscreen_cams[i]); }
         }
         
     });
@@ -712,7 +712,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
 
 void ModelViewer::update_select_indicator()
 {
-    scene().removeObject(m_select_indicator);
+    scene()->removeObject(m_select_indicator);
     
     if(auto m = selected_mesh())
     {
@@ -795,7 +795,7 @@ void ModelViewer::toggle_selection(int the_inc)
     if(m_timer_select_enable.has_expired())
     {
         gl::SelectVisitor<gl::Mesh> mv;
-        scene().root()->accept(mv);
+        scene()->root()->accept(mv);
         auto mesh_list = mv.get_objects();
         mesh_list.remove(m_select_indicator.get());
         

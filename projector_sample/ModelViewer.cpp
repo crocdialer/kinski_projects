@@ -37,7 +37,7 @@ void ModelViewer::setup()
     m_fbos[1] = gl::Fbo(1024, 1024);
     
     // add lights to scene
-    for (auto l : lights()){ scene().addObject(l ); }
+    for (auto l : lights()){ scene()->addObject(l ); }
     
     m_draw_depth_mat = gl::Material::create();
     m_draw_depth_mat->setBlending();
@@ -91,7 +91,7 @@ void ModelViewer::draw()
         for (auto l : lights()){ gl::draw_light(l); }
     }
     
-    scene().render(camera());
+    scene()->render(camera());
     
     // draw texture map(s)
     if(displayTweakBar()){ draw_textures(textures()); }
@@ -114,9 +114,9 @@ void ModelViewer::keyPress(const KeyEvent &e)
     {
         case GLFW_KEY_P:
             m_projector = create_camera_from_viewport();
-            scene().removeObject(m_projector_mesh);
+            scene()->removeObject(m_projector_mesh);
             m_projector_mesh = gl::create_frustum_mesh(m_projector);
-            scene().addObject(m_projector_mesh);
+            scene()->addObject(m_projector_mesh);
             
             break;
             
@@ -198,7 +198,7 @@ void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &
                     }
                 }
                 catch (Exception &e) { LOG_WARNING << e.what();}
-                if(scene().pick(gl::calculate_ray(camera(), vec2(e.getPos()))))
+                if(scene()->pick(gl::calculate_ray(camera(), vec2(e.getPos()))))
                 {
                     LOG_INFO << "texture drop on model";
                 }
@@ -238,9 +238,9 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
             
             for(auto &t : m->material()->textures()){ textures()[0] = t; }
             
-            scene().removeObject(m_mesh);
+            scene()->removeObject(m_mesh);
             m_mesh = m;
-            scene().addObject(m_mesh);
+            scene()->addObject(m_mesh);
             
             auto aabb = m->boundingBox();
             

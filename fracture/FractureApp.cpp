@@ -117,7 +117,7 @@ void FractureApp::draw()
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             if(*m_physics_debug_draw){ m_physics.debug_render(m_fbo_cam); }
-            else{ scene().render(m_fbo_cam); }
+            else{ scene()->render(m_fbo_cam); }
             
             // gui stuff
             gl::set_matrices(m_gui_cam);
@@ -149,7 +149,7 @@ void FractureApp::draw()
             }
             
             if(*m_physics_debug_draw){ m_physics.debug_render(camera()); }
-            else{ scene().render(camera()); }
+            else{ scene()->render(camera()); }
             break;
             
         case VIEW_OUTPUT:
@@ -299,7 +299,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
         {
             for(auto &t : m->material()->textures()){ textures().push_back(t); }
             
-            scene().removeObject(m_mesh);
+            scene()->removeObject(m_mesh);
             m_physics.remove_mesh_from_simulation(m_mesh);
             m_mesh = m;
             
@@ -307,7 +307,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
             float scale_factor = 10.f / aabb.width();
             m->setScale(scale_factor);
             
-            scene().addObject(m_mesh);
+            scene()->addObject(m_mesh);
             m_physics.add_mesh_to_simulation(m_mesh);
         }
     }
@@ -409,7 +409,7 @@ void FractureApp::shoot_box(const gl::Ray &the_ray, float the_velocity,
     gl::MeshPtr mesh = gl::Mesh::create(m_box_geom, gl::Material::create(phong_shader));
     mesh->setScale(.2f * the_half_extents);
     mesh->setPosition(the_ray.origin);
-    scene().addObject(mesh);
+    scene()->addObject(mesh);
     m_box_shape->setLocalScaling(physics::type_cast(mesh->scale()));
     
     
@@ -423,7 +423,7 @@ void FractureApp::shoot_box(const gl::Ray &the_ray, float the_velocity,
 
 void FractureApp::fracture_test(uint32_t num_shards)
 {
-    scene().clear();
+    scene()->clear();
     m_physics.init();
     m_gravity->notify_observers();
     
@@ -443,7 +443,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
         auto col_shape = std::make_shared<btBoxShape>(physics::type_cast(ground_aabb.halfExtents()));
         btRigidBody *rb = m_physics.add_mesh_to_simulation(ground, 0.f, col_shape);
         rb->setFriction(*m_friction);
-        scene().addObject(ground);
+        scene()->addObject(ground);
         
         // back plane
         auto back = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
@@ -473,11 +473,11 @@ void FractureApp::fracture_test(uint32_t num_shards)
     
     if(m_mesh)
     {
-        scene().addObject(m_mesh);
+        scene()->addObject(m_mesh);
         m_physics.add_mesh_to_simulation(m_mesh);
     }
     
-    for(auto &l : lights()){ scene().addObject(l); }
+    for(auto &l : lights()){ scene()->addObject(l); }
     
     auto m = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), gl::Material::create(phong_shadow));
     m->setScale(*m_obj_scale);
@@ -531,7 +531,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
     for(auto &s : m_voronoi_shards)
     {
         auto mesh_copy = s.mesh->copy();
-        scene().addObject(mesh_copy);
+        scene()->addObject(mesh_copy);
         mesh_copy->materials() = {outer_mat, inner_mat};
         
         

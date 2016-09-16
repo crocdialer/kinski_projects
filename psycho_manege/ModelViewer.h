@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "core/CircularBuffer.hpp"
 #include "app/ViewerApp.hpp"
 #include "app/LightComponent.hpp"
 #include "app/RemoteControl.hpp"
@@ -33,7 +34,7 @@ namespace kinski
     private:
         
         gl::MeshPtr m_mesh, m_select_indicator;
-        gl::Scene m_debug_scene;
+        gl::ScenePtr m_debug_scene = gl::Scene::create();
         gl::Texture m_cube_map;
         gl::Noise m_noise;
         
@@ -169,7 +170,7 @@ namespace kinski
         // recording assets
         audio::SoundPtr m_sound_recording;
         std::vector<float> m_sound_spectrum;
-        std::vector<kinski::Measurement<float>> m_sound_values{256};
+        std::vector<kinski::CircularBuffer<float>> m_sound_values{256};
         
         // last measured values
         std::vector<float> m_last_volumes;
