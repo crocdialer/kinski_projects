@@ -42,13 +42,19 @@ void FractureApp::setup()
     register_property(m_syphon_server_name);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
+    add_tweakbar_for_component(m_light_component);
     
     // init physics
     m_physics.init();
     
     // box shooting stuff
     m_box_shape = std::make_shared<btBoxShape>(btVector3(.5f, .5f, .5f));
+    m_sphere_shape = std::make_shared<btSphereShape>(.5f);
     m_box_geom = gl::Geometry::createBox(vec3(.5f));
+    m_shoot_mesh = gl::Mesh::create(gl::Geometry::createSphere(.5f, 24),
+                                    gl::Material::create(gl::ShaderType::PHONG));
+    m_shoot_mesh->material()->queue_texture_load("~/Downloads/tennisball.jpg");
+    m_shoot_mesh->material()->setSpecular(gl::COLOR_BLACK);
     
     m_gui_cam = gl::OrthographicCamera::create(0, gl::window_dimension().x, gl::window_dimension().y,
                                                0, 0, 1);
@@ -213,7 +219,8 @@ void FractureApp::mousePress(const MouseEvent &e)
     {
         gl::CameraPtr cam = *m_view_type == VIEW_OUTPUT ? m_fbo_cam : camera();
         auto ray = gl::calculate_ray(cam, vec2(e.getX(), e.getY()));
-        shoot_box(ray, *m_shoot_velocity);
+//        shoot_box(ray, *m_shoot_velocity);
+        shoot_ball(ray, *m_shoot_velocity, .1f);
     }
 }
 
@@ -421,6 +428,29 @@ void FractureApp::shoot_box(const gl::Ray &the_ray, float the_velocity,
     rb->setCcdMotionThreshold(glm::length(mesh->scale() / 2.f));
 }
 
+/////////////////////////////////////////////////////////////////
+
+void FractureApp::shoot_ball(const gl::Ray &the_ray, float the_velocity,
+                             float the_radius)
+{
+    gl::MeshPtr mesh = m_shoot_mesh->copy();
+    mesh->setScale(2 * the_radius);
+    mesh->setPosition(the_ray.origin);
+    scene()->addObject(mesh);
+    m_sphere_shape->setLocalScaling(physics::type_cast(mesh->scale()));
+    
+    
+    btRigidBody *rb = m_physics.add_mesh_to_simulation(mesh,
+                                                       100 * glm::pi<float>() * 4.f / 3.f * pow(the_radius, 3.f),
+                                                       m_sphere_shape);
+    rb->setFriction(*m_friction);
+    rb->setLinearVelocity(physics::type_cast(the_ray.direction * the_velocity));
+    rb->setCcdSweptSphereRadius(glm::length(mesh->scale() / 2.f));
+    rb->setCcdMotionThreshold(glm::length(mesh->scale() / 2.f));
+}
+
+/////////////////////////////////////////////////////////////////
+
 void FractureApp::fracture_test(uint32_t num_shards)
 {
     scene()->clear();
@@ -437,6 +467,8 @@ void FractureApp::fracture_test(uint32_t num_shards)
         auto ground_mat = gl::Material::create(phong_shadow);
 //        ground_mat->setDiffuse(gl::COLOR_BLACK);
         auto ground = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
+        ground->geometry()->colors().clear();
+        
         ground->setScale(vec3(100, 1, 100));
         auto ground_aabb = ground->boundingBox();
         ground->position().y -= ground_aabb.halfExtents().y;

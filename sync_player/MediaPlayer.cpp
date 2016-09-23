@@ -52,7 +52,7 @@ void MediaPlayer::setup()
     m_warp->observe_properties();
 
     // check for command line input
-    if(args().size() > 1 && fs::file_exists(args()[1])){ *m_movie_path = args()[1]; }
+    if(args().size() > 1 && fs::exists(args()[1])){ *m_movie_path = args()[1]; }
     
     // setup our components to receive rpc calls
     setup_rpc_interface();
@@ -565,9 +565,9 @@ void MediaPlayer::reload_movie()
     m_movie->set_volume(*m_volume);
     
     m_movie->set_media_ended_callback([this](media::MediaControllerPtr the_movie)
-                                      {
-                                          if(*m_loop){ start_playback(*m_movie_path); }
-                                      });
+    {
+        if(*m_loop){ start_playback(*m_movie_path); }
+    });
     
     if(!*m_load_remote_movies){ start_playback(*m_movie_path); }
 }

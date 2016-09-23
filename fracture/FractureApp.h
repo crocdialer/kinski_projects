@@ -55,7 +55,8 @@ namespace kinski
         Property_<glm::vec3>::Ptr
         m_obj_scale = Property_<glm::vec3>::create("object scale", glm::vec3(.5f));
         
-        physics::btCollisionShapePtr m_box_shape;
+        physics::btCollisionShapePtr m_box_shape, m_sphere_shape;
+        gl::MeshPtr m_shoot_mesh;
         gl::GeometryPtr m_box_geom;
         
         bool m_needs_refracture = true;
@@ -90,6 +91,9 @@ namespace kinski
         
         void shoot_box(const gl::Ray &the_ray, float the_velocity,
                        const glm::vec3 &the_half_extents = glm::vec3(.5f));
+        
+        void shoot_ball(const gl::Ray &the_ray, float the_velocity,
+                        float the_radius = .5f);
         
         void fracture_test(uint32_t num_shards);
         
