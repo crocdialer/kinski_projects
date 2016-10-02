@@ -1,4 +1,4 @@
 set(LIBS ${LIBS} "cv")
-set(MODULES video)
+set(MODULES media)
 KINSKI_ADD_SAMPLE(${itemName} ${folderItem} "${MODULES}")
 

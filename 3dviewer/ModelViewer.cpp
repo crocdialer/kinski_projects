@@ -104,6 +104,8 @@ void ModelViewer::update(float timeDelta)
             {
                 gl::Shader shader = gl::create_shader(gl::ShaderType::DEPTH_OF_FIELD);
                 m_post_process_mat = gl::Material::create(shader);
+                m_post_process_mat->setDepthWrite(false);
+                m_post_process_mat->setDepthTest(false);
             }catch(Exception &e){ LOG_WARNING << e.what(); }
         }
         
@@ -130,11 +132,6 @@ void ModelViewer::draw()
     gl::set_matrices(camera());
     if(draw_grid()){ gl::draw_grid(50, 50); }
 
-    if(m_light_component->draw_light_dummies())
-    {
-        for (auto l : lights()){ gl::draw_light(l); }
-    }
-    
     if(*m_use_post_process)
     {
         auto tex = gl::render_to_texture(scene(), m_post_process_fbo, camera());
@@ -152,7 +149,13 @@ void ModelViewer::draw()
         textures()[1] = m_post_process_fbo.getDepthTexture();
     }
     else{ scene()->render(camera()); }
-
+    
+    if(m_light_component->draw_light_dummies())
+    {
+        gl::set_matrices(camera());
+        for (auto l : lights()){ gl::draw_light(l); }
+    }
+    
     if(*m_draw_fps)
     {
         gl::draw_text_2D(to_string(fps(), 1), fonts()[0],

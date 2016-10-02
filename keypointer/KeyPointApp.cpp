@@ -200,9 +200,10 @@ void KeyPointApp::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_img_path)
     {
-        if(m_processNode)
+        if(!m_img_path->value().empty() && m_processNode)
         {
-            std::dynamic_pointer_cast<KeyPointNode>(m_processNode)->setReferenceImage(cv::imread(fs::search_file(*m_img_path)));
+            auto kp_node = std::dynamic_pointer_cast<KeyPointNode>(m_processNode);
+            kp_node->setReferenceImage(cv::imread(fs::search_file(*m_img_path)));
         }
     }
 }
