@@ -36,7 +36,7 @@ namespace kinski
         
         //////////////////////// sensor input ///////////////////////////////////
 
-        std::vector<std::list<float>> m_measurements;
+        std::vector<CircularBuffer<float>> m_measurements;
         
         std::vector<uint8_t> m_serial_accumulator, m_serial_read_buf;
         
