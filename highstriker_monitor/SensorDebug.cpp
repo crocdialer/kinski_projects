@@ -106,8 +106,7 @@ void SensorDebug::draw()
 
     for(size_t i = 0; i < m_measurements.size(); i++)
     {
-        std::vector<float> tmp_array(m_measurements[i].begin(), m_measurements[i].end());
-        float val = tmp_array.back();
+        float val = m_measurements[i].back();
 
         // rectangle for current value
         gl::draw_quad(gl::COLOR_GRAY, vec2(val * w, h), offset);
@@ -130,7 +129,7 @@ void SensorDebug::draw()
             float x_val = offset.x + j / (float) sz * w;
             float y_val = gl::window_dimension().y - offset.y - h;
             
-            float hist_val = tmp_array[j / 2];
+            float hist_val = m_measurements[i][j / 2];
             verts[sz - 1 - j] = vec3(x_val, y_val, 0.f);
             verts[sz - 2 - j] = vec3(x_val, y_val + std::max(h * hist_val, 1.f), 0.f);
             colors[sz - 1 - j] = colors[sz - 2 - j] =
