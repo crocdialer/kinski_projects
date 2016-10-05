@@ -52,8 +52,8 @@ namespace kinski
         UMat descriptors_scene, downSized, out_img;
         
         float scale = (float)*m_maxImageWidth / img.cols;
-        scale = min(scale, 1.f);
-        resize(img.getUMat(ACCESS_READ), downSized, Size(), scale, scale);
+        scale = min( scale, 1.f);
+        resize(img, downSized, Size(), scale, scale);
         
         m_featureDetect->detect(downSized, keypoints);
         m_featureExtract->compute(downSized, keypoints,descriptors_scene);

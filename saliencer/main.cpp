@@ -145,7 +145,6 @@ public:
 
 int main(int argc, char *argv[])
 {
-    App::Ptr theApp(new Saliencer);
-    
+    AppPtr theApp(new Saliencer);
     return theApp->run();
 }

@@ -421,7 +421,7 @@ void MovieTimeshift::update_property(const Property::ConstPtr &theProperty)
             theProperty == m_noise_scale_y)
     {
         m_noise.set_tex_size(*m_noise_map_size);
-        m_noise.set_scale(vec2(*m_noise_scale_x, *m_noise_scale_y));
+        m_noise.set_scale(vec2(m_noise_scale_x->value(), m_noise_scale_y->value()));
     }
 //    else if(theProperty == m_offscreen_size)
 //    {

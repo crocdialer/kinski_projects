@@ -22,6 +22,8 @@ private:
     
 public:
     
+    ColorHistApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
+    
     void setup()
     {
         m_material = gl::Material::create();
@@ -110,7 +112,6 @@ public:
 
 int main(int argc, char *argv[])
 {
-    App::Ptr theApp(new ColorHistApp);
-    
+    auto theApp = std::make_shared<ColorHistApp>(argc, argv);
     return theApp->run();
 }
