@@ -354,7 +354,9 @@ void SensorDebug::update_sensor_values(float time_delta)
                                       CircularBuffer<float>(*m_sensor_hist_size));
             }
             
-            for(size_t i = 0; i < splits.size(); i++)
+            size_t max_index = std::min(m_measurements.size(), splits.size());
+            
+            for(size_t i = 0; i < max_index; i++)
             {
                 auto v = string_to<float>(splits[i]);
                 v = clamp(*m_force_multiplier * v / 16.f, 0.f, 1.f);
