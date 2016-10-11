@@ -40,7 +40,7 @@ private:
     void initParticles(uint32_t num_particles)
     {
         m_geom = gl::Geometry::create();
-        m_geom->setPrimitiveType(GL_POINTS);
+        m_geom->set_primitive_type(GL_POINTS);
         m_mesh = gl::Mesh::create(m_geom, m_pointMaterial);
         
         m_numParticles = num_particles;
@@ -49,7 +49,7 @@ private:
         m_geom->vertices().resize(m_numParticles, vec3(0));
         m_geom->colors().resize(m_numParticles, vec4(1));
         m_geom->point_sizes().resize(m_numParticles, 9.f);
-        m_geom->createGLBuffers();
+        m_geom->create_gl_buffers();
         m_mesh->material()->set_point_size(2.f);
         
         scene()->clear();
@@ -60,8 +60,8 @@ private:
         try
         {
             // shared position buffer for OpenGL / OpenCL
-            m_positions = cl::BufferGL(m_opencl.context(), CL_MEM_READ_WRITE, m_geom->vertexBuffer().id());
-            m_colors = cl::BufferGL(m_opencl.context(), CL_MEM_READ_WRITE, m_geom->colorBuffer().id());
+            m_positions = cl::BufferGL(m_opencl.context(), CL_MEM_READ_WRITE, m_geom->vertex_buffer().id());
+            m_colors = cl::BufferGL(m_opencl.context(), CL_MEM_READ_WRITE, m_geom->color_buffer().id());
             
             //create the OpenCL only arrays
             m_velocities = cl::Buffer( m_opencl.context(), CL_MEM_WRITE_ONLY, numBytes );
@@ -78,7 +78,7 @@ private:
                 velGen.push_back(vec4(tmp.x, yVel, tmp.y, life));
                 m_geom->point_sizes()[i] = kinski::random(5.f, 15.f);
             }
-            m_geom->createGLBuffers();
+            m_geom->create_gl_buffers();
             
             m_opencl.queue().enqueueWriteBuffer(m_velocities, CL_TRUE, 0, numBytes, &velGen[0]);
             m_opencl.queue().enqueueWriteBuffer(m_positionGen, CL_TRUE, 0, numBytes, &posGen[0]);

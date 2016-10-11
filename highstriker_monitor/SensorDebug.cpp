@@ -48,7 +48,7 @@ void SensorDebug::setup()
     // use this for line drawing
     m_line_mesh = gl::Mesh::create(gl::Geometry::create(),
                                    gl::Material::create(gl::create_shader(gl::ShaderType::LINES_2D)));
-    m_line_mesh->geometry()->setPrimitiveType(GL_LINES);
+    m_line_mesh->geometry()->set_primitive_type(GL_LINES);
     m_line_mesh->material()->set_depth_test(false);
 //    m_line_mesh->material()->setTwoSided();
     
@@ -122,7 +122,7 @@ void SensorDebug::draw()
         
         verts.resize(m_measurements[i].size() * 2);
         colors.resize(verts.size(), gl::COLOR_WHITE);
-        m_line_mesh->geometry()->texCoords().resize(verts.size(), gl::vec2(0));
+        m_line_mesh->geometry()->tex_coords().resize(verts.size(), gl::vec2(0));
         
         for (size_t j = 0, sz = verts.size(); j < sz; j += 2)
         {

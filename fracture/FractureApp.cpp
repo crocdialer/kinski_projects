@@ -50,8 +50,8 @@ void FractureApp::setup()
     // box shooting stuff
     m_box_shape = std::make_shared<btBoxShape>(btVector3(.5f, .5f, .5f));
     m_sphere_shape = std::make_shared<btSphereShape>(.5f);
-    m_box_geom = gl::Geometry::createBox(vec3(.5f));
-    m_shoot_mesh = gl::Mesh::create(gl::Geometry::createSphere(.5f, 24),
+    m_box_geom = gl::Geometry::create_box(vec3(.5f));
+    m_shoot_mesh = gl::Mesh::create(gl::Geometry::create_sphere(.5f, 24),
                                     gl::Material::create(gl::ShaderType::PHONG));
     m_shoot_mesh->material()->queue_texture_load("~/Downloads/tennisball.jpg");
     m_shoot_mesh->material()->set_specular(gl::COLOR_BLACK);
@@ -466,7 +466,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
         // ground plane
         auto ground_mat = gl::Material::create(phong_shadow);
 //        ground_mat->setDiffuse(gl::COLOR_BLACK);
-        auto ground = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
+        auto ground = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), ground_mat);
         ground->geometry()->colors().clear();
         
         ground->set_scale(vec3(100, 1, 100));
@@ -478,14 +478,14 @@ void FractureApp::fracture_test(uint32_t num_shards)
         scene()->addObject(ground);
         
         // back plane
-        auto back = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
+        auto back = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), ground_mat);
         back->set_scale(vec3(100, 20, .3));
         auto back_aabb = back->boundingBox();
         back->position() += vec3(0, back_aabb.halfExtents().y, -2.f * back_aabb.halfExtents().z);
         col_shape = std::make_shared<btBoxShape>(physics::type_cast(back_aabb.halfExtents()));
         
         // stopper
-        auto stopper = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
+        auto stopper = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), ground_mat);
         stopper->set_scale(vec3(m_obj_scale->value().x, .1f, .1f));
         auto stopper_aabb = back->boundingBox();
         stopper->position() = vec3(0, 0,  - m_obj_scale->value().z / 2.f);
@@ -511,7 +511,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
     
     for(auto &l : lights()){ scene()->addObject(l); }
     
-    auto m = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), gl::Material::create(phong_shadow));
+    auto m = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), gl::Material::create(phong_shadow));
     m->set_scale(*m_obj_scale);
     auto aabb = m->boundingBox();
     m->position().y += aabb.halfExtents().y;

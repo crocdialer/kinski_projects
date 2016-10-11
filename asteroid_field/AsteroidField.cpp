@@ -35,7 +35,7 @@ void AsteroidField::setup()
     add_tweakbar_for_component(shared_from_this());
     add_tweakbar_for_component(m_light_component);
     
-    m_skybox_mesh = gl::Mesh::create(gl::Geometry::createSphere(1.f, 16), gl::Material::create());
+    m_skybox_mesh = gl::Mesh::create(gl::Geometry::create_sphere(1.f, 16), gl::Material::create());
     m_skybox_mesh->material()->set_depth_write(false);
     m_skybox_mesh->material()->set_two_sided();
     
@@ -241,8 +241,8 @@ void AsteroidField::load_assets()
             auto &verts = mesh->geometry()->vertices();
             vec3 centroid = gl::calculate_centroid(verts);
             for(auto &v : verts){ v -= centroid; }
-            mesh->geometry()->createGLBuffers();
-            mesh->geometry()->computeBoundingBox();
+            mesh->geometry()->create_gl_buffers();
+            mesh->geometry()->compute_bounding_box();
             
             mesh->material()->set_shader(shader);
             mesh->material()->set_ambient(gl::COLOR_WHITE);

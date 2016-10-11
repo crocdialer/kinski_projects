@@ -70,7 +70,7 @@ void ModelViewer::setup()
     scene()->addObject(light_root);
 
     // add groundplane
-    auto ground_mesh = gl::Mesh::create(gl::Geometry::createPlane(400, 400),
+    auto ground_mesh = gl::Mesh::create(gl::Geometry::create_plane(400, 400),
                                         gl::Material::create(gl::create_shader(gl::ShaderType::PHONG_SHADOWS)));
     ground_mesh->transform() = glm::rotate(mat4(), -glm::half_pi<float>(), gl::X_AXIS);
     ground_mesh->add_tag(tag_ground_plane);
@@ -434,7 +434,7 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
         case fs::FileType::IMAGE:
             
         {
-            auto geom = gl::Geometry::createPlane(1.f, 1.f, 100, 100);
+            auto geom = gl::Geometry::create_plane(1.f, 1.f, 100, 100);
             auto mat = gl::Material::create();
             m = gl::Mesh::create(geom, mat);
             m->transform() = rotate(mat4(), 90.f, gl::Y_AXIS);
@@ -548,7 +548,7 @@ void ModelViewer::update_shader()
     {
         m_dirty_shader  = false;
         
-        bool use_bones = m_mesh->geometry()->hasBones() && *m_use_bones;
+        bool use_bones = m_mesh->geometry()->has_bones() && *m_use_bones;
         bool use_normal_map = *m_use_normal_map && *m_use_lighting && m_normal_map;
         gl::Shader shader;
         

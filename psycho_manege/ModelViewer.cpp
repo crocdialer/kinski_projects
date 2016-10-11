@@ -111,7 +111,7 @@ void ModelViewer::setup()
     m_shaders[SHADER_UNLIT_SKIN_DISPLACE] = gl::create_shader_from_file("unlit_skin_displace.vert", "unlit.frag");
     
     // init select indicator mesh
-    m_select_indicator = gl::Mesh::create(gl::Geometry::createCone(10.f, 30.f, 4),
+    m_select_indicator = gl::Mesh::create(gl::Geometry::create_cone(10.f, 30.f, 4),
                                           gl::Material::create());
     m_select_indicator->transform() = rotate(mat4(), glm::pi<float>(), gl::X_AXIS);
     m_select_indicator->material()->set_diffuse(gl::COLOR_PURPLE);
@@ -410,7 +410,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     {
         if(auto m = selected_mesh())
         {
-            bool use_bones = m->geometry()->hasBones() && *m_use_bones;
+            bool use_bones = m->geometry()->has_bones() && *m_use_bones;
             for(auto &mat : m->materials())
             {
                 mat->set_shader(m_shaders[use_bones ? SHADER_UNLIT_SKIN_DISPLACE : SHADER_UNLIT_DISPLACE]);
@@ -656,7 +656,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
             
             if(t)
             {
-                auto geom = gl::Geometry::createPlane(t.getWidth(), t.getHeight(), 100, 100);
+                auto geom = gl::Geometry::create_plane(t.getWidth(), t.getHeight(), 100, 100);
                 auto mat = gl::Material::create(m_shaders[SHADER_UNLIT_DISPLACE]);
                 mat->add_texture(t);
                 mat->set_depth_write(false);
@@ -671,7 +671,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
     
     if(m)
     {
-        bool use_bones = m->geometry()->hasBones() && *m_use_bones;
+        bool use_bones = m->geometry()->has_bones() && *m_use_bones;
         
         for(auto &mat : m->materials())
         {

@@ -48,7 +48,7 @@ void GrowthApp::setup()
     
     try
     {
-        m_bounding_mesh = gl::Mesh::create(gl::Geometry::createBox(vec3(50)),
+        m_bounding_mesh = gl::Mesh::create(gl::Geometry::create_box(vec3(50)),
                                            gl::Material::create());
         m_bounding_mesh->position() += m_bounding_mesh->boundingBox().center();
         

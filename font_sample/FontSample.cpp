@@ -164,8 +164,16 @@ void FontSample::update_property(const Property::ConstPtr &theProperty)
         
         for(auto *m : v.get_objects())
         {
-            m->material()->set_shader(gl::create_shader(gl::ShaderType::UNLIT));
-            m->material()->textures() = {fonts()[1].glyph_texture()};
+            if(*m_use_sdf)
+            {
+                m->material()->set_shader(gl::create_shader(gl::ShaderType::SDF_FONT));
+                m->material()->textures() = {fonts()[1].sdf_texture()};
+            }
+            else
+            {
+                m->material()->set_shader(gl::create_shader(gl::ShaderType::UNLIT));
+                m->material()->textures() = {fonts()[1].glyph_texture()};
+            }
         }
     }
     else if(theProperty == m_buffer || theProperty == m_gamma)
