@@ -114,7 +114,7 @@ void ModelViewer::midi_callback(double time_stamp, const std::vector<uint8_t> &t
                 {
                     for(auto &mat : m->materials())
                     {
-                        mat->setWireframe(!mat->wireframe());
+                        mat->set_wireframe(!mat->wireframe());
                     }
                 }
             }

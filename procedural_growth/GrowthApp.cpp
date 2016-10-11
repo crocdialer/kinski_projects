@@ -54,9 +54,9 @@ void GrowthApp::setup()
         
         // some material props
         auto &bound_mat = m_bounding_mesh->material();
-        bound_mat->setDiffuse(gl::Color(bound_mat->diffuse().rgb(), .2));
-        bound_mat->setBlending();
-        bound_mat->setDepthWrite(false);
+        bound_mat->set_diffuse(gl::Color(bound_mat->diffuse().rgb(), .2));
+        bound_mat->set_blending();
+        bound_mat->set_depth_write(false);
         
         // load shaders
         m_lsystem_shaders[0].loadFromData(geom_prepass_vert,
@@ -361,19 +361,19 @@ void GrowthApp::refresh_lsystem()
     // add our shader
     for (auto &m : m_mesh->materials())
     {
-        m->setShader(m_lsystem_shaders[0]);
+        m->set_shader(m_lsystem_shaders[0]);
         
-//        m->addTexture(m_textures[0]);
-//        m->addTexture(m_textures[1]);
-        m->setBlending();
+//        m->add_texture(m_textures[0]);
+//        m->add_texture(m_textures[1]);
+        m->set_blending();
 //        m->setDepthTest(false);
 //        m->setDepthWrite(false);
         
         m->uniform("u_cap_bias", *m_cap_bias);
         
         //TODO: remove this when submaterials are tested well enough
-        m->setDiffuse(glm::linearRand(vec4(0,0,.3,.8), vec4(.3,1,1,.9)));
-        m->setPointAttenuation(0.1, .0002, 0);
+        m->set_diffuse(glm::linearRand(vec4(0,0,.3,.8), vec4(.3,1,1,.9)));
+        m->set_point_attenuation(0.1, .0002, 0);
     }
     
     uint32_t min = 0, max = m_entries.front().num_indices - 1;

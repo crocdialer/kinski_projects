@@ -49,7 +49,7 @@ void SensorDebug::setup()
     m_line_mesh = gl::Mesh::create(gl::Geometry::create(),
                                    gl::Material::create(gl::create_shader(gl::ShaderType::LINES_2D)));
     m_line_mesh->geometry()->setPrimitiveType(GL_LINES);
-    m_line_mesh->material()->setDepthTest(false);
+    m_line_mesh->material()->set_depth_test(false);
 //    m_line_mesh->material()->setTwoSided();
     
     // setup a recurring timer for sensor-refresh-rate measurement

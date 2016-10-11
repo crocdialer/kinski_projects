@@ -54,7 +54,7 @@ void FractureApp::setup()
     m_shoot_mesh = gl::Mesh::create(gl::Geometry::createSphere(.5f, 24),
                                     gl::Material::create(gl::ShaderType::PHONG));
     m_shoot_mesh->material()->queue_texture_load("~/Downloads/tennisball.jpg");
-    m_shoot_mesh->material()->setSpecular(gl::COLOR_BLACK);
+    m_shoot_mesh->material()->set_specular(gl::COLOR_BLACK);
     
     m_gui_cam = gl::OrthographicCamera::create(0, gl::window_dimension().x, gl::window_dimension().y,
                                                0, 0, 1);
@@ -524,7 +524,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
 //            textures.push_back(gl::createTextureFromFile(tex_path, true, true, 8.f));
 //        }catch(Exception &e){ LOG_WARNING << e.what(); }
 //    }
-//    m->material()->addTexture(tex);
+//    m->material()->add_texture(tex);
     
     // voronoi points
     std::vector<glm::vec3> voronoi_points;
@@ -555,7 +555,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
     outer_mat(gl::Material::create(phong_shadow));
     
 //    inner_mat->setDiffuse(gl::COLOR_RED);
-    inner_mat->setSpecular(gl::COLOR_BLACK);
+    inner_mat->set_specular(gl::COLOR_BLACK);
     
     outer_mat->textures() = { textures()[TEXTURE_OUTER] };
     inner_mat->textures() = { textures()[TEXTURE_INNER] };

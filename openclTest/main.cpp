@@ -50,7 +50,7 @@ private:
         m_geom->colors().resize(m_numParticles, vec4(1));
         m_geom->point_sizes().resize(m_numParticles, 9.f);
         m_geom->createGLBuffers();
-        m_mesh->material()->setPointSize(2.f);
+        m_mesh->material()->set_point_size(2.f);
         
         scene()->clear();
         scene()->addObject(m_mesh);
@@ -191,18 +191,18 @@ public:
         add_tweakbar_for_component(shared_from_this());
         
         m_pointMaterial = gl::Material::create(gl::create_shader(gl::ShaderType::POINTS_SPHERE));
-        //m_pointMaterial->addTexture(gl::createTextureFromFile("smoketex.png"));
+        //m_pointMaterial->add_texture(gl::createTextureFromFile("smoketex.png"));
         float vals[2];
         glGetFloatv(GL_POINT_SIZE_RANGE, vals);
         m_point_size->set_range(vals[0], vals[1]);
-        m_pointMaterial->setPointSize(*m_point_size);
-        m_pointMaterial->setPointAttenuation(0.f, 0.01f, 0.f);
+        m_pointMaterial->set_point_size(*m_point_size);
+        m_pointMaterial->set_point_attenuation(0.f, 0.01f, 0.f);
         m_pointMaterial->uniform("u_pointRadius", 50.f);
         
-        m_pointMaterial->setDiffuse(vec4(1, 1, 1, .7f));
-        m_pointMaterial->setBlending();
+        m_pointMaterial->set_diffuse(vec4(1, 1, 1, .7f));
+        m_pointMaterial->set_blending();
 //        m_pointMaterial->setDepthWrite(false);
-//        m_pointMaterial->addTexture(gl::createTextureFromFile("~/Desktop/harp_icon.png"));
+//        m_pointMaterial->add_texture(gl::createTextureFromFile("~/Desktop/harp_icon.png"));
         
         m_opencl.init();
         m_opencl.set_sources("kernels.cl");
@@ -308,11 +308,11 @@ public:
         }
         else if(theProperty == m_point_size)
         {
-            m_pointMaterial->setPointSize(*m_point_size);
+            m_pointMaterial->set_point_size(*m_point_size);
         }
         else if(theProperty == m_point_color)
         {
-            m_mesh->material()->setDiffuse(*m_point_color);
+            m_mesh->material()->set_diffuse(*m_point_color);
         }
     }
 };

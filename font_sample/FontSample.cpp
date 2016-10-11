@@ -19,6 +19,7 @@ using namespace glm;
 void FontSample::setup()
 {
     ViewerApp::setup();
+    register_property(m_use_sdf);
     register_property(m_font_size);
     register_property(m_gamma);
     register_property(m_buffer);
@@ -155,6 +156,17 @@ void FontSample::update_property(const Property::ConstPtr &theProperty)
     if(theProperty == m_font_size)
     {
         m_text_root->set_scale(*m_font_size / 100.f);
+    }
+    else if(theProperty == m_use_sdf)
+    {
+        gl::SelectVisitor<gl::Mesh> v;
+        m_text_root->accept(v);
+        
+        for(auto *m : v.get_objects())
+        {
+            m->material()->set_shader(gl::create_shader(gl::ShaderType::UNLIT));
+            m->material()->textures() = {fonts()[1].glyph_texture()};
+        }
     }
     else if(theProperty == m_buffer || theProperty == m_gamma)
     {

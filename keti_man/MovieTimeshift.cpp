@@ -43,14 +43,14 @@ void MovieTimeshift::setup()
     m_movie->set_on_load_callback(bind(&MovieTimeshift::on_movie_load, this));
     
     m_custom_mat = gl::Material::create();
-    m_custom_mat->setBlending();
-    m_custom_mat->setDepthTest(false);
-    m_custom_mat->setDepthWrite(false);
+    m_custom_mat->set_blending();
+    m_custom_mat->set_depth_test(false);
+    m_custom_mat->set_depth_write(false);
     
     try
     {
         auto sh = gl::create_shader_from_file("array_shader.vert", "array_shader.frag");
-        m_custom_mat->setShader(sh);
+        m_custom_mat->set_shader(sh);
     } catch (Exception &e) { LOG_ERROR << e.what();}
     
     // init buffer as PixelBuffer

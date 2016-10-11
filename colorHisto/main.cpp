@@ -30,10 +30,10 @@ public:
         
         try
         {
-            m_material->setShader(gl::create_shader_from_file("applyMap.vert", "applyMap.frag"));
-            m_material->addTexture(m_textures[0]);
-            m_material->addTexture(m_textures[1]);
-            m_material->addTexture(m_textures[2]);
+            m_material->set_shader(gl::create_shader_from_file("applyMap.vert", "applyMap.frag"));
+            m_material->add_texture(m_textures[0]);
+            m_material->add_texture(m_textures[1]);
+            m_material->add_texture(m_textures[2]);
             
         }catch (std::exception &e)
         {

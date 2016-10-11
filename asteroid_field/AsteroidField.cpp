@@ -36,8 +36,8 @@ void AsteroidField::setup()
     add_tweakbar_for_component(m_light_component);
     
     m_skybox_mesh = gl::Mesh::create(gl::Geometry::createSphere(1.f, 16), gl::Material::create());
-    m_skybox_mesh->material()->setDepthWrite(false);
-    m_skybox_mesh->material()->setTwoSided();
+    m_skybox_mesh->material()->set_depth_write(false);
+    m_skybox_mesh->material()->set_two_sided();
     
     // finally load state from file
     load_settings();
@@ -244,8 +244,8 @@ void AsteroidField::load_assets()
             mesh->geometry()->createGLBuffers();
             mesh->geometry()->computeBoundingBox();
             
-            mesh->material()->setShader(shader);
-            mesh->material()->setAmbient(gl::COLOR_WHITE);
+            mesh->material()->set_shader(shader);
+            mesh->material()->set_ambient(gl::COLOR_WHITE);
             
             auto aabb = mesh->boundingBox();
             float scale_factor = 50.f / aabb.width();
@@ -285,7 +285,7 @@ void AsteroidField::create_scene(int num_objects)
         
         if(test_mesh->material()->textures().empty())
         {
-            test_mesh->material()->addTexture(m_proto_textures[m % m_proto_textures.size()]);
+            test_mesh->material()->add_texture(m_proto_textures[m % m_proto_textures.size()]);
         }
         
         // random spawn position

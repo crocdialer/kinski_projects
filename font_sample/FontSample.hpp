@@ -23,6 +23,9 @@ namespace kinski
         
         gl::Object3DPtr m_text_root;
         
+        Property_<bool>::Ptr
+        m_use_sdf = Property_<bool>::create("use signed distance field", true);
+        
         Property_<float>::Ptr
         m_buffer = RangedProperty<float>::create("buffer", 0.75, 0, 1),
         m_gamma = RangedProperty<float>::create("gamma", 0.05, 0, 1),

@@ -114,8 +114,8 @@ void ModelViewer::setup()
     m_select_indicator = gl::Mesh::create(gl::Geometry::createCone(10.f, 30.f, 4),
                                           gl::Material::create());
     m_select_indicator->transform() = rotate(mat4(), glm::pi<float>(), gl::X_AXIS);
-    m_select_indicator->material()->setDiffuse(gl::COLOR_PURPLE);
-    m_select_indicator->material()->setWireframe();
+    m_select_indicator->material()->set_diffuse(gl::COLOR_PURPLE);
+    m_select_indicator->material()->set_wireframe();
     
     // init timers
     m_timer_select_enable = Timer(main_queue().io_service());
@@ -413,7 +413,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
             bool use_bones = m->geometry()->hasBones() && *m_use_bones;
             for(auto &mat : m->materials())
             {
-                mat->setShader(m_shaders[use_bones ? SHADER_UNLIT_SKIN_DISPLACE : SHADER_UNLIT_DISPLACE]);
+                mat->set_shader(m_shaders[use_bones ? SHADER_UNLIT_SKIN_DISPLACE : SHADER_UNLIT_DISPLACE]);
             }
         }
     }
@@ -469,7 +469,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     {
         if(selected_mesh())
         {
-            for(auto &mat : selected_mesh()->materials()){ mat->setWireframe(*m_obj_wire_frame); }
+            for(auto &mat : selected_mesh()->materials()){ mat->set_wireframe(*m_obj_wire_frame); }
         }
     }
     else if(theProperty == m_cube_map_folder)
@@ -585,7 +585,7 @@ void ModelViewer::setup_offscreen_cameras(int num_screens, bool as_circle)
         
         // create debug mesh
         m_offscreen_meshes[i] = gl::create_frustum_mesh(m_offscreen_cams[i]);
-        m_offscreen_meshes[i]->material()->setDiffuse(m_cam_colors[i]);
+        m_offscreen_meshes[i]->material()->set_diffuse(m_cam_colors[i]);
         m_debug_scene->addObject(m_offscreen_meshes[i]);
     }
     
@@ -658,8 +658,8 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
             {
                 auto geom = gl::Geometry::createPlane(t.getWidth(), t.getHeight(), 100, 100);
                 auto mat = gl::Material::create(m_shaders[SHADER_UNLIT_DISPLACE]);
-                mat->addTexture(t);
-                mat->setDepthWrite(false);
+                mat->add_texture(t);
+                mat->set_depth_write(false);
                 m = gl::Mesh::create(geom, mat);
                 m->transform() = rotate(mat4(), glm::half_pi<float>(), gl::Y_AXIS);
             }
@@ -675,12 +675,12 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
         
         for(auto &mat : m->materials())
         {
-            mat->setShader(m_shaders[use_bones ? SHADER_UNLIT_SKIN_DISPLACE : SHADER_UNLIT_DISPLACE]);
-            mat->setBlending();
-            mat->setTwoSided();
-            mat->setWireframe();
-            mat->setDiffuse(gl::COLOR_WHITE);
-            mat->addTexture(textures()[TEXTURE_NOISE]);
+            mat->set_shader(m_shaders[use_bones ? SHADER_UNLIT_SKIN_DISPLACE : SHADER_UNLIT_DISPLACE]);
+            mat->set_blending();
+            mat->set_two_sided();
+            mat->set_wireframe();
+            mat->set_diffuse(gl::COLOR_WHITE);
+            mat->add_texture(textures()[TEXTURE_NOISE]);
             mat->uniform("u_displace_factor", 0.f);
         }
         
@@ -876,7 +876,7 @@ void ModelViewer::process_joystick_input(float time_delta)
                 {
                     for(auto &mat : m->materials())
                     {
-                        mat->setWireframe(!mat->wireframe());
+                        mat->set_wireframe(!mat->wireframe());
                     }
                 }
             }

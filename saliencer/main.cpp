@@ -36,10 +36,10 @@ public:
 
         // add 2 empty textures
         m_material = gl::Material::create();
-        m_material->addTexture(m_textures[0]);
-        m_material->addTexture(m_textures[1]);
-        m_material->setDepthTest(false);
-        m_material->setDepthWrite(false);
+        m_material->add_texture(m_textures[0]);
+        m_material->add_texture(m_textures[1]);
+        m_material->set_depth_test(false);
+        m_material->set_depth_write(false);
         
         m_activator = Property_<bool>::create("processing", true);
         m_imageIndex = RangedProperty<uint32_t>::create("Image Index", 0, 0, 1);
@@ -71,7 +71,7 @@ public:
         
         try
         {
-            m_material->setShader(gl::create_shader_from_file("applyMap.vert", "applyMap.frag"));
+            m_material->set_shader(gl::create_shader_from_file("applyMap.vert", "applyMap.frag"));
             Serializer::loadComponentState(shared_from_this(), "config.json", PropertyIO_GL());
             
         }catch(Exception &e)

@@ -40,14 +40,14 @@ void ModelViewer::setup()
     for (auto l : lights()){ scene()->addObject(l ); }
     
     m_draw_depth_mat = gl::Material::create();
-    m_draw_depth_mat->setBlending();
-    m_draw_depth_mat->setDepthTest(false);
-    m_draw_depth_mat->setDepthWrite();
+    m_draw_depth_mat->set_blending();
+    m_draw_depth_mat->set_depth_test(false);
+    m_draw_depth_mat->set_depth_write();
     
     try
     {
         auto sh = gl::create_shader_from_file("depthmap.vert", "depthmap.frag");
-        m_draw_depth_mat->setShader(sh);
+        m_draw_depth_mat->set_shader(sh);
     } catch (Exception &e) { LOG_ERROR << e.what(); }
     
     // load settings
@@ -232,8 +232,8 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
         
         if(m)
         {
-            m->material()->setShader(m_draw_depth_mat->shader());
-//            m->material()->addTexture(m_fbos[0].getDepthTexture());
+            m->material()->set_shader(m_draw_depth_mat->shader());
+//            m->material()->add_texture(m_fbos[0].getDepthTexture());
             m->createVertexArray();
             
             for(auto &t : m->material()->textures()){ textures()[0] = t; }

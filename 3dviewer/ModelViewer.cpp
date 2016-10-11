@@ -104,8 +104,8 @@ void ModelViewer::update(float timeDelta)
             {
                 gl::Shader shader = gl::create_shader(gl::ShaderType::DEPTH_OF_FIELD);
                 m_post_process_mat = gl::Material::create(shader);
-                m_post_process_mat->setDepthWrite(false);
-                m_post_process_mat->setDepthTest(false);
+                m_post_process_mat->set_depth_write(false);
+                m_post_process_mat->set_depth_test(false);
             }catch(Exception &e){ LOG_WARNING << e.what(); }
         }
         
@@ -358,7 +358,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
         {
             for(auto &mat : m_mesh->materials())
             {
-                mat->setWireframe(*m_wireframe);
+                mat->set_wireframe(*m_wireframe);
             }
         }
     }
@@ -441,8 +441,8 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
             
             async_load_texture(the_path, [this, m](const gl::Texture &t)
             {
-                m->material()->addTexture(t);
-                m->material()->setTwoSided();
+                m->material()->add_texture(t);
+                m->material()->set_two_sided();
                 gl::vec3 s = m->scale();
                 m->set_scale(gl::vec3(s.x * t.getAspectRatio(), s.y, 1.f));
                 m->position().y += m->boundingBox().height() / 2.f;
@@ -528,7 +528,7 @@ void ModelViewer::async_load_asset(const std::string &the_path,
                     for(const ImagePtr &img : mat_img_map.at(mat))
                     {
                         gl::Texture tex = gl::create_texture_from_image(img, true, true);
-                        mat->addTexture(tex);
+                        mat->add_texture(tex);
                     }
                 }
             }
@@ -575,13 +575,13 @@ void ModelViewer::update_shader()
         
         for(auto &mat : m_mesh->materials())
         {
-            if(shader){ mat->setShader(shader); }
-            mat->setBlending();
+            if(shader){ mat->set_shader(shader); }
+            mat->set_blending();
             if(use_normal_map && mat->textures().size() < 2)
             {
                 mat->textures().push_back(m_normal_map);
-                mat->setSpecular(gl::COLOR_WHITE);
-                mat->setShinyness(15.f);
+                mat->set_specular(gl::COLOR_WHITE);
+                mat->set_shinyness(15.f);
             }
             else if(!mat->textures().empty()){ mat->textures().resize(1); }
         }
