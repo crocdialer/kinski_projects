@@ -26,7 +26,7 @@ namespace kinski
         
         gl::MeshPtr m_mesh;
         
-        LightComponent::Ptr m_light_component;
+        LightComponentPtr m_light_component;
         
         std::vector<gl::Fbo> m_fbos{4};
         

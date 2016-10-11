@@ -21,6 +21,13 @@ namespace kinski
     {
     private:
         
+        gl::Object3DPtr m_text_root;
+        
+        Property_<float>::Ptr
+        m_buffer = RangedProperty<float>::create("buffer", 0.75, 0, 1),
+        m_gamma = RangedProperty<float>::create("gamma", 0.05, 0, 1),
+        m_font_size = RangedProperty<float>::create("font size", 100, .1f, 1000);
+        
     public:
         FontSample(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;

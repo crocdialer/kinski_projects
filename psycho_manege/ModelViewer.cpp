@@ -446,7 +446,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
         if(selected_mesh() && selected_mesh()->parent())
         {
             auto p = selected_mesh()->parent();
-            p->setScale(*m_obj_scale);
+            p->set_scale(*m_obj_scale);
         }
     }
     else if(theProperty == m_obj_audio_auto_rotate)
@@ -580,8 +580,8 @@ void ModelViewer::setup_offscreen_cameras(int num_screens, bool as_circle)
     for(size_t i = 0; i < m_offscreen_cams.size(); i++)
     {
         m_offscreen_cams[i] = gl::PerspectiveCamera::create(aspect, *m_offscreen_fov, 5.f, 1000.f);
-        m_offscreen_cams[i]->setTransform(rotate(mat4(), glm::radians(rot_angle_deg) * i, gl::Y_AXIS));
-        m_offscreen_cams[i]->setPosition(*m_offscreen_offset);
+        m_offscreen_cams[i]->set_transform(rotate(mat4(), glm::radians(rot_angle_deg) * i, gl::Y_AXIS));
+        m_offscreen_cams[i]->set_position(*m_offscreen_offset);
         
         // create debug mesh
         m_offscreen_meshes[i] = gl::create_frustum_mesh(m_offscreen_cams[i]);
@@ -687,7 +687,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
         // apply scaling
         auto aabb = m->boundingBox();
         float scale_factor = random(1.f, 3.f) * 25.f / length(aabb.halfExtents());
-        m->setScale(scale_factor);
+        m->set_scale(scale_factor);
         
         // look for animations for this mesh
         auto animation_folder = fs::join_paths(asset_dir, "animations");

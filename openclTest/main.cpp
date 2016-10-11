@@ -35,7 +35,7 @@ private:
     cl::BufferGL m_positions, m_colors;
     cl::ImageGL m_cl_image;
     
-    LightComponent::Ptr m_light_component;
+    LightComponentPtr m_light_component;
     
     void initParticles(uint32_t num_particles)
     {
@@ -52,10 +52,10 @@ private:
         m_geom->createGLBuffers();
         m_mesh->material()->setPointSize(2.f);
         
-        scene().clear();
-        scene().addObject(m_mesh);
+        scene()->clear();
+        scene()->addObject(m_mesh);
         // add lights to scene
-        for (auto l : lights()){ scene().addObject(l ); }
+        for (auto l : lights()){ scene()->addObject(l ); }
         
         try
         {
@@ -246,7 +246,7 @@ public:
     {
         gl::set_matrices(camera());
         if(draw_grid()) gl::draw_grid(200, 200);
-        scene().render(camera());
+        scene()->render(camera());
         
         //gl::drawPoints(m_geom->vertexBuffer().id(), m_numParticles, gl::MaterialPtr(), sizeof(vec4));
         
@@ -319,6 +319,6 @@ public:
 
 int main(int argc, char *argv[])
 {
-    App::Ptr theApp(new OpenCLTest);
+    AppPtr theApp(new OpenCLTest);
     return theApp->run();
 }

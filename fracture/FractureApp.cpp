@@ -312,7 +312,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
             
             auto aabb = m->boundingBox();
             float scale_factor = 10.f / aabb.width();
-            m->setScale(scale_factor);
+            m->set_scale(scale_factor);
             
             scene()->addObject(m_mesh);
             m_physics.add_mesh_to_simulation(m_mesh);
@@ -414,8 +414,8 @@ void FractureApp::shoot_box(const gl::Ray &the_ray, float the_velocity,
     static gl::Shader phong_shader;
     if(!phong_shader){ phong_shader = gl::create_shader(gl::ShaderType::PHONG); }
     gl::MeshPtr mesh = gl::Mesh::create(m_box_geom, gl::Material::create(phong_shader));
-    mesh->setScale(.2f * the_half_extents);
-    mesh->setPosition(the_ray.origin);
+    mesh->set_scale(.2f * the_half_extents);
+    mesh->set_position(the_ray.origin);
     scene()->addObject(mesh);
     m_box_shape->setLocalScaling(physics::type_cast(mesh->scale()));
     
@@ -434,8 +434,8 @@ void FractureApp::shoot_ball(const gl::Ray &the_ray, float the_velocity,
                              float the_radius)
 {
     gl::MeshPtr mesh = m_shoot_mesh->copy();
-    mesh->setScale(2 * the_radius);
-    mesh->setPosition(the_ray.origin);
+    mesh->set_scale(2 * the_radius);
+    mesh->set_position(the_ray.origin);
     scene()->addObject(mesh);
     m_sphere_shape->setLocalScaling(physics::type_cast(mesh->scale()));
     
@@ -469,7 +469,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
         auto ground = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
         ground->geometry()->colors().clear();
         
-        ground->setScale(vec3(100, 1, 100));
+        ground->set_scale(vec3(100, 1, 100));
         auto ground_aabb = ground->boundingBox();
         ground->position().y -= ground_aabb.halfExtents().y;
         auto col_shape = std::make_shared<btBoxShape>(physics::type_cast(ground_aabb.halfExtents()));
@@ -479,14 +479,14 @@ void FractureApp::fracture_test(uint32_t num_shards)
         
         // back plane
         auto back = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
-        back->setScale(vec3(100, 20, .3));
+        back->set_scale(vec3(100, 20, .3));
         auto back_aabb = back->boundingBox();
         back->position() += vec3(0, back_aabb.halfExtents().y, -2.f * back_aabb.halfExtents().z);
         col_shape = std::make_shared<btBoxShape>(physics::type_cast(back_aabb.halfExtents()));
         
         // stopper
         auto stopper = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), ground_mat);
-        stopper->setScale(vec3(m_obj_scale->value().x, .1f, .1f));
+        stopper->set_scale(vec3(m_obj_scale->value().x, .1f, .1f));
         auto stopper_aabb = back->boundingBox();
         stopper->position() = vec3(0, 0,  - m_obj_scale->value().z / 2.f);
         col_shape = std::make_shared<btBoxShape>(physics::type_cast(stopper_aabb.halfExtents()));
@@ -512,7 +512,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
     for(auto &l : lights()){ scene()->addObject(l); }
     
     auto m = gl::Mesh::create(gl::Geometry::createBox(vec3(.5f)), gl::Material::create(phong_shadow));
-    m->setScale(*m_obj_scale);
+    m->set_scale(*m_obj_scale);
     auto aabb = m->boundingBox();
     m->position().y += aabb.halfExtents().y;
     

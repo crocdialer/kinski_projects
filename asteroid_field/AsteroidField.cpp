@@ -249,7 +249,7 @@ void AsteroidField::load_assets()
             
             auto aabb = mesh->boundingBox();
             float scale_factor = 50.f / aabb.width();
-            mesh->setScale(scale_factor);
+            mesh->set_scale(scale_factor);
             
             m_proto_objects.push_back(mesh);
         }
@@ -280,7 +280,7 @@ void AsteroidField::create_scene(int num_objects)
     for(int i = 0; i < num_objects; i++)
     {
         auto test_mesh = m_proto_objects[m % m_proto_objects.size()]->copy();
-        test_mesh->setScale(test_mesh->scale() * random<float>(.5f, 3.f));
+        test_mesh->set_scale(test_mesh->scale() * random<float>(.5f, 3.f));
         m++;
         
         if(test_mesh->material()->textures().empty())
@@ -289,7 +289,7 @@ void AsteroidField::create_scene(int num_objects)
         }
         
         // random spawn position
-        test_mesh->setPosition(glm::linearRand(m_aabb.min, m_aabb.max));
+        test_mesh->set_position(glm::linearRand(m_aabb.min, m_aabb.max));
         
         // object rotation via update-functor
         vec3 rot_vec = glm::ballRand(1.f);

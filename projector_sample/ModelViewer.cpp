@@ -245,7 +245,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
             auto aabb = m->boundingBox();
             
             float scale_factor = 50.f / aabb.width();
-            m->setScale(scale_factor);
+            m->set_scale(scale_factor);
         }
     }
     else if(theProperty == m_movie_path)

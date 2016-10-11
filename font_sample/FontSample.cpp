@@ -6,6 +6,7 @@
 //
 //
 
+#include "gl/Visitor.hpp"
 #include "FontSample.hpp"
 
 using namespace std;
@@ -18,9 +19,20 @@ using namespace glm;
 void FontSample::setup()
 {
     ViewerApp::setup();
+    register_property(m_font_size);
+    register_property(m_gamma);
+    register_property(m_buffer);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
+    
+    fonts()[1].load(fonts()[0].path(), 100, true);
+    m_text_root = fonts()[1].create_text_obj("Hallo der Onkel,\nwerd schnell gesund pupu.", 1000);
+    m_text_root->set_position(-m_text_root->boundingBox().center());
+    scene()->addObject(m_text_root);
+    
     load_settings();
+    
+    m_text_root->position() += gl::vec3(gl::window_dimension() / 2.f, 0.f);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -34,8 +46,13 @@ void FontSample::update(float timeDelta)
 
 void FontSample::draw()
 {
-    gl::set_matrices(camera());
-    if(*m_draw_grid){ gl::draw_grid(50, 50); }
+//    gl::set_matrices(camera());
+    
+    gl::set_matrices(gui_camera());
+    gl::draw_boundingbox(m_text_root);
+    gl::draw_transform(m_text_root->global_transform(), *m_font_size);
+    
+    scene()->render(gui_camera());
 }
 
 /////////////////////////////////////////////////////////////////
@@ -134,4 +151,20 @@ void FontSample::tearDown()
 void FontSample::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
+    
+    if(theProperty == m_font_size)
+    {
+        m_text_root->set_scale(*m_font_size / 100.f);
+    }
+    else if(theProperty == m_buffer || theProperty == m_gamma)
+    {
+        gl::SelectVisitor<gl::Mesh> v;
+        m_text_root->accept(v);
+        
+        for(auto *m : v.get_objects())
+        {
+            m->material()->uniform("u_buffer", *m_buffer);
+            m->material()->uniform("u_gamma", *m_gamma);
+        }
+    }
 }

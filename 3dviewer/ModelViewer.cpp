@@ -444,7 +444,7 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
                 m->material()->addTexture(t);
                 m->material()->setTwoSided();
                 gl::vec3 s = m->scale();
-                m->setScale(gl::vec3(s.x * t.getAspectRatio(), s.y, 1.f));
+                m->set_scale(gl::vec3(s.x * t.getAspectRatio(), s.y, 1.f));
                 m->position().y += m->boundingBox().height() / 2.f;
             });
         }
@@ -459,7 +459,7 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
         // apply scaling
         auto aabb = m->boundingBox();
         float scale_factor = 50.f / length(aabb.halfExtents());
-        m->setScale(scale_factor);
+        m->set_scale(scale_factor);
 
         // look for animations for this mesh
         auto animation_folder = fs::join_paths(asset_dir, "animations");
