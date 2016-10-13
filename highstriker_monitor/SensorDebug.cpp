@@ -6,7 +6,7 @@
 //
 //
 
-#include "SensorDebug.h"
+#include "SensorDebug.hpp"
 
 using namespace std;
 using namespace kinski;

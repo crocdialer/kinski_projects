@@ -6,8 +6,8 @@
 //
 //
 
-#include "MeditationRoom.h"
 #include "gl/ShaderLibrary.h"
+#include "MeditationRoom.hpp"
 
 using namespace std;
 using namespace kinski;

@@ -6,8 +6,7 @@
 //
 //
 
-#include "MovieTimeshift.h"
-//#include "cv/TextureIO.h"
+#include "MovieTimeshift.hpp"
 
 using namespace std;
 using namespace kinski;
