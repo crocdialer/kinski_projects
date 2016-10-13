@@ -247,7 +247,7 @@ void AsteroidField::load_assets()
             mesh->material()->set_shader(shader);
             mesh->material()->set_ambient(gl::COLOR_WHITE);
             
-            auto aabb = mesh->boundingBox();
+            auto aabb = mesh->bounding_box();
             float scale_factor = 50.f / aabb.width();
             mesh->set_scale(scale_factor);
             

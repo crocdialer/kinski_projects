@@ -90,7 +90,7 @@ void ModelViewer::update(float timeDelta)
     if(*m_use_post_process)
     {
         // check fbo
-        if(!m_post_process_fbo || m_post_process_fbo.getSize() != gl::window_dimension())
+        if(!m_post_process_fbo || m_post_process_fbo.size() != gl::window_dimension())
         {
             gl::Fbo::Format fmt;
 //            fmt.setSamples(8);
@@ -140,13 +140,13 @@ void ModelViewer::draw()
 //        gl::draw_texture(tex, gl::window_dimension());
         m_post_process_mat->textures() =
         {
-            m_post_process_fbo.getTexture(),
-            m_post_process_fbo.getDepthTexture()
+            m_post_process_fbo.texture(),
+            m_post_process_fbo.depth_texture()
         };
         gl::draw_quad(m_post_process_mat, gl::window_dimension());
         
         textures()[TEXTURE_OFFSCREEN] = tex;
-        textures()[1] = m_post_process_fbo.getDepthTexture();
+        textures()[1] = m_post_process_fbo.depth_texture();
     }
     else{ scene()->render(camera()); }
     
@@ -444,8 +444,8 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
                 m->material()->add_texture(t);
                 m->material()->set_two_sided();
                 gl::vec3 s = m->scale();
-                m->set_scale(gl::vec3(s.x * t.getAspectRatio(), s.y, 1.f));
-                m->position().y += m->boundingBox().height() / 2.f;
+                m->set_scale(gl::vec3(s.x * t.aspect_ratio(), s.y, 1.f));
+                m->position().y += m->bounding_box().height() / 2.f;
             });
         }
             break;
@@ -457,7 +457,7 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
     if(m)
     {
         // apply scaling
-        auto aabb = m->boundingBox();
+        auto aabb = m->bounding_box();
         float scale_factor = 50.f / length(aabb.halfExtents());
         m->set_scale(scale_factor);
 

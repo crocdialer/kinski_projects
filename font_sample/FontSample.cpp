@@ -28,7 +28,7 @@ void FontSample::setup()
     
     fonts()[1].load(fonts()[0].path(), 100, true);
     m_text_root = fonts()[1].create_text_obj("Hallo der Onkel,\nwerd schnell gesund pupu.", 1000);
-    m_text_root->set_position(-m_text_root->boundingBox().center());
+    m_text_root->set_position(-m_text_root->bounding_box().center());
     scene()->addObject(m_text_root);
     
     load_settings();

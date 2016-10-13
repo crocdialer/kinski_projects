@@ -261,11 +261,11 @@ public:
                 
                 if(!t) continue;
                 
-                float h = t.getHeight() * w / t.getWidth();
+                float h = t.height() * w / t.width();
                 glm::vec2 step(0, h + 10);
                 draw_texture(t, vec2(w, h), offset);
-                gl::draw_text_2D(to_string(t.getWidth()) + std::string(" x ") +
-                                 to_string(t.getHeight()), m_font, glm::vec4(1),
+                gl::draw_text_2D(to_string(t.width()) + std::string(" x ") +
+                                 to_string(t.height()), m_font, glm::vec4(1),
                                  offset);
                 offset += step;
             }
@@ -292,7 +292,7 @@ public:
                 {
                     // ->CL_INVALID_GL_OBJECT: internal format must be pow2 (RG, RGBA)
                     m_cl_image = cl::ImageGL(m_opencl.context(), CL_MEM_READ_WRITE, GL_TEXTURE_2D, 0,
-                                             m_textures[0].getId());
+                                             m_textures[0].id());
                 }
             }
             catch(cl::Error &error){LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")";}

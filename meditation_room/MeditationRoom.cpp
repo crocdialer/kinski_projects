@@ -105,7 +105,7 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::MEDITATION:
-            m_mat_rgb_shift->textures() = {m_fbos[0].getTexture()};
+            m_mat_rgb_shift->textures() = {m_fbos[0].texture()};
             m_mat_rgb_shift->uniform("u_shift_amount", *m_shift_amount);
             m_mat_rgb_shift->uniform("u_shift_angle", *m_shift_angle);
             m_mat_rgb_shift->uniform("u_blur_amount", *m_blur_amount);
@@ -436,16 +436,16 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
 
 void MeditationRoom::set_fbo_state()
 {
-    if(!m_fbos[0] || m_fbos[0].getSize() != m_output_res->value())
+    if(!m_fbos[0] || m_fbos[0].size() != m_output_res->value())
     {
         gl::Fbo::Format fmt;
-        fmt.setSamples(16);
+        fmt.set_num_samples(8);
         m_fbos[0] = gl::Fbo(*m_output_res, fmt);
     }
-    if(!m_fbos[1] || m_fbos[1].getSize() != m_output_res->value())
+    if(!m_fbos[1] || m_fbos[1].size() != m_output_res->value())
     {
         gl::Fbo::Format fmt;
-        fmt.setSamples(16);
+        fmt.set_num_samples(8);
         m_fbos[1] = gl::Fbo(*m_output_res, fmt);
     }
 }

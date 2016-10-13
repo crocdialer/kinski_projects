@@ -99,7 +99,7 @@ public:
         
         for(int i=0;i<m_cvThread->getImages().size();i++)
         {
-            float h = m_textures[i].getHeight() * w / m_textures[i].getWidth();
+            float h = m_textures[i].height() * w / m_textures[i].width();
             glm::vec2 step(0, h + 10);
             
             gl::draw_texture(textures()[i],

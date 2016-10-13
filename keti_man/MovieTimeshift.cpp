@@ -91,7 +91,7 @@ void MovieTimeshift::update(float timeDelta)
         {
             LOG_DEBUG << "copying frames to Arraytexture took: " << t.time_elapsed() << " secs";
             
-            m_custom_mat->uniform("u_num_frames", m_array_tex.getDepth());
+            m_custom_mat->uniform("u_num_frames", m_array_tex.depth());
             m_custom_mat->textures() = {m_array_tex};
         }
     }
@@ -114,13 +114,13 @@ void MovieTimeshift::update(float timeDelta)
                 m_needs_array_refresh = false;
                 
                 gl::Texture::Format fmt;
-                fmt.setTarget(GL_TEXTURE_3D);
+                fmt.set_target(GL_TEXTURE_3D);
 //                fmt.setInternalFormat(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT);
                 m_array_tex = gl::Texture(w, h, *m_num_buffer_frames, fmt);
-                m_array_tex.setFlipped(*m_flip_image);
+                m_array_tex.set_flipped(*m_flip_image);
                 
                 m_custom_mat->textures() = {m_array_tex};
-                m_custom_mat->uniform("u_num_frames", m_array_tex.getDepth());
+                m_custom_mat->uniform("u_num_frames", m_array_tex.depth());
             }
             
             // insert camera raw data into array texture
@@ -132,32 +132,32 @@ void MovieTimeshift::update(float timeDelta)
     // syphon
     if(*m_input_source == INPUT_SYPHON && m_syphon_in.copy_frame(textures()[TEXTURE_INPUT]))
     {
-        if(!m_fbo_transfer || m_fbo_transfer.getSize() != textures()[TEXTURE_INPUT].getSize())
+        if(!m_fbo_transfer || m_fbo_transfer.size() != textures()[TEXTURE_INPUT].size())
         {
-            m_fbo_transfer = gl::Fbo(textures()[TEXTURE_INPUT].getSize());
+            m_fbo_transfer = gl::Fbo(textures()[TEXTURE_INPUT].size());
         }
         auto tex = gl::render_to_texture(m_fbo_transfer, [&]()
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            gl::draw_texture(textures()[TEXTURE_INPUT], m_fbo_transfer.getSize());
+            gl::draw_texture(textures()[TEXTURE_INPUT], m_fbo_transfer.size());
         });
         
         textures()[TEXTURE_INPUT] = tex;
         
-        w = textures()[TEXTURE_INPUT].getWidth();
-        h = textures()[TEXTURE_INPUT].getHeight();
+        w = textures()[TEXTURE_INPUT].width();
+        h = textures()[TEXTURE_INPUT].height();
         
         if(m_needs_array_refresh)
         {
             m_needs_array_refresh = false;
             
             gl::Texture::Format fmt;
-            fmt.setTarget(GL_TEXTURE_3D);
+            fmt.set_target(GL_TEXTURE_3D);
             m_array_tex = gl::Texture(w, h, *m_num_buffer_frames, fmt);
-            m_array_tex.setFlipped(!*m_flip_image);
+            m_array_tex.set_flipped(!*m_flip_image);
             
             m_custom_mat->textures() = {m_array_tex};
-            m_custom_mat->uniform("u_num_frames", m_array_tex.getDepth());
+            m_custom_mat->uniform("u_num_frames", m_array_tex.depth());
         }
         
         insert_texture_into_array_texture(textures()[TEXTURE_INPUT], m_array_tex, m_current_index);
@@ -277,8 +277,8 @@ bool MovieTimeshift::insert_data_into_array_texture(const std::vector<uint8_t> &
                                                     uint32_t the_index)
 {
     // sanity check
-    if(!the_array_tex || the_width != the_array_tex.getWidth() ||
-       the_height != the_array_tex.getHeight() || the_index >= the_array_tex.getDepth())
+    if(!the_array_tex || the_width != the_array_tex.width() ||
+       the_height != the_array_tex.height() || the_index >= the_array_tex.depth())
     {
         return false;
     }
@@ -291,7 +291,7 @@ bool MovieTimeshift::insert_data_into_array_texture(const std::vector<uint8_t> &
     
     // upload new frame to array texture
     the_array_tex.bind();
-    glTexSubImage3D(the_array_tex.getTarget(), 0, 0, 0, the_index, the_width, the_height, 1,
+    glTexSubImage3D(the_array_tex.target(), 0, 0, 0, the_index, the_width, the_height, 1,
                     GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
     the_array_tex.unbind();
     
@@ -307,15 +307,15 @@ bool MovieTimeshift::insert_texture_into_array_texture(const gl::Texture &the_te
                                                        uint32_t the_index)
 {
     // sanity check
-    if(!the_texture || !the_array_tex || the_texture.getSize() != the_array_tex.getSize() ||
-       the_index >= the_array_tex.getDepth())
+    if(!the_texture || !the_array_tex || the_texture.size() != the_array_tex.size() ||
+       the_index >= the_array_tex.depth())
     {
         return false;
     }
     
     // reserve size
     const uint32_t bytes_per_pixel = 4;
-    int num_bytes = the_texture.getWidth() * the_texture.getHeight() * bytes_per_pixel;
+    int num_bytes = the_texture.width() * the_texture.height() * bytes_per_pixel;
     if(m_pbo.num_bytes() != num_bytes)
     {
         m_pbo.set_data(nullptr, num_bytes);
@@ -327,7 +327,7 @@ bool MovieTimeshift::insert_texture_into_array_texture(const gl::Texture &the_te
     m_pbo.bind(GL_PIXEL_PACK_BUFFER);
     
     the_texture.bind();
-    glGetTexImage(the_texture.getTarget(), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glGetTexImage(the_texture.target(), 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     the_texture.unbind();
     m_pbo.unbind(GL_PIXEL_PACK_BUFFER);
     
@@ -336,8 +336,8 @@ bool MovieTimeshift::insert_texture_into_array_texture(const gl::Texture &the_te
     
     // upload new frame from pbo to array texture
     the_array_tex.bind();
-    glTexSubImage3D(the_array_tex.getTarget(), 0, 0, 0, the_index, the_texture.getWidth(),
-                    the_texture.getHeight(), 1, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexSubImage3D(the_array_tex.target(), 0, 0, 0, the_index, the_texture.width(),
+                    the_texture.height(), 1, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
     the_array_tex.unbind();
     m_pbo.unbind(GL_PIXEL_UNPACK_BUFFER);
     

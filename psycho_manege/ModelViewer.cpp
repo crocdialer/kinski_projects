@@ -656,7 +656,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
             
             if(t)
             {
-                auto geom = gl::Geometry::create_plane(t.getWidth(), t.getHeight(), 100, 100);
+                auto geom = gl::Geometry::create_plane(t.width(), t.height(), 100, 100);
                 auto mat = gl::Material::create(m_shaders[SHADER_UNLIT_DISPLACE]);
                 mat->add_texture(t);
                 mat->set_depth_write(false);
@@ -685,7 +685,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
         }
         
         // apply scaling
-        auto aabb = m->boundingBox();
+        auto aabb = m->bounding_box();
         float scale_factor = random(1.f, 3.f) * 25.f / length(aabb.halfExtents());
         m->set_scale(scale_factor);
         
@@ -716,9 +716,9 @@ void ModelViewer::update_select_indicator()
     
     if(auto m = selected_mesh())
     {
-        auto aabb = m->boundingBox();
+        auto aabb = m->bounding_box();
         aabb = aabb.transform(m->global_transform());
-        float h = aabb.height() + m_select_indicator->boundingBox().height();
+        float h = aabb.height() + m_select_indicator->bounding_box().height();
         
         gl::Object3DPtr mesh_root = m->parent();
         mesh_root = mesh_root ? mesh_root->parent() : mesh_root;

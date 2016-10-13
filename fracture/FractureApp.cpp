@@ -92,11 +92,11 @@ void FractureApp::update(float timeDelta)
         m_crosshair_pos[i] += vec2(x_axis, y_axis) * multiplier * timeDelta;
         
         if(m_fbos[0])
-        m_crosshair_pos[i] = glm::clamp(m_crosshair_pos[i], vec2(0), m_fbos[0].getSize());
+        m_crosshair_pos[i] = glm::clamp(m_crosshair_pos[i], vec2(0), m_fbos[0].size());
         
         if(joystick.buttons()[11] && m_fbo_cam && m_time_since_last_shot > 1.f / *m_shots_per_sec)
         {
-            auto ray = gl::calculate_ray(m_fbo_cam, m_crosshair_pos[i], m_fbos[0].getSize());
+            auto ray = gl::calculate_ray(m_fbo_cam, m_crosshair_pos[i], m_fbos[0].size());
             shoot_box(ray, *m_shoot_velocity);
             m_time_since_last_shot = 0.f;
         }
@@ -310,7 +310,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
             m_physics.remove_mesh_from_simulation(m_mesh);
             m_mesh = m;
             
-            auto aabb = m->boundingBox();
+            auto aabb = m->bounding_box();
             float scale_factor = 10.f / aabb.width();
             m->set_scale(scale_factor);
             
@@ -362,9 +362,9 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_fbo_resolution)
     {
         gl::Fbo::Format fmt;
-        fmt.setSamples(8);
+        fmt.set_num_samples(8);
         m_fbos[0] = gl::Fbo(m_fbo_resolution->value().x, m_fbo_resolution->value().y, fmt);
-        float aspect = m_fbos[0].getAspectRatio();//m_obj_scale->value().x / m_obj_scale->value().y;
+        float aspect = m_fbos[0].aspect_ratio();//m_obj_scale->value().x / m_obj_scale->value().y;
         m_fbo_cam = gl::PerspectiveCamera::create(aspect, 45.f, .1f, 100.f);
         m_fbo_cam->position() = *m_fbo_cam_pos;
     }
@@ -470,7 +470,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
         ground->geometry()->colors().clear();
         
         ground->set_scale(vec3(100, 1, 100));
-        auto ground_aabb = ground->boundingBox();
+        auto ground_aabb = ground->bounding_box();
         ground->position().y -= ground_aabb.halfExtents().y;
         auto col_shape = std::make_shared<btBoxShape>(physics::type_cast(ground_aabb.halfExtents()));
         btRigidBody *rb = m_physics.add_mesh_to_simulation(ground, 0.f, col_shape);
@@ -480,14 +480,14 @@ void FractureApp::fracture_test(uint32_t num_shards)
         // back plane
         auto back = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), ground_mat);
         back->set_scale(vec3(100, 20, .3));
-        auto back_aabb = back->boundingBox();
+        auto back_aabb = back->bounding_box();
         back->position() += vec3(0, back_aabb.halfExtents().y, -2.f * back_aabb.halfExtents().z);
         col_shape = std::make_shared<btBoxShape>(physics::type_cast(back_aabb.halfExtents()));
         
         // stopper
         auto stopper = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), ground_mat);
         stopper->set_scale(vec3(m_obj_scale->value().x, .1f, .1f));
-        auto stopper_aabb = back->boundingBox();
+        auto stopper_aabb = back->bounding_box();
         stopper->position() = vec3(0, 0,  - m_obj_scale->value().z / 2.f);
         col_shape = std::make_shared<btBoxShape>(physics::type_cast(stopper_aabb.halfExtents()));
         m_physics.add_mesh_to_simulation(stopper);
@@ -513,7 +513,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
     
     auto m = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), gl::Material::create(phong_shadow));
     m->set_scale(*m_obj_scale);
-    auto aabb = m->boundingBox();
+    auto aabb = m->bounding_box();
     m->position().y += aabb.halfExtents().y;
     
 //    std::vector<gl::Texture> textures;
@@ -576,7 +576,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
         rb->setRollingFriction(*m_friction);
         
         //ccd
-        auto aabb = mesh_copy->boundingBox();
+        auto aabb = mesh_copy->bounding_box();
         rb->setCcdSweptSphereRadius(glm::length(aabb.halfExtents()) / 2.f);
         rb->setCcdMotionThreshold(glm::length(aabb.halfExtents()) / 2.f);
         

@@ -31,7 +31,7 @@ void ModelViewer::setup()
     
     gl::Fbo::Format fmt;
 //    fmt.setSamples(8);
-    fmt.setNumColorBuffers(0);
+    fmt.set_num_color_buffers(0);
     
     m_fbos[0] = gl::Fbo(1024, 1024, fmt);
     m_fbos[1] = gl::Fbo(1024, 1024);
@@ -75,7 +75,7 @@ void ModelViewer::update(float timeDelta)
     if(m_movie->copy_frame_to_texture(textures()[TEXTURE_MOVIE], true))
     {
         auto &t = m_mesh->material()->textures();
-        t = {textures().front(), textures()[TEXTURE_MOVIE], m_fbos[0].getDepthTexture()};
+        t = {textures().front(), textures()[TEXTURE_MOVIE], m_fbos[0].depth_texture()};
     }
 }
 
@@ -242,7 +242,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
             m_mesh = m;
             scene()->addObject(m_mesh);
             
-            auto aabb = m->boundingBox();
+            auto aabb = m->bounding_box();
             
             float scale_factor = 50.f / aabb.width();
             m->set_scale(scale_factor);

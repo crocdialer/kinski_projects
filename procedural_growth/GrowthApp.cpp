@@ -50,7 +50,7 @@ void GrowthApp::setup()
     {
         m_bounding_mesh = gl::Mesh::create(gl::Geometry::create_box(vec3(50)),
                                            gl::Material::create());
-        m_bounding_mesh->position() += m_bounding_mesh->boundingBox().center();
+        m_bounding_mesh->position() += m_bounding_mesh->bounding_box().center();
         
         // some material props
         auto &bound_mat = m_bounding_mesh->material();
