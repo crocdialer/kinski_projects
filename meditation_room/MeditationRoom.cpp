@@ -322,13 +322,14 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     {
         if(!m_bio_sense_dev_name->value().empty())
         {
-            background_queue().submit([this]()
+            auto serial = Serial::create();
+            serial->setup(*m_bio_sense_dev_name, 57600);
+            
+            if(serial->is_initialized())
             {
-                m_bio_sense->setup(*m_bio_sense_dev_name, 57600);
-                
-                // finally flush the newly initialized device
-                if(m_bio_sense->is_initialized()){ m_bio_sense->flush(); }
-            });
+                serial->flush();
+                m_bio_sense = serial;
+            }
         }
     }
     else if(theProperty == m_led_dev_name)
