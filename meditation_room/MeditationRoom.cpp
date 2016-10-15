@@ -459,13 +459,13 @@ void MeditationRoom::set_fbo_state()
     if(!m_fbos[0] || m_fbos[0].size() != m_output_res->value())
     {
         gl::Fbo::Format fmt;
-        fmt.set_num_samples(8);
+//        fmt.set_num_samples(8);
         m_fbos[0] = gl::Fbo(*m_output_res, fmt);
     }
     if(!m_fbos[1] || m_fbos[1].size() != m_output_res->value())
     {
         gl::Fbo::Format fmt;
-        fmt.set_num_samples(8);
+//        fmt.set_num_samples(8);
         m_fbos[1] = gl::Fbo(*m_output_res, fmt);
     }
 }
@@ -515,6 +515,7 @@ void MeditationRoom::read_bio_sensor(float time_delta)
                 v = clamp(v, 0.f, 5.f);
                 m_measurement.push(v);
                 *m_bio_score = median(m_measurement);
+                LOG_TRACE_1 << m_bio_score->value();
             }
         }
     }
