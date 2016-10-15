@@ -147,7 +147,7 @@ void MeditationRoom::update_bio_visuals()
     // circle radius
     m_current_circ_radius = mix<float>(m_current_circ_radius, *m_circle_radius * (1.f + val * 2.f), .05f);
     
-    // blurmount
+    // bluramount
     *m_blur_amount = mix<float>(*m_blur_amount, 2.f + 120.f * val, .1f);
 }
 
@@ -499,6 +499,7 @@ void MeditationRoom::read_bio_sensor()
     
     if(m_bio_sense->is_initialized())
     {
+//        m_bio_sense->flush();
         size_t bytes_to_read = std::min(m_bio_sense->available(), buf.size());
         
         if(!bytes_to_read){}

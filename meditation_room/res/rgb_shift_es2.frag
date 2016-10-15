@@ -33,7 +33,7 @@ varying vec4 v_color;
 varying vec4 v_texCoord;
 
 ///////////////////////////// POISSON STUFF ///////////////////////////////////////////////////////
-const int NUM_TAPS = 12;
+const int NUM_TAPS = 4;
 vec2 fTaps_Poisson[NUM_TAPS];
 
 float nrand( vec2 n )
@@ -53,7 +53,7 @@ vec4 poisson_blur(in sampler2D the_texture, in vec2 tex_coord)
     vec4 color_sum = vec4(0);
 
 	vec4 basis = vec4( rot2d(vec2(1,0),rnd), rot2d(vec2(0,1),rnd) );
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < NUM_TAPS; i++)
 	{
 		vec2 ofs = fTaps_Poisson[i]; ofs = vec2(dot(ofs,basis.xz),dot(ofs,basis.yw) );
 		vec2 poisson_coord = tex_coord + u_blur_amount * ofs / u_window_dimension;
@@ -68,18 +68,18 @@ void main()
 	fTaps_Poisson[1]  = vec2(-.840,-.074);
 	fTaps_Poisson[2]  = vec2(-.696, .457);
 	fTaps_Poisson[3]  = vec2(-.203, .621);
-	fTaps_Poisson[4]  = vec2( .962,-.195);
-	fTaps_Poisson[5]  = vec2( .473,-.480);
-	fTaps_Poisson[6]  = vec2( .519, .767);
-	fTaps_Poisson[7]  = vec2( .185,-.893);
-	fTaps_Poisson[8]  = vec2( .507, .064);
-	fTaps_Poisson[9]  = vec2( .896, .412);
-	fTaps_Poisson[10] = vec2(-.322,-.933);
-	fTaps_Poisson[11] = vec2(-.792,-.598);
+	// fTaps_Poisson[4]  = vec2( .962,-.195);
+	// fTaps_Poisson[5]  = vec2( .473,-.480);
+	// fTaps_Poisson[6]  = vec2( .519, .767);
+	// fTaps_Poisson[7]  = vec2( .185,-.893);
+	// fTaps_Poisson[8]  = vec2( .507, .064);
+	// fTaps_Poisson[9]  = vec2( .896, .412);
+	// fTaps_Poisson[10] = vec2(-.322,-.933);
+	// fTaps_Poisson[11] = vec2(-.792,-.598);
 
     vec4 color = v_color;
     float angle = u_shift_angle;
-    vec2 val = vec2(1.0);//2.f * (gl_FragCoord.xy / u_window_dimension - vec2(.5f));
+    vec2 val = vec2(1.0);
     vec2 coord_shift = val * vec2(u_shift_amount) / u_window_dimension;
 
     for(int i = 0; i < 3; i++)
