@@ -55,6 +55,7 @@ void MeditationRoom::setup()
     gl::Shader rgb_shader;
     rgb_shader.loadFromData(unlit_vert, fs::read_file("rgb_shift.frag"));
     m_mat_rgb_shift = gl::Material::create(rgb_shader);
+    m_mat_rgb_shift->set_depth_test(false);
     
     // setup timer objects
     m_timer_idle = Timer(main_queue().io_service(), [this](){ change_state(State::IDLE, true); });
@@ -67,8 +68,8 @@ void MeditationRoom::setup()
     add_tweakbar_for_component(m_warp);
     
     // output window
-    auto output_window = GLFW_Window::create(1280, 720, "output", false, 0, windows().back()->handle());
-    add_window(output_window);
+//    auto output_window = GLFW_Window::create(1280, 720, "output", false, 0, windows().back()->handle());
+//    add_window(output_window);
     
     if(!load_assets()){ LOG_ERROR << "could not load assets"; }
     load_settings();
@@ -105,7 +106,7 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::MEDITATION:
-            m_mat_rgb_shift->textures() = {m_fbos[0].texture()};
+//            m_mat_rgb_shift->textures() = {m_fbos[0].texture()};
             m_mat_rgb_shift->uniform("u_shift_amount", *m_shift_amount);
             m_mat_rgb_shift->uniform("u_shift_angle", *m_shift_angle);
             m_mat_rgb_shift->uniform("u_blur_amount", *m_blur_amount);
@@ -123,11 +124,14 @@ void MeditationRoom::update(float timeDelta)
 
 void MeditationRoom::update_bio_visuals()
 {
-//    float val = clamp<float>(10.f * *m_bio_score, 0.f, 5.f);
+    if(m_movie && m_current_state == State::DESC_MOVIE)
+    {
+        m_movie->copy_frame_to_texture(textures()[TEXTURE_OUTPUT], true);
+    }
+    
+    // couple bioscore with meditation-parameters
     float val = map_value<float>(m_bio_sensitivity->value() * *m_bio_score, 0.f, 10.f, 0.f, 1.f);
     val = glm::smoothstep(0.f, 1.f, val);
-    
-    //TODO: couple bioscore with meditation-parameters
     
     // shiftamount
     *m_shift_amount = mix<float>(*m_shift_amount, val * 80.f, .15f);
@@ -146,11 +150,7 @@ void MeditationRoom::update_bio_visuals()
 
 void MeditationRoom::draw()
 {
-    if(m_current_state == State::DESC_MOVIE)
-    {
-        if(m_movie && m_movie->copy_frame_to_texture(textures()[TEXTURE_OUTPUT], true)){}
-    }
-    else if(m_current_state == State::MEDITATION)
+    if(m_current_state == State::MEDITATION)
     {
         // create undistorted offscreen tex
         textures()[0] = gl::render_to_texture(m_fbos[0], [this]()
@@ -159,6 +159,7 @@ void MeditationRoom::draw()
             gl::draw_circle(gl::window_dimension() / 2.f, m_current_circ_radius, gl::COLOR_WHITE,
                             true, 48);
         });
+        m_mat_rgb_shift->textures() = {m_fbos[0].texture()};
         
         // apply distortion shader
         textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_fbos[1], [this]()
@@ -167,15 +168,17 @@ void MeditationRoom::draw()
             gl::draw_quad(m_mat_rgb_shift, gl::window_dimension());
         });
     }
-    output_switch();
     
     // draw final result
-    gl::draw_texture(textures()[TEXTURE_OUTPUT], gl::window_dimension());
+    m_warp->render_output(textures()[TEXTURE_OUTPUT]);
     
-    // draw status overlay
-    draw_status_info();
-    
-    if(displayTweakBar()){ draw_textures(textures()); }
+    if(displayTweakBar())
+    {
+        // draw status overlay
+        draw_status_info();
+        
+        draw_textures(textures());
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -206,15 +209,15 @@ void MeditationRoom::keyPress(const KeyEvent &e)
                 next_state = e.getCode() - Key::_1;
                 break;
                 
-            case Key::_O:
-            {
-                // output window
-                auto output_window = GLFW_Window::create(1280, 720, "output", false, 0,
-                                                         windows().back()->handle());
-                add_window(output_window);
-                output_switch();
-            }
-                break;
+//            case Key::_O:
+//            {
+//                // output window
+//                auto output_window = GLFW_Window::create(1280, 720, "output", false, 0,
+//                                                         windows().back()->handle());
+//                add_window(output_window);
+//                output_switch();
+//            }
+//                break;
                 
             default:
                 break;
@@ -631,19 +634,4 @@ void MeditationRoom::create_animations()
                                                     *m_timeout_fade);
     animations()[LIGHT_FADE_OUT] = animation::create(m_led_color, m_led_color->value(), gl::COLOR_BLACK,
                                                      *m_timeout_fade);
-}
-
-void MeditationRoom::output_switch()
-{
-    if(windows().size() > 1)
-    {
-        auto tex = textures()[TEXTURE_OUTPUT];
-        windows().back()->set_draw_function([this, tex]()
-        {
-            static auto mat = gl::Material::create();
-            gl::clear();
-            gl::apply_material(mat);
-            m_warp->render_output(tex);
-        });
-    }
 }

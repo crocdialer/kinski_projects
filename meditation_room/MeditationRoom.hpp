@@ -84,7 +84,6 @@ namespace kinski
         
         //! ouput warping
         WarpComponent::Ptr m_warp;
-        void output_switch();
         
         // our content
         media::MediaControllerPtr
