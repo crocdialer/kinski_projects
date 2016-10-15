@@ -107,7 +107,10 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::DESC_MOVIE:
-            
+            if(m_movie)
+            {
+                m_movie->copy_frame_to_texture(textures()[TEXTURE_OUTPUT], true);
+            }
             break;
             
         case State::MEDITATION:
@@ -129,11 +132,6 @@ void MeditationRoom::update(float timeDelta)
 
 void MeditationRoom::update_bio_visuals()
 {
-    if(m_movie && m_current_state == State::DESC_MOVIE)
-    {
-        m_movie->copy_frame_to_texture(textures()[TEXTURE_OUTPUT], true);
-    }
-    
     // couple bioscore with meditation-parameters
     float val = map_value<float>(m_bio_sensitivity->value() * *m_bio_score, 0.f, 10.f, 0.f, 1.f);
     val = glm::smoothstep(0.f, 1.f, val);
