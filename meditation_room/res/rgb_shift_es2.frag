@@ -82,10 +82,11 @@ void main()
     vec2 val = vec2(1.0);//2.f * (gl_FragCoord.xy / u_window_dimension - vec2(.5f));
     vec2 coord_shift = val * vec2(u_shift_amount) / u_window_dimension;
 
-    for(int i = 0; i < 3; i++, angle += angle_inc)
+    for(int i = 0; i < 3; i++)
     {
         vec2 coord = v_texCoord.st + vec2(sin(angle), cos(angle)) * coord_shift;
         color[i] *= poisson_blur(u_sampler_2D[0], coord)[i];
+        angle += angle_inc;
     }
     gl_FragColor = u_material.diffuse * color;
 }
