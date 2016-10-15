@@ -53,7 +53,14 @@ void MeditationRoom::setup()
     m_serial_buf.resize(2048);
     
     gl::Shader rgb_shader;
+    
+#if defined(KINSKI_GLES)
+    rgb_shader.loadFromData(unlit_vert, fs::read_file("rgb_shift_es2.frag"));
+#else
     rgb_shader.loadFromData(unlit_vert, fs::read_file("rgb_shift.frag"));
+#endif
+    
+    
     m_mat_rgb_shift = gl::Material::create(rgb_shader);
     m_mat_rgb_shift->set_depth_test(false);
     
