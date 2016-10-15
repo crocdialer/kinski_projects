@@ -113,7 +113,7 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::WELCOME:
-            change_state(State::MANDALA_ILLUMINATED);
+            
             break;
             
         case State::MANDALA_ILLUMINATED:
@@ -411,6 +411,10 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
             
             case State::WELCOME:
                 //TODO: implement
+                main_queue().submit_with_delay([this]()
+                {
+                    change_state(State::MANDALA_ILLUMINATED);
+                }, 2.0);
                 break;
                 
             case State::MANDALA_ILLUMINATED:
@@ -477,7 +481,7 @@ void MeditationRoom::read_bio_sensor(float time_delta)
     std::string reading_str;
     
     // parse sensor input
-    if(m_bio_sense->is_initialized())
+    while(m_bio_sense->available())
     {
         size_t bytes_to_read = std::min(m_bio_sense->available(), m_serial_read_buf.size());
         uint8_t *buf_ptr = &m_serial_read_buf[0];
