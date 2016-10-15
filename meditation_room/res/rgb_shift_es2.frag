@@ -16,7 +16,7 @@ uniform float u_shift_angle;
 uniform float u_blur_amount;
 
 #define PI 3.1415926536
-const float angle_inc = 2.0 * PI / 3.f;
+float angle_inc = 2.0 * PI / 3.f;
 
 struct Material
 {
