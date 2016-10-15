@@ -53,7 +53,7 @@ vec4 poisson_blur(in sampler2D the_texture, in vec2 tex_coord)
     vec4 color_sum = vec4(0);
 
 	vec4 basis = vec4( rot2d(vec2(1,0),rnd), rot2d(vec2(0,1),rnd) );
-	for(int i = 0; i < NUM_TAPS; i++)
+	for(int i = 0; i < 4; i++)
 	{
 		vec2 ofs = fTaps_Poisson[i]; ofs = vec2(dot(ofs,basis.xz),dot(ofs,basis.yw) );
 		vec2 poisson_coord = tex_coord + u_blur_amount * ofs / u_window_dimension;

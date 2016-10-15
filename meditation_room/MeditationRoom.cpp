@@ -74,9 +74,7 @@ void MeditationRoom::setup()
     m_warp->observe_properties();
     add_tweakbar_for_component(m_warp);
     
-    // output window
-//    auto output_window = GLFW_Window::create(1280, 720, "output", false, 0, windows().back()->handle());
-//    add_window(output_window);
+    remote_control().set_components({shared_from_this(), m_warp});
     
     if(!load_assets()){ LOG_ERROR << "could not load assets"; }
     load_settings();
