@@ -9,10 +9,11 @@
 #include "gl/ShaderLibrary.h"
 #include "MeditationRoom.hpp"
 
+#define SERIAL_END_CODE '\n'
+
 using namespace std;
 using namespace kinski;
 using namespace glm;
-
 
 /////////////////////////////////////////////////////////////////
 
@@ -49,8 +50,17 @@ void MeditationRoom::setup()
     m_fbos.resize(2);
     set_fbo_state();
     
-    // init a reasonable serial buffer
-    m_serial_buf.resize(2048);
+    // buffer incoming bytes from serial connection
+    m_serial_read_buf.resize(2048);
+    
+    m_motion_sensor.set_motion_callback([this](int v)
+    {
+        if(v > 0)
+        {
+            m_motion_detected = true;
+            m_timer_motion_reset.expires_from_now(5.f);
+        }
+    });
     
     gl::Shader rgb_shader;
     
@@ -89,16 +99,21 @@ void MeditationRoom::update(float timeDelta)
     ViewerApp::update(timeDelta);
     
     // update sensor status
-    detect_motion();
-    read_bio_sensor();
+//    detect_motion();
+    m_motion_sensor.update(timeDelta);
     m_cap_sense.update(timeDelta);
+    read_bio_sensor(timeDelta);
     
     // update according to current state
     
     switch (m_current_state)
     {
         case State::IDLE:
-            if(m_motion_detected){ change_state(State::MANDALA_ILLUMINATED); }
+            if(m_motion_detected){ change_state(State::WELCOME); }
+            break;
+            
+        case State::WELCOME:
+            change_state(State::MANDALA_ILLUMINATED);
             break;
             
         case State::MANDALA_ILLUMINATED:
@@ -175,11 +190,14 @@ void MeditationRoom::draw()
     // draw final result
     m_warp->render_output(textures()[TEXTURE_OUTPUT]);
     
-    if(displayTweakBar())
+    if(Logger::get()->severity() >= Severity::DEBUG)
     {
         // draw status overlay
         draw_status_info();
-        
+    }
+    
+    if(displayTweakBar())
+    {
         draw_textures(textures());
     }
 }
@@ -198,8 +216,8 @@ void MeditationRoom::keyPress(const KeyEvent &e)
     ViewerApp::keyPress(e);
     
     int next_state = -1;
-    std::vector<State> states = {State::IDLE, State::MANDALA_ILLUMINATED, State::DESC_MOVIE,
-        State::MEDITATION};
+    std::vector<State> states = {State::IDLE, State::WELCOME, State::MANDALA_ILLUMINATED,
+        State::DESC_MOVIE, State::MEDITATION};
     
     if(!displayTweakBar())
     {
@@ -209,18 +227,9 @@ void MeditationRoom::keyPress(const KeyEvent &e)
             case Key::_2:
             case Key::_3:
             case Key::_4:
+            case Key::_5:
                 next_state = e.getCode() - Key::_1;
                 break;
-                
-//            case Key::_O:
-//            {
-//                // output window
-//                auto output_window = GLFW_Window::create(1280, 720, "output", false, 0,
-//                                                         windows().back()->handle());
-//                add_window(output_window);
-//                output_switch();
-//            }
-//                break;
                 
             default:
                 break;
@@ -305,10 +314,7 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
         {
             background_queue().submit([this]()
             {
-                m_motion_sense->setup(*m_motion_sense_dev_name, 57600);
-              
-                // finally flush the newly initialized device
-                if(m_motion_sense->is_initialized()){ m_motion_sense->flush(); }
+                m_motion_sensor.connect(*m_motion_sense_dev_name);
             });
         }
     }
@@ -364,6 +370,10 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
     switch(m_current_state)
     {
         case State::IDLE:
+            ret = the_state == State::WELCOME;
+            break;
+        
+        case State::WELCOME:
             ret = the_state == State::MANDALA_ILLUMINATED;
             break;
             
@@ -381,8 +391,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
             break;
     }
     
-    if (!ret){ LOG_DEBUG << "invalid state change requested"; }
-    if (force_change){ LOG_DEBUG << "forced state change"; }
+    if(!ret){ LOG_DEBUG << "invalid state change requested"; }
+    if(force_change){ LOG_DEBUG << "forced state change"; }
     
     // create the fade in/out animations based on current values
     create_animations();
@@ -398,6 +408,10 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[AUDIO_FADE_IN]->start();
                 animations()[LIGHT_FADE_OUT]->start();
                 m_show_movie = true;
+                break;
+            
+            case State::WELCOME:
+                //TODO: implement
                 break;
                 
             case State::MANDALA_ILLUMINATED:
@@ -458,73 +472,58 @@ void MeditationRoom::set_fbo_state()
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::detect_motion()
+void MeditationRoom::read_bio_sensor(float time_delta)
 {
-    if(m_motion_sense->is_initialized())
-    {
-        size_t bytes_to_read = std::min(m_motion_sense->available(),
-                                        m_serial_buf.size());
-        
-        if(!bytes_to_read)
-        {
-//            m_motion_sense_dev_name->notifyObservers();
-        }
-        
-        uint8_t *buf_ptr = &m_serial_buf[0];
-        m_motion_sense->read_bytes(&m_serial_buf[0], bytes_to_read);
-        
-        for(uint32_t i = 0; i < bytes_to_read; i++)
-        {
-            if(*buf_ptr++)
-            {
-                m_motion_detected = true;
-                m_timer_motion_reset.expires_from_now(5.f);
-                break;
-            }
-        }
-    }
-}
-
-/////////////////////////////////////////////////////////////////
-
-void MeditationRoom::read_bio_sensor()
-{
-    static std::vector<uint8_t> buf, accum;
-//    const size_t num_bytes = sizeof(float);
-    buf.resize(32);
+    m_last_sensor_reading += time_delta;
+    std::string reading_str;
     
-    enum SerialCodes{SERIAL_END_CODE = '\n'};
-    
+    // parse sensor input
     if(m_bio_sense->is_initialized())
     {
-//        m_bio_sense->flush();
-        size_t bytes_to_read = std::min(m_bio_sense->available(), buf.size());
+        size_t bytes_to_read = std::min(m_bio_sense->available(), m_serial_read_buf.size());
+        uint8_t *buf_ptr = &m_serial_read_buf[0];
         
-        if(!bytes_to_read){}
-        
-        float val;
+        m_bio_sense->read_bytes(&m_serial_read_buf[0], bytes_to_read);
+        if(bytes_to_read){ m_last_sensor_reading = 0.f; }
         bool reading_complete = false;
-        uint8_t *buf_ptr = &buf[0];
-        m_bio_sense->read_bytes(&buf[0], bytes_to_read);
         
         for(uint32_t i = 0; i < bytes_to_read; i++)
         {
-            uint8_t byte = *buf_ptr++;
+            const uint8_t &byte = *buf_ptr++;
             
             switch(byte)
             {
                 case SERIAL_END_CODE:
-                    val = string_to<float>(string(accum.begin(), accum.end()));
-                    accum.clear();
+                    reading_str = string(m_serial_accumulator.begin(), m_serial_accumulator.end());
+                    m_serial_accumulator.clear();
                     reading_complete = true;
                     break;
                     
                 default:
-                    accum.push_back(byte);
+                    m_serial_accumulator.push_back(byte);
                     break;
             }
         }
-        if(reading_complete){ *m_bio_score = clamp(val, 0.f, 5.f); }
+        
+        if(reading_complete)
+        {
+            auto splits = split(reading_str, ' ');
+            
+            for(size_t i = 0; i < splits.size(); i++)
+            {
+                auto v = string_to<float>(splits[i]);
+                v = clamp(v, 0.f, 5.f);
+                m_measurement.push(v);
+                *m_bio_score = median(m_measurement);
+            }
+        }
+    }
+
+    // reconnect
+    if((m_last_sensor_reading > m_sensor_timeout) && (m_sensor_timeout > 0.f))
+    {
+        m_last_sensor_reading = 0.f;
+        m_motion_sense_dev_name->notify_observers();
     }
 }
 
@@ -566,7 +565,7 @@ void MeditationRoom::draw_status_info()
     gl::draw_text_2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
     offset += step;
     
-    bool motion_sensor_found = m_motion_sense->is_initialized();
+    bool motion_sensor_found = m_motion_sensor.is_initialized();
     bool cap_sensor_found = m_cap_sense.is_initialized();
     bool bio_sensor_found = m_bio_sense->is_initialized();
     bool led_device_found = m_led_device->is_initialized();

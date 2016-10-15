@@ -22,7 +22,7 @@ namespace kinski
     {
     private:
         
-        enum class State{IDLE, MANDALA_ILLUMINATED, DESC_MOVIE, MEDITATION};
+        enum class State{IDLE, WELCOME, MANDALA_ILLUMINATED, DESC_MOVIE, MEDITATION};
         
         enum AnimationEnum{ AUDIO_FADE_IN = 0, AUDIO_FADE_OUT = 1, LIGHT_FADE_IN = 2,
             LIGHT_FADE_OUT = 3};
@@ -31,6 +31,7 @@ namespace kinski
         std::map<State, std::string> m_state_string_map =
         {
             {State::IDLE, "Idle"},
+            {State::WELCOME, "Welcome"},
             {State::MANDALA_ILLUMINATED, "Mandala Illuminated"},
             {State::DESC_MOVIE, "Description Movie"},
             {State::MEDITATION, "Meditation"}
@@ -39,6 +40,10 @@ namespace kinski
         State m_current_state = State::IDLE;
         Timer m_timer_idle, m_timer_motion_reset, m_timer_movie_start;
         bool m_show_movie = true;
+        
+        float m_last_sensor_reading = 0.f, m_sensor_timeout = 5.f;
+        CircularBuffer<float> m_measurement;
+        std::vector<uint8_t> m_serial_accumulator, m_serial_read_buf;
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
@@ -65,10 +70,9 @@ namespace kinski
         m_bio_sense_dev_name = Property_<string>::create("bio sensor device");
         
         SerialPtr
-        m_motion_sense = Serial::create(),
         m_bio_sense = Serial::create(), m_led_device = Serial::create();
         
-        std::vector<uint8_t> m_serial_buf;
+        DistanceSensor m_motion_sensor;
         bool m_motion_detected = false;
         
         Property_<gl::Color>::Ptr
@@ -94,10 +98,7 @@ namespace kinski
         
         bool change_state(State the_the_state, bool force_change = false);
         
-        //! read our motion sensor, update m_motion_detected member, start timer to reset val
-        void detect_motion();
-        
-        void read_bio_sensor();
+        void read_bio_sensor(float time_delta);
         
         void update_bio_visuals();
         
