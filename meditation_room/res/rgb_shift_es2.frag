@@ -59,7 +59,7 @@ vec4 poisson_blur(in sampler2D the_texture, in vec2 tex_coord)
 		vec2 poisson_coord = tex_coord + u_blur_amount * ofs / u_window_dimension;
         color_sum += texture2D(the_texture, poisson_coord);
     }
-    return color_sum / (float)NUM_TAPS;
+    return color_sum / float(NUM_TAPS);
 }
 
 void main()
