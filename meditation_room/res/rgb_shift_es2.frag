@@ -77,15 +77,15 @@ void main()
 	fTaps_Poisson[10] = vec2(-.322,-.933);
 	fTaps_Poisson[11] = vec2(-.792,-.598);
 
-    vec4 texColors = vertex_in.color;
+    vec4 color = v_color;
     float angle = u_shift_angle;
     vec2 val = vec2(1.0);//2.f * (gl_FragCoord.xy / u_window_dimension - vec2(.5f));
     vec2 coord_shift = val * vec2(u_shift_amount) / u_window_dimension;
 
     for(int i = 0; i < 3; i++, angle += angle_inc)
     {
-        vec2 coord = vertex_in.texCoord.st + vec2(sin(angle), cos(angle)) * coord_shift;
-        texColors[i] *= poisson_blur(u_sampler_2D[0], coord)[i];
+        vec2 coord = v_texCoord.st + vec2(sin(angle), cos(angle)) * coord_shift;
+        color[i] *= poisson_blur(u_sampler_2D[0], coord)[i];
     }
-    gl_FragColor = u_material.diffuse * texColors;
+    gl_FragColor = u_material.diffuse * color;
 }
