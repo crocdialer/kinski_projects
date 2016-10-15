@@ -303,47 +303,45 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_cap_sense_dev_name)
     {
-        background_queue().submit([this]()
-        {
-            m_cap_sense.connect(*m_cap_sense_dev_name);
-        });
+//        background_queue().submit([this]()
+//        {
+//            m_cap_sense.connect(*m_cap_sense_dev_name);
+//        });
     }
     else if(theProperty == m_motion_sense_dev_name)
     {
-        if(!m_motion_sense_dev_name->value().empty())
-        {
-            background_queue().submit([this]()
-            {
-                m_motion_sensor.connect(*m_motion_sense_dev_name);
-            });
-        }
+//        if(!m_motion_sense_dev_name->value().empty())
+//        {
+//            background_queue().submit([this]()
+//            {
+//                m_motion_sensor.connect(*m_motion_sense_dev_name);
+//            });
+//        }
     }
     else if(theProperty == m_bio_sense_dev_name)
     {
+        auto serial = Serial::create();
+        
         if(!m_bio_sense_dev_name->value().empty())
         {
-            auto serial = Serial::create();
             serial->setup(*m_bio_sense_dev_name, 57600);
             
-            if(serial->is_initialized())
-            {
-                serial->flush();
-                m_bio_sense = serial;
-            }
+            if(serial->is_initialized()){ serial->flush(); }
         }
+        m_bio_sense = serial;
     }
     else if(theProperty == m_led_dev_name)
     {
-        if(!m_led_dev_name->value().empty())
-        {
-            background_queue().submit([this]()
-            {
-                m_led_device->setup(*m_led_dev_name, 57600);
-              
-                // finally flush the newly initialized device
-                if(m_led_device->is_initialized()){ m_led_device->flush(); }
-            });
-        }
+//        if(!m_led_dev_name->value().empty())
+//        {
+//            background_queue().submit([this]()
+//            {
+//                m_led_device->setup(*m_led_dev_name, 57600);
+//              
+//                // finally flush the newly initialized device
+//                if(m_led_device->is_initialized()){ m_led_device->flush(); }
+//            });
+//        }
     }
     else if(theProperty == m_led_color){ set_led_color(*m_led_color); }
     else if(theProperty == m_volume)
@@ -515,7 +513,7 @@ void MeditationRoom::read_bio_sensor(float time_delta)
                 auto v = string_to<float>(splits[i]);
                 v = clamp(v, 0.f, 5.f);
                 m_measurement.push(v);
-                *m_bio_score = median(m_measurement);
+                *m_bio_score = v;//median<float>(m_measurement);
                 LOG_TRACE_1 << m_bio_score->value();
             }
         }
@@ -525,7 +523,7 @@ void MeditationRoom::read_bio_sensor(float time_delta)
     if((m_last_sensor_reading > m_sensor_timeout) && (m_sensor_timeout > 0.f))
     {
         m_last_sensor_reading = 0.f;
-        m_motion_sense_dev_name->notify_observers();
+        m_bio_sense_dev_name->notify_observers();
     }
 }
 
