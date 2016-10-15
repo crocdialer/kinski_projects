@@ -51,7 +51,7 @@ void MeditationRoom::setup()
     set_fbo_state();
     
     // buffer incoming bytes from serial connection
-    m_serial_read_buf.resize(2048);
+    m_serial_read_buf.resize(1 << 16);
     
     m_motion_sensor.set_motion_callback([this](int v)
     {
@@ -513,7 +513,7 @@ void MeditationRoom::read_bio_sensor(float time_delta)
                 auto v = string_to<float>(splits[i]);
                 v = clamp(v, 0.f, 5.f);
                 m_measurement.push(v);
-                *m_bio_score = v;//median<float>(m_measurement);
+                *m_bio_score = median<float>(m_measurement);
                 LOG_TRACE_1 << m_bio_score->value();
             }
         }
