@@ -307,16 +307,11 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
 //        {
 //            m_cap_sense.connect(*m_cap_sense_dev_name);
 //        });
+        m_cap_sense.connect(*m_cap_sense_dev_name);
     }
     else if(theProperty == m_motion_sense_dev_name)
     {
-//        if(!m_motion_sense_dev_name->value().empty())
-//        {
-//            background_queue().submit([this]()
-//            {
-//                m_motion_sensor.connect(*m_motion_sense_dev_name);
-//            });
-//        }
+        m_motion_sensor.connect(*m_motion_sense_dev_name);
     }
     else if(theProperty == m_bio_sense_dev_name)
     {
