@@ -38,8 +38,7 @@ namespace kinski
         };
         
         State m_current_state = State::IDLE;
-        Timer m_timer_idle, m_timer_motion_reset, m_timer_movie_start;
-        bool m_show_movie = true;
+        Timer m_timer_idle, m_timer_motion_reset, m_timer_movie_start, m_timer_movie_pause;
         
         float m_last_sensor_reading = 0.f, m_sensor_timeout = 5.f;
         CircularBuffer<float> m_measurement;
@@ -48,6 +47,7 @@ namespace kinski
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
         m_timeout_movie_start = Property_<float>::create("timeout movie start", 1.f),
+        m_timeout_movie_pause = Property_<float>::create("timeout movie pause", 5.f),
         m_timeout_fade = Property_<float>::create("timeout fade audio/light", 2.f);
         
         Property_<float>::Ptr
@@ -64,6 +64,7 @@ namespace kinski
         m_output_res = Property_<gl::vec2>::create("output resolution", gl::vec2(1280, 720));
         
         Property_<string>::Ptr
+        m_asset_dir = Property_<string>::create("asset base directory"),
         m_cap_sense_dev_name = Property_<string>::create("touch sensor device"),
         m_led_dev_name = Property_<string>::create("led device"),
         m_motion_sense_dev_name = Property_<string>::create("motion sensor device"),

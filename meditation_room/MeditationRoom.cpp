@@ -22,7 +22,7 @@ void MeditationRoom::setup()
     ViewerApp::setup();
     
     fonts()[1].load(fonts()[0].path(), 64);
-    
+    register_property(m_asset_dir);
     register_property(m_cap_sense_dev_name);
     register_property(m_motion_sense_dev_name);
     register_property(m_bio_sense_dev_name);
@@ -35,6 +35,7 @@ void MeditationRoom::setup()
     register_property(m_blur_amount);
     register_property(m_timeout_idle);
     register_property(m_timeout_movie_start);
+    register_property(m_timeout_movie_pause);
     register_property(m_timeout_fade);
     register_property(m_led_color);
     register_property(m_volume);
@@ -50,7 +51,7 @@ void MeditationRoom::setup()
     m_fbos.resize(2);
     set_fbo_state();
     
-    // buffer incoming bytes from serial connection
+    // buffer incoming bytes from serial connection (used for bio-feedback)
     m_serial_read_buf.resize(1 << 16);
     
     m_motion_sensor.set_motion_callback([this](int v)
@@ -59,6 +60,7 @@ void MeditationRoom::setup()
         {
             m_motion_detected = true;
             m_timer_motion_reset.expires_from_now(5.f);
+            m_timer_idle.expires_from_now(*m_timeout_idle);
         }
     });
     
@@ -77,16 +79,28 @@ void MeditationRoom::setup()
     // setup timer objects
     m_timer_idle = Timer(main_queue().io_service(), [this](){ change_state(State::IDLE, true); });
     m_timer_motion_reset = Timer(main_queue().io_service(), [this](){ m_motion_detected = false; });
-    m_timer_movie_start = Timer(main_queue().io_service(), [this](){ if(m_movie){ m_movie->restart(); } });
+    m_timer_movie_start = Timer(main_queue().io_service(), [this]()
+    {
+        if(m_movie)
+        {
+            m_movie->play();
+            m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
+        }
+    });
+    
+    // TODO: fade in/out
+    m_timer_movie_pause = Timer(main_queue().io_service(), [this]()
+    {
+        change_state(State::MANDALA_ILLUMINATED, true);
+    });
     
     // warp component
     m_warp = std::make_shared<WarpComponent>();
     m_warp->observe_properties();
     add_tweakbar_for_component(m_warp);
     
+    // web interface
     remote_control().set_components({shared_from_this(), m_warp});
-    
-    if(!load_assets()){ LOG_ERROR << "could not load assets"; }
     load_settings();
     
     change_state(State::IDLE, true);
@@ -99,13 +113,11 @@ void MeditationRoom::update(float timeDelta)
     ViewerApp::update(timeDelta);
     
     // update sensor status
-//    detect_motion();
     m_motion_sensor.update(timeDelta);
     m_cap_sense.update(timeDelta);
     read_bio_sensor(timeDelta);
     
     // update according to current state
-    
     switch (m_current_state)
     {
         case State::IDLE:
@@ -117,7 +129,7 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::MANDALA_ILLUMINATED:
-            if(m_cap_sense.is_touched(12) && m_show_movie){ change_state(State::DESC_MOVIE); }
+            if(m_cap_sense.is_touched(12)){ change_state(State::DESC_MOVIE); }
             else if(*m_bio_score > *m_bio_thresh){ change_state(State::MEDITATION); }
             break;
             
@@ -125,6 +137,12 @@ void MeditationRoom::update(float timeDelta)
             if(m_movie)
             {
                 m_movie->copy_frame_to_texture(textures()[TEXTURE_OUTPUT], true);
+            }
+            
+            // keep on restarting the timer while touched
+            if(m_cap_sense.is_touched(12))
+            {
+                m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
             }
             break;
             
@@ -301,13 +319,15 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
     
-    if(theProperty == m_cap_sense_dev_name)
+    if(theProperty == m_asset_dir)
     {
-//        background_queue().submit([this]()
-//        {
-//            m_cap_sense.connect(*m_cap_sense_dev_name);
-//        });
+        if(!load_assets()){ LOG_ERROR << "could not load assets"; }
+    }
+    else if(theProperty == m_cap_sense_dev_name)
+    {
         m_cap_sense.connect(*m_cap_sense_dev_name);
+        m_cap_sense.set_thresholds(24, 8);
+        m_cap_sense.set_charge_current(63);
     }
     else if(theProperty == m_motion_sense_dev_name)
     {
@@ -384,7 +404,6 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
             ret = the_state == State::MANDALA_ILLUMINATED;
             break;
     }
-    
     if(!ret){ LOG_DEBUG << "invalid state change requested"; }
     if(force_change){ LOG_DEBUG << "forced state change"; }
     
@@ -395,13 +414,13 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
     {
         textures()[TEXTURE_OUTPUT].reset();
         
-        //TODO: handle state transition
+        // handle state transition
         switch(the_state)
         {
             case State::IDLE:
                 animations()[AUDIO_FADE_IN]->start();
                 animations()[LIGHT_FADE_OUT]->start();
-                m_show_movie = true;
+                if(m_movie){ m_movie->seek_to_time(0); m_movie->pause(); }
                 break;
             
             case State::WELCOME:
@@ -431,9 +450,9 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 {
                     LOG_DEBUG << "starting movie in " << m_timeout_movie_start->value() <<" secs";
                     m_timer_movie_start.expires_from_now(*m_timeout_movie_start);
+                    
                     m_movie->set_media_ended_callback([this](media::MovieControllerPtr)
                     {
-                        m_show_movie = false;
                         change_state(State::MANDALA_ILLUMINATED);
                     });
                 }
@@ -574,22 +593,23 @@ void MeditationRoom::draw_status_info()
     string bs_string = bio_sensor_found ? to_string(m_bio_score->value(), 2) : "not found";
     string led_string = led_device_found ? "ok" : "not found";
     
-    gl::Color cap_col = (cap_sensor_found && m_cap_sense.is_touched()) ? gl::COLOR_GREEN : gl::COLOR_RED;
-    gl::Color motion_col = (motion_sensor_found && m_motion_detected) ?
-        gl::COLOR_GREEN : gl::COLOR_RED;
-    gl::Color bio_col = (bio_sensor_found && *m_bio_score > *m_bio_thresh) ?
-    gl::COLOR_GREEN : gl::COLOR_RED;
+    gl::Color cap_col = cap_sensor_found ?
+        (m_cap_sense.is_touched() ? gl::COLOR_GREEN : gl::COLOR_WHITE) : gl::COLOR_RED;
+    gl::Color motion_col = motion_sensor_found ?
+        (m_motion_detected ? gl::COLOR_GREEN : gl::COLOR_WHITE) : gl::COLOR_RED;
+    gl::Color bio_col = bio_sensor_found ?
+        (*m_bio_score > *m_bio_thresh ? gl::COLOR_GREEN : gl::COLOR_WHITE) : gl::COLOR_RED;
     
     // motion sensor
     gl::draw_text_2D("motion-sensor: " + ms_string, fonts()[0], motion_col, offset);
     
     // chair sensor
     offset += step;
-    gl::draw_text_2D("chair-sensor: " + cs_string, fonts()[0], cap_col, offset);
+    gl::draw_text_2D("capacitive-sensor: " + cs_string, fonts()[0], cap_col, offset);
     
     // bio feedback sensor
     offset += step;
-    gl::draw_text_2D("bio-sensor (accelo): " + bs_string, fonts()[0], bio_col, offset);
+    gl::draw_text_2D("bio-feedback (accelo): " + bs_string, fonts()[0], bio_col, offset);
     
     // LED device
     offset += step;
@@ -602,20 +622,17 @@ void MeditationRoom::draw_status_info()
 
 bool MeditationRoom::load_assets()
 {
-    // asset path
-    const std::string asset_base_dir = "~/Desktop/mkb_assets";
+    if(!fs::is_directory(*m_asset_dir)){ return false; }
     
-    if(!fs::is_directory(asset_base_dir)){ return false; }
-    
-    auto audio_files = fs::get_directory_entries(asset_base_dir, fs::FileType::AUDIO, true);
+    auto audio_files = fs::get_directory_entries(*m_asset_dir, fs::FileType::AUDIO, true);
     
     if(!audio_files.empty())
     {
         // background chanting audio
-        m_audio->load(audio_files.front(), true, true);
+        m_audio->load(audio_files.front(), false, true);
     }
     
-    auto video_files = fs::get_directory_entries(asset_base_dir, fs::FileType::MOVIE, true);
+    auto video_files = fs::get_directory_entries(*m_asset_dir, fs::FileType::MOVIE, true);
     
     if(!video_files.empty())
     {
