@@ -42,7 +42,7 @@ namespace kinski
             m_timer_meditation_cancel;
         
         float m_last_sensor_reading = 0.f, m_sensor_timeout = 5.f;
-        CircularBuffer<float> m_measurement;
+        CircularBuffer<float> m_bio_acceleration, m_bio_elongation;
         std::vector<uint8_t> m_serial_accumulator, m_serial_read_buf;
         
         Property_<float>::Ptr
@@ -90,7 +90,7 @@ namespace kinski
         std::vector<gl::Fbo> m_fbos;
         
         // current brightness
-        float m_brightness = 1.f;
+        float m_brightness = 0.f;
         
         //! ouput warping
         WarpComponent::Ptr m_warp;

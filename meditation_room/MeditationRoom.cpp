@@ -574,13 +574,12 @@ void MeditationRoom::read_bio_sensor(float time_delta)
         {
             auto splits = split(reading_str, ' ');
             
-            for(size_t i = 0; i < splits.size(); i++)
+            if(splits.size() == 2)
             {
-                auto v = string_to<float>(splits[i]);
-                v = clamp(v, 0.f, 5.f);
-                m_measurement.push(v);
-                *m_bio_score = median<float>(m_measurement);
-                LOG_TRACE_1 << m_bio_score->value();
+                m_bio_acceleration.push(string_to<float>(splits[0]));
+                m_bio_elongation.push(string_to<float>(splits[1]));
+                *m_bio_score = median<float>(m_bio_acceleration);
+                LOG_TRACE_1 << m_bio_score->value() << " - " <<  median<float>(m_bio_elongation);
             }
         }
     }
