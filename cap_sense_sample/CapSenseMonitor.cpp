@@ -85,7 +85,7 @@ void CapSenseMonitor::draw()
             
             if(i == 12)
             {
-                gl::draw_text_2D(to_string(int(proxi_val * 100.f)) + "%", fonts()[FONT_MEDIUM],
+                gl::draw_text_2D(to_string(int(std::round(proxi_val * 100.f))) + "%", fonts()[FONT_MEDIUM],
                                  gl::COLOR_WHITE, offset - sz / 3.f);
             }
             offset.x += step.x;

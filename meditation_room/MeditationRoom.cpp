@@ -34,9 +34,10 @@ void MeditationRoom::setup()
     register_property(m_shift_velocity);
     register_property(m_blur_amount);
     register_property(m_timeout_idle);
-    register_property(m_timeout_movie_start);
+    register_property(m_timeout_audio);
     register_property(m_timeout_movie_pause);
-    register_property(m_timeout_fade);
+    register_property(m_timeout_meditation_cancel);
+    register_property(m_duration_fade);
     register_property(m_led_color);
     register_property(m_volume);
     register_property(m_volume_max);
@@ -76,23 +77,34 @@ void MeditationRoom::setup()
     m_mat_rgb_shift = gl::Material::create(rgb_shader);
     m_mat_rgb_shift->set_depth_test(false);
     
+    // generate animations
+    create_animations();
+    
     // setup timer objects
     m_timer_idle = Timer(main_queue().io_service(), [this](){ change_state(State::IDLE, true); });
+    m_timer_audio_start = Timer(main_queue().io_service(), [this]()
+    {
+        m_audio->restart();
+        animations()[AUDIO_FADE_IN]->start();
+    });
     m_timer_motion_reset = Timer(main_queue().io_service(), [this](){ m_motion_detected = false; });
-    m_timer_movie_start = Timer(main_queue().io_service(), [this]()
-    {
-        if(m_movie)
-        {
-            m_movie->play();
-            m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
-        }
-    });
     
-    // TODO: fade in/out
-    m_timer_movie_pause = Timer(main_queue().io_service(), [this]()
+    // fade movie in/out
+    auto fade_out_func = [this]()
     {
-        change_state(State::MANDALA_ILLUMINATED, true);
-    });
+        animations()[PROJECTION_FADE_IN]->stop();
+        
+        create_animations();
+        auto anim_cp = animations()[PROJECTION_FADE_OUT];
+        anim_cp->start();
+        
+        animations()[PROJECTION_FADE_OUT]->set_finish_callback([this, anim_cp]()
+        {
+            change_state(State::MANDALA_ILLUMINATED, true);
+        });
+    };
+    m_timer_movie_pause = Timer(main_queue().io_service(), fade_out_func);
+    m_timer_meditation_cancel = Timer(main_queue().io_service(), fade_out_func);
     
     // warp component
     m_warp = std::make_shared<WarpComponent>();
@@ -143,6 +155,16 @@ void MeditationRoom::update(float timeDelta)
             if(m_cap_sense.is_touched(12))
             {
                 m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
+                
+                // movie began to fade out, but user wants to continue -> fade back in
+                if(animations()[PROJECTION_FADE_OUT]->is_playing())
+                {
+                    animations()[PROJECTION_FADE_OUT]->stop();
+                    
+                    // create new animation object
+                    create_animations();
+                    animations()[PROJECTION_FADE_IN]->start();
+                }
             }
             break;
             
@@ -153,7 +175,12 @@ void MeditationRoom::update(float timeDelta)
             m_mat_rgb_shift->uniform("u_blur_amount", *m_blur_amount);
             m_mat_rgb_shift->uniform("u_window_dimension", *m_output_res);
             *m_shift_angle += *m_shift_velocity * timeDelta;
-            if(*m_bio_score > *m_bio_thresh){ m_timer_idle.expires_from_now(*m_timeout_idle); }
+            
+            // restart timer while people keep using chestbelt
+            if(*m_bio_score > *m_bio_thresh)
+            {
+                m_timer_meditation_cancel.expires_from_now(*m_timeout_meditation_cancel);
+            }
             break;
     }
     
@@ -206,7 +233,7 @@ void MeditationRoom::draw()
     }
     
     // draw final result
-    m_warp->render_output(textures()[TEXTURE_OUTPUT]);
+    m_warp->render_output(textures()[TEXTURE_OUTPUT], m_brightness);
     
     if(Logger::get()->severity() >= Severity::DEBUG)
     {
@@ -363,7 +390,7 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     {
         if(m_audio){ m_audio->set_volume(*m_volume); }
     }
-    else if(theProperty == m_timeout_fade)
+    else if(theProperty == m_duration_fade)
     {
         create_animations();
     }
@@ -418,7 +445,9 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
         switch(the_state)
         {
             case State::IDLE:
-                animations()[AUDIO_FADE_IN]->start();
+                animations()[AUDIO_FADE_IN]->stop();
+                animations()[AUDIO_FADE_OUT]->start();
+                animations()[LIGHT_FADE_IN]->stop();
                 animations()[LIGHT_FADE_OUT]->start();
                 if(m_movie){ m_movie->seek_to_time(0); m_movie->pause(); }
                 break;
@@ -439,29 +468,48 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 if(m_current_state == State::IDLE){ animations()[AUDIO_FADE_OUT]->start(); }
                 else{ *m_volume = 0.f; }
                 m_timer_idle.expires_from_now(*m_timeout_idle);
+                m_timer_audio_start.expires_from_now(*m_timeout_audio);
+                m_timer_meditation_cancel.cancel();
                 break;
                 
             case State::DESC_MOVIE:
-                if(animations()[LIGHT_FADE_IN]){ animations()[LIGHT_FADE_IN]->stop(); }
-                if(animations()[LIGHT_FADE_OUT]){ animations()[LIGHT_FADE_OUT]->start(44.f); }
+                animations()[AUDIO_FADE_IN]->stop();
+                animations()[AUDIO_FADE_OUT]->start();
+                animations()[LIGHT_FADE_IN]->stop();
+                animations()[LIGHT_FADE_OUT]->start();
+                animations()[PROJECTION_FADE_OUT]->stop();
+                animations()[PROJECTION_FADE_IN]->start();
+                
                 m_timer_idle.cancel();
+                m_timer_audio_start.cancel();
                 
                 if(m_movie)
                 {
-                    LOG_DEBUG << "starting movie in " << m_timeout_movie_start->value() <<" secs";
-                    m_timer_movie_start.expires_from_now(*m_timeout_movie_start);
-                    
                     m_movie->set_media_ended_callback([this](media::MovieControllerPtr)
                     {
                         change_state(State::MANDALA_ILLUMINATED);
                     });
+                    
+                    // jump back a few seconds, in case movie was paused
+                    m_movie->seek_to_time(m_movie->current_time() - 3.0);
+                    m_movie->play();
+                    m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
                 }
                 break;
                 
             case State::MEDITATION:
+                animations()[AUDIO_FADE_IN]->stop();
+                animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_IN]->stop();
                 animations()[LIGHT_FADE_OUT]->start();
+                animations()[PROJECTION_FADE_OUT]->stop();
+                animations()[PROJECTION_FADE_IN]->start();
                 if(m_movie){ m_movie->pause(); }
+                
+                m_timer_idle.cancel();
+                m_timer_audio_start.cancel();
+                m_timer_meditation_cancel.expires_from_now(*m_timeout_meditation_cancel);
+                
                 break;
         }
         m_current_state = the_state;
@@ -629,7 +677,7 @@ bool MeditationRoom::load_assets()
     if(!audio_files.empty())
     {
         // background chanting audio
-        m_audio->load(audio_files.front(), false, true);
+        m_audio->load(audio_files.front(), true, true);
     }
     
     auto video_files = fs::get_directory_entries(*m_asset_dir, fs::FileType::MOVIE, true);
@@ -646,11 +694,17 @@ void MeditationRoom::create_animations()
 {
     // setup animations
     animations()[AUDIO_FADE_IN] = animation::create(m_volume, m_volume->value(),
-                                                    m_volume_max->value(), *m_timeout_fade);
+                                                    m_volume_max->value(), *m_duration_fade);
     animations()[AUDIO_FADE_OUT] = animation::create(m_volume, m_volume->value(), 0.f,
-                                                     *m_timeout_fade);
+                                                     *m_duration_fade);
     animations()[LIGHT_FADE_IN] = animation::create(m_led_color, m_led_color->value(), gl::COLOR_WHITE,
-                                                    *m_timeout_fade);
+                                                    *m_duration_fade);
     animations()[LIGHT_FADE_OUT] = animation::create(m_led_color, m_led_color->value(), gl::COLOR_BLACK,
-                                                     *m_timeout_fade);
+                                                     *m_duration_fade);
+    
+    animations()[PROJECTION_FADE_IN] = animation::create(&m_brightness, m_brightness, 1.f,
+                                                         *m_duration_fade);
+    
+    animations()[PROJECTION_FADE_OUT] = animation::create(&m_brightness, m_brightness, 0.f,
+                                                          *m_duration_fade);
 }

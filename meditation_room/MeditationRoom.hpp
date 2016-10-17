@@ -25,7 +25,7 @@ namespace kinski
         enum class State{IDLE, WELCOME, MANDALA_ILLUMINATED, DESC_MOVIE, MEDITATION};
         
         enum AnimationEnum{ AUDIO_FADE_IN = 0, AUDIO_FADE_OUT = 1, LIGHT_FADE_IN = 2,
-            LIGHT_FADE_OUT = 3};
+            LIGHT_FADE_OUT = 3, PROJECTION_FADE_IN = 4, PROJECTION_FADE_OUT = 5};
         enum TextureEnum{ TEXTURE_BLANK = 0, TEXTURE_OUTPUT = 1};
         
         std::map<State, std::string> m_state_string_map =
@@ -38,7 +38,8 @@ namespace kinski
         };
         
         State m_current_state = State::IDLE;
-        Timer m_timer_idle, m_timer_motion_reset, m_timer_movie_start, m_timer_movie_pause;
+        Timer m_timer_idle, m_timer_audio_start, m_timer_motion_reset, m_timer_movie_pause,
+            m_timer_meditation_cancel;
         
         float m_last_sensor_reading = 0.f, m_sensor_timeout = 5.f;
         CircularBuffer<float> m_measurement;
@@ -46,9 +47,10 @@ namespace kinski
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
-        m_timeout_movie_start = Property_<float>::create("timeout movie start", 1.f),
         m_timeout_movie_pause = Property_<float>::create("timeout movie pause", 5.f),
-        m_timeout_fade = Property_<float>::create("timeout fade audio/light", 2.f);
+        m_timeout_audio = Property_<float>::create("timeout for audio start", 10.f),
+        m_timeout_meditation_cancel = Property_<float>::create("timeout for meditation cancel", 30.f),
+        m_duration_fade = Property_<float>::create("duration fade audio/video/light", 2.f);
         
         Property_<float>::Ptr
         m_shift_angle = Property_<float>::create("shift angle", 0.f),
@@ -86,6 +88,9 @@ namespace kinski
         
         gl::MaterialPtr m_mat_rgb_shift;
         std::vector<gl::Fbo> m_fbos;
+        
+        // current brightness
+        float m_brightness = 1.f;
         
         //! ouput warping
         WarpComponent::Ptr m_warp;
