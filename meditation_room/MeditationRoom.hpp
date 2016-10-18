@@ -39,11 +39,13 @@ namespace kinski
         
         State m_current_state = State::IDLE;
         Timer m_timer_idle, m_timer_audio_start, m_timer_motion_reset, m_timer_movie_pause,
-            m_timer_meditation_cancel;
+            m_timer_meditation_cancel, m_timer_sensor_update;
         
         float m_last_sensor_reading = 0.f, m_sensor_timeout = 5.f;
         CircularBuffer<float> m_bio_acceleration, m_bio_elongation;
         std::vector<uint8_t> m_serial_accumulator, m_serial_read_buf;
+        
+        double m_sensor_read_timestamp = getApplicationTime();
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
@@ -106,7 +108,7 @@ namespace kinski
         
         void read_bio_sensor(float time_delta);
         
-        void update_bio_visuals();
+        void update_bio_visuals(float accel, float elong);
         
         void set_led_color(const gl::Color &the_color);
         

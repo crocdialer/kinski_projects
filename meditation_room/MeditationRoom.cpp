@@ -106,6 +106,20 @@ void MeditationRoom::setup()
     m_timer_movie_pause = Timer(main_queue().io_service(), fade_out_func);
     m_timer_meditation_cancel = Timer(main_queue().io_service(), fade_out_func);
     
+    m_timer_sensor_update = Timer(background_queue().io_service(), [this]()
+    {
+        double now = getApplicationTime();
+        double time_delta = now - m_sensor_read_timestamp;
+        m_sensor_read_timestamp = now;
+        
+        // update sensor status
+        m_motion_sensor.update(time_delta);
+        m_cap_sense.update(time_delta);
+        read_bio_sensor(time_delta);
+    });
+    m_timer_sensor_update.set_periodic();
+    m_timer_sensor_update.expires_from_now(.033);
+    
     // warp component
     m_warp = std::make_shared<WarpComponent>();
     m_warp->observe_properties();
@@ -124,10 +138,10 @@ void MeditationRoom::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
     
-    // update sensor status
-    m_motion_sensor.update(timeDelta);
-    m_cap_sense.update(timeDelta);
-    read_bio_sensor(timeDelta);
+//    // update sensor status
+//    m_motion_sensor.update(timeDelta);
+//    m_cap_sense.update(timeDelta);
+//    read_bio_sensor(timeDelta);
     
     // update according to current state
     switch (m_current_state)
@@ -169,7 +183,7 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::MEDITATION:
-//            m_mat_rgb_shift->textures() = {m_fbos[0].texture()};
+            update_bio_visuals(median<float>(m_bio_acceleration), median<float>(m_bio_elongation));
             m_mat_rgb_shift->uniform("u_shift_amount", *m_shift_amount);
             m_mat_rgb_shift->uniform("u_shift_angle", *m_shift_angle);
             m_mat_rgb_shift->uniform("u_blur_amount", *m_blur_amount);
@@ -190,10 +204,10 @@ void MeditationRoom::update(float timeDelta)
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::update_bio_visuals()
+void MeditationRoom::update_bio_visuals(float accel, float elong)
 {
     // couple bioscore with meditation-parameters
-    float val = map_value<float>(m_bio_sensitivity->value() * *m_bio_score, 0.f, 10.f, 0.f, 1.f);
+    float val = map_value<float>(m_bio_sensitivity->value() * accel, 0.f, 10.f, 0.f, 1.f);
     val = glm::smoothstep(0.f, 1.f, val);
     
     // shiftamount
@@ -203,7 +217,8 @@ void MeditationRoom::update_bio_visuals()
     *m_shift_velocity = mix<float>(*m_shift_velocity, val * 20.f, .015f);
     
     // circle radius
-    m_current_circ_radius = mix<float>(m_current_circ_radius, *m_circle_radius * (1.f + val * 2.f), .05f);
+    m_current_circ_radius = mix<float>(m_current_circ_radius,
+                                       *m_circle_radius * (elong + 1.f + val * 2.f), .05f);
     
     // bluramount
     *m_blur_amount = mix<float>(*m_blur_amount, 2.f + 120.f * val, .1f);
@@ -388,14 +403,11 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_volume)
     {
         if(m_audio){ m_audio->set_volume(*m_volume); }
+        if(m_movie){ m_movie->set_volume(*m_volume); }
     }
     else if(theProperty == m_duration_fade)
     {
         create_animations();
-    }
-    else if(theProperty == m_bio_score)
-    {
-        update_bio_visuals();
     }
     else if (theProperty == m_circle_radius){ m_current_circ_radius = *m_circle_radius; }
 }
@@ -448,7 +460,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_IN]->stop();
                 animations()[LIGHT_FADE_OUT]->start();
-                if(m_movie){ m_movie->seek_to_time(0); m_movie->pause(); }
+                if(m_movie){ m_movie->restart(); m_movie->pause(); }
                 break;
             
             case State::WELCOME:
@@ -461,10 +473,10 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 
             case State::MANDALA_ILLUMINATED:
                 animations()[AUDIO_FADE_IN]->stop();
+                animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_OUT]->stop();
                 animations()[LIGHT_FADE_IN]->start();
                 if(m_movie){ m_movie->pause(); }
-                if(m_current_state == State::IDLE){ animations()[AUDIO_FADE_OUT]->start(); }
                 else{ *m_volume = 0.f; }
                 m_timer_idle.expires_from_now(*m_timeout_idle);
                 m_timer_audio_start.expires_from_now(*m_timeout_audio);
