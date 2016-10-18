@@ -9,6 +9,7 @@
 #include "gl/ShaderLibrary.h"
 #include "MeditationRoom.hpp"
 
+#define SENSOR_UPDATE_FREQUENCY 50.0
 #define SERIAL_END_CODE '\n'
 
 using namespace std;
@@ -118,7 +119,7 @@ void MeditationRoom::setup()
         read_bio_sensor(time_delta);
     });
     m_timer_sensor_update.set_periodic();
-    m_timer_sensor_update.expires_from_now(.033);
+    m_timer_sensor_update.expires_from_now(1.0 / SENSOR_UPDATE_FREQUENCY);
     
     // warp component
     m_warp = std::make_shared<WarpComponent>();
@@ -162,6 +163,7 @@ void MeditationRoom::update(float timeDelta)
         case State::DESC_MOVIE:
             if(m_movie)
             {
+                m_movie->set_volume(*m_volume_max * m_brightness);
                 m_movie->copy_frame_to_texture(textures()[TEXTURE_OUTPUT], true);
             }
             
@@ -403,7 +405,6 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_volume)
     {
         if(m_audio){ m_audio->set_volume(*m_volume); }
-        if(m_movie){ m_movie->set_volume(*m_volume); }
     }
     else if(theProperty == m_duration_fade)
     {
