@@ -374,16 +374,15 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_led_dev_name)
     {
-//        if(!m_led_dev_name->value().empty())
-//        {
-//            background_queue().submit([this]()
-//            {
-//                m_led_device->setup(*m_led_dev_name, 57600);
-//              
-//                // finally flush the newly initialized device
-//                if(m_led_device->is_initialized()){ m_led_device->flush(); }
-//            });
-//        }
+        auto serial = Serial::create();
+        
+        if(!m_led_dev_name->value().empty())
+        {
+            serial->setup(*m_led_dev_name, 57600);
+            
+            if(serial->is_initialized()){ serial->flush(); }
+        }
+        m_led_device = serial;
     }
     else if(theProperty == m_led_color){ set_led_color(*m_led_color); }
     else if(theProperty == m_volume)
@@ -598,20 +597,14 @@ void MeditationRoom::set_led_color(const gl::Color &the_color)
 {
     if(m_led_device->is_initialized())
     {
-        // create RGBA integer val
-//        uint32_t rgb_val = (static_cast<uint32_t>(the_color.r * 255) << 24) |
-//        (static_cast<uint32_t>(the_color.g * 255) << 16) |
-//        (static_cast<uint32_t>(the_color.b * 255) << 8) |
-//        static_cast<uint32_t>(the_color.a * 255);
+        char buf[32];
+        sprintf(buf, "%d %d %d %d\n", (int)std::round(the_color.r * 255),
+                                      (int)std::round(the_color.g * 255),
+                                      (int)std::round(the_color.b * 255),
+                                      (int)std::round(the_color.a * 255));
         
-//        m_led_device.writeBytes(&rgb_val, sizeof(rgb_val));
-//        m_led_device.writeByte('\n');
-        
-        uint8_t c = the_color.r * 255;
-        m_led_device->write_bytes(&c, 1);
-        m_led_device->flush();
+        m_led_device->write(buf);
     }
-    
 }
 
 /////////////////////////////////////////////////////////////////
@@ -646,6 +639,7 @@ void MeditationRoom::draw_status_info()
         (m_motion_detected ? gl::COLOR_GREEN : gl::COLOR_WHITE) : gl::COLOR_RED;
     gl::Color bio_col = bio_sensor_found ?
         (*m_bio_score > *m_bio_thresh ? gl::COLOR_GREEN : gl::COLOR_WHITE) : gl::COLOR_RED;
+    gl::Color led_str_col = led_device_found ? gl::COLOR_WHITE : gl::COLOR_RED;
     
     // motion sensor
     gl::draw_text_2D("motion-sensor: " + ms_string, fonts()[0], motion_col, offset);
@@ -660,10 +654,11 @@ void MeditationRoom::draw_status_info()
     
     // LED device
     offset += step;
-    gl::draw_text_2D("LEDs: " + led_string, fonts()[0], gl::COLOR_WHITE, offset);
+    gl::draw_text_2D("LEDs: " + led_string, fonts()[0], led_str_col, offset);
     
-    offset += gl::vec2(155, 0);
-    gl::draw_quad(*m_led_color, gl::vec2(75.f), offset);
+    offset += gl::vec2(145, 0);
+    gl::Color c(m_led_color->value().a); c.a = 1;
+    gl::draw_quad(c, gl::vec2(50.f), offset);
     
 }
 
@@ -696,9 +691,9 @@ void MeditationRoom::create_animations()
                                                     m_volume_max->value(), *m_duration_fade);
     animations()[AUDIO_FADE_OUT] = animation::create(m_volume, m_volume->value(), 0.f,
                                                      *m_duration_fade);
-    animations()[LIGHT_FADE_IN] = animation::create(m_led_color, m_led_color->value(), gl::COLOR_WHITE,
+    animations()[LIGHT_FADE_IN] = animation::create(m_led_color, m_led_color->value(), gl::Color(0, 0, 0, .4),
                                                     *m_duration_fade);
-    animations()[LIGHT_FADE_OUT] = animation::create(m_led_color, m_led_color->value(), gl::COLOR_BLACK,
+    animations()[LIGHT_FADE_OUT] = animation::create(m_led_color, m_led_color->value(), gl::Color(0),
                                                      *m_duration_fade);
     
     animations()[PROJECTION_FADE_IN] = animation::create(&m_brightness, m_brightness, 1.f,
