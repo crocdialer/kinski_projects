@@ -461,7 +461,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_IN]->stop();
                 animations()[LIGHT_FADE_OUT]->start();
-                if(m_movie){ m_movie->restart(); m_movie->pause(); }
+                if(m_movie){ m_movie->seek_to_time(0); m_movie->pause(); m_movie->set_volume(0); }
                 break;
             
             case State::WELCOME:
