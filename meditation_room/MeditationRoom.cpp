@@ -139,11 +139,6 @@ void MeditationRoom::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
     
-//    // update sensor status
-//    m_motion_sensor.update(timeDelta);
-//    m_cap_sense.update(timeDelta);
-//    read_bio_sensor(timeDelta);
-    
     // update according to current state
     switch (m_current_state)
     {
@@ -590,7 +585,7 @@ void MeditationRoom::read_bio_sensor(float time_delta)
             {
                 m_bio_acceleration.push(string_to<float>(splits[0]));
                 m_bio_elongation.push(string_to<float>(splits[1]));
-                *m_bio_score = median<float>(m_bio_acceleration);
+                *m_bio_score = median<float>(m_bio_acceleration) + median<float>(m_bio_elongation);
                 LOG_TRACE_1 << m_bio_score->value() << " - " <<  median<float>(m_bio_elongation);
             }
         }
@@ -611,11 +606,11 @@ void MeditationRoom::set_led_color(const gl::Color &the_color)
     if(m_led_device->is_initialized())
     {
         char buf[32];
-        sprintf(buf, "%d %d %d %d\n", (int)std::round(the_color.r * 255),
-                                      (int)std::round(the_color.g * 255),
-                                      (int)std::round(the_color.b * 255),
-                                      (int)std::round(the_color.a * 255));
-        
+//        sprintf(buf, "%d %d %d %d\n", (int)std::round(the_color.r * 255),
+//                                      (int)std::round(the_color.g * 255),
+//                                      (int)std::round(the_color.b * 255),
+//                                      (int)std::round(the_color.a * 255));
+        sprintf(buf, "%d\n", (int)std::round(the_color.a * 255));
         m_led_device->write(buf);
     }
 }
