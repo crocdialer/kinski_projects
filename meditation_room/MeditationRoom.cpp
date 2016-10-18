@@ -82,7 +82,7 @@ void MeditationRoom::setup()
     create_animations();
     
     // setup timer objects
-    m_timer_idle = Timer(main_queue().io_service(), [this](){ change_state(State::IDLE, true); });
+    m_timer_idle = Timer(main_queue().io_service(), [this](){ change_state(State::IDLE); });
     m_timer_audio_start = Timer(main_queue().io_service(), [this]()
     {
         m_audio->restart();
@@ -101,7 +101,7 @@ void MeditationRoom::setup()
         
         animations()[PROJECTION_FADE_OUT]->set_finish_callback([this, anim_cp]()
         {
-            change_state(State::MANDALA_ILLUMINATED, true);
+            change_state(State::MANDALA_ILLUMINATED);
         });
     };
     m_timer_movie_pause = Timer(main_queue().io_service(), fade_out_func);
@@ -461,7 +461,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_IN]->stop();
                 animations()[LIGHT_FADE_OUT]->start();
-                if(m_movie){ m_movie->seek_to_time(0); m_movie->pause(); m_movie->set_volume(0); }
+                if(m_movie){ m_movie->restart(); m_movie->pause(); m_movie->set_volume(0); }
                 break;
             
             case State::WELCOME:
