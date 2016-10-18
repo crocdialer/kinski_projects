@@ -685,6 +685,7 @@ bool MeditationRoom::load_assets()
     {
         // background chanting audio
         m_audio->load(audio_files.front(), true, true);
+        m_audio->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); });
     }
     
     auto video_files = fs::get_directory_entries(*m_asset_dir, fs::FileType::MOVIE, true);
@@ -693,6 +694,7 @@ bool MeditationRoom::load_assets()
     {
         // description movie
         m_movie->load(video_files.front());
+        m_movie->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); });
     }
     return true;
 }
