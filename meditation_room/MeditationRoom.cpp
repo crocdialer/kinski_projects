@@ -187,7 +187,7 @@ void MeditationRoom::update(float timeDelta)
             m_mat_rgb_shift->uniform("u_window_dimension", *m_output_res);
             *m_shift_angle += *m_shift_velocity * timeDelta;
             
-            // restart timer while people keep using chestbelt
+            // restart timer while people keep using the chestbelt
             if(*m_bio_score > *m_bio_thresh)
             {
                 m_timer_meditation_cancel.expires_from_now(*m_timeout_meditation_cancel);
@@ -610,8 +610,8 @@ void MeditationRoom::set_led_color(const gl::Color &the_color)
 //                                      (int)std::round(the_color.g * 255),
 //                                      (int)std::round(the_color.b * 255),
 //                                      (int)std::round(the_color.a * 255));
-        sprintf(buf, "%d\n", (int)std::round(the_color.a * 255));
-        m_led_device->write(buf);
+        int num_bytes = sprintf(buf, "%d\n", (int)std::round(the_color.a * 255));
+        m_led_device->write_bytes(buf, num_bytes);
     }
 }
 
