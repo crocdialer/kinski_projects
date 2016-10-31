@@ -44,7 +44,8 @@ void MeditationRoom::setup()
     register_property(m_volume_max);
     register_property(m_bio_score);
     register_property(m_bio_thresh);
-    register_property(m_bio_sensitivity);
+    register_property(m_bio_sensitivity_accel);
+    register_property(m_bio_sensitivity_elong);
     
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
@@ -204,7 +205,7 @@ void MeditationRoom::update(float timeDelta)
 void MeditationRoom::update_bio_visuals(float accel, float elong)
 {
     // couple bioscore with meditation-parameters
-    float val = map_value<float>(m_bio_sensitivity->value() * accel, 0.f, 10.f, 0.f, 1.f);
+    float val = map_value<float>(m_bio_sensitivity_accel->value() * accel, 0.f, 10.f, 0.f, 1.f);
     val = glm::smoothstep(0.f, 1.f, val);
     
     // shiftamount
@@ -215,7 +216,8 @@ void MeditationRoom::update_bio_visuals(float accel, float elong)
     
     // circle radius
     m_current_circ_radius = mix<float>(m_current_circ_radius,
-                                       *m_circle_radius * (elong + 1.f + val * 2.f), .05f);
+                                       *m_circle_radius * (m_bio_sensitivity_elong->value() * elong
+                                                           + 1.f + val * 2.f), .05f);
     
     // bluramount
     *m_blur_amount = mix<float>(*m_blur_amount, 2.f + 120.f * val, .1f);
