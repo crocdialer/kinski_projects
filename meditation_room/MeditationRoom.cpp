@@ -40,6 +40,7 @@ void MeditationRoom::setup()
     register_property(m_timeout_meditation_cancel);
     register_property(m_duration_fade);
     register_property(m_led_color);
+    register_property(m_led_full_bright);
     register_property(m_spot_color_01);
     register_property(m_spot_color_02);
     register_property(m_volume);
@@ -159,7 +160,6 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::WELCOME:
-            
             break;
             
         case State::MANDALA_ILLUMINATED:
@@ -406,7 +406,11 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
         {
             serial->setup(*m_led_dev_name, 57600);
             
-            if(serial->is_initialized()){ serial->flush(); }
+            if(serial->is_initialized())
+            {
+                serial->flush();
+                set_led_color(gl::COLOR_BLACK);
+            }
         }
         m_led_device = serial;
     }
@@ -474,15 +478,12 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_IN]->stop();
                 animations()[LIGHT_FADE_OUT]->start();
+                *m_spot_color_01 = gl::COLOR_BLACK;
+                *m_spot_color_02 = gl::COLOR_BLACK;
                 if(m_movie){ m_movie->restart(); m_movie->pause(); m_movie->set_volume(0); }
                 break;
             
             case State::WELCOME:
-                //TODO: implement
-//                main_queue().submit_with_delay([this]()
-//                {
-//                    change_state(State::MANDALA_ILLUMINATED);
-//                }, 2.0);
                 
                 if(m_assets_found)
                 {
@@ -490,6 +491,14 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     m_audio->set_on_load_callback([this](media::MediaControllerPtr m)
                     {
                         m->set_volume(*m_volume_max);
+                        
+                        // start with delays
+                        animations()[LIGHT_FADE_OUT]->stop();
+                        animations()[SPOT_01_FADE_OUT]->stop();
+                        animations()[SPOT_02_FADE_OUT]->stop();
+                        animations()[LIGHT_FADE_IN]->start(7.5f);
+                        animations()[SPOT_01_FADE_IN]->start(14.5f);
+                        animations()[SPOT_02_FADE_IN]->start(24.f);
                     });
                     m_audio->set_media_ended_callback([this](media::MediaControllerPtr m)
                     {
@@ -510,6 +519,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_OUT]->stop();
                 animations()[LIGHT_FADE_IN]->start();
+                animations()[SPOT_01_FADE_OUT]->stop();
+                animations()[SPOT_01_FADE_IN]->start();
                 if(m_movie){ m_movie->pause(); }
                 else{ *m_volume = 0.f; }
                 m_timer_idle.expires_from_now(*m_timeout_idle);
@@ -524,6 +535,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[LIGHT_FADE_OUT]->start();
                 animations()[PROJECTION_FADE_OUT]->stop();
                 animations()[PROJECTION_FADE_IN]->start();
+                animations()[SPOT_01_FADE_IN]->stop();
+                animations()[SPOT_01_FADE_OUT]->start();
                 
                 m_timer_idle.cancel();
                 m_timer_audio_start.cancel();
@@ -644,11 +657,11 @@ void MeditationRoom::set_led_color(const gl::Color &the_color)
     if(m_led_device->is_initialized())
     {
         char buf[32];
-//        sprintf(buf, "%d %d %d %d\n", (int)std::round(the_color.r * 255),
-//                                      (int)std::round(the_color.g * 255),
-//                                      (int)std::round(the_color.b * 255),
-//                                      (int)std::round(the_color.a * 255));
-        int num_bytes = sprintf(buf, "%d\n", (int)std::round(the_color.a * 255));
+        int num_bytes = sprintf(buf, "%d %d %d %d\n", (int)std::round(the_color.r * 255),
+                                (int)std::round(the_color.g * 255),
+                                (int)std::round(the_color.b * 255),
+                                (int)std::round(the_color.a * 255));
+//        int num_bytes = sprintf(buf, "%d\n", (int)std::round(the_color.a * 255));
         m_led_device->write_bytes(buf, num_bytes);
     }
 }
@@ -741,8 +754,8 @@ void MeditationRoom::create_animations()
                                                     m_volume_max->value(), *m_duration_fade);
     animations()[AUDIO_FADE_OUT] = animation::create(m_volume, m_volume->value(), 0.f,
                                                      *m_duration_fade);
-    animations()[LIGHT_FADE_IN] = animation::create(m_led_color, m_led_color->value(), gl::Color(0, 0, 0, 1.),
-                                                    *m_duration_fade);
+    animations()[LIGHT_FADE_IN] = animation::create(m_led_color, m_led_color->value(),
+                                                    m_led_full_bright->value(), *m_duration_fade);
     animations()[LIGHT_FADE_OUT] = animation::create(m_led_color, m_led_color->value(), gl::Color(0),
                                                      *m_duration_fade);
     
@@ -751,4 +764,13 @@ void MeditationRoom::create_animations()
     
     animations()[PROJECTION_FADE_OUT] = animation::create(&m_brightness, m_brightness, 0.f,
                                                           *m_duration_fade);
+    
+    animations()[SPOT_01_FADE_IN] = animation::create(m_spot_color_01, m_spot_color_01->value(),
+                                                      gl::COLOR_WHITE, *m_duration_fade);
+    animations()[SPOT_01_FADE_OUT] = animation::create(m_spot_color_01, m_spot_color_01->value(),
+                                                       gl::COLOR_BLACK, *m_duration_fade);
+    animations()[SPOT_02_FADE_IN] = animation::create(m_spot_color_02, m_spot_color_02->value(),
+                                                      gl::COLOR_WHITE, *m_duration_fade);
+    animations()[SPOT_02_FADE_OUT] = animation::create(m_spot_color_02, m_spot_color_02->value(),
+                                                      gl::COLOR_BLACK, *m_duration_fade);
 }

@@ -26,7 +26,8 @@ namespace kinski
         enum class State{IDLE, WELCOME, MANDALA_ILLUMINATED, DESC_MOVIE, MEDITATION};
         
         enum AnimationEnum{ AUDIO_FADE_IN = 0, AUDIO_FADE_OUT = 1, LIGHT_FADE_IN = 2,
-            LIGHT_FADE_OUT = 3, PROJECTION_FADE_IN = 4, PROJECTION_FADE_OUT = 5};
+            LIGHT_FADE_OUT = 3, PROJECTION_FADE_IN = 4, PROJECTION_FADE_OUT = 5,
+            SPOT_01_FADE_IN = 6, SPOT_01_FADE_OUT = 7, SPOT_02_FADE_IN = 8, SPOT_02_FADE_OUT = 9};
         enum TextureEnum{ TEXTURE_BLANK = 0, TEXTURE_OUTPUT = 1};
         
         enum AudioEnum{ AUDIO_WELCOME = 0, AUDIO_CHANTING = 1, AUDIO_WIND = 2 };
@@ -88,6 +89,7 @@ namespace kinski
         bool m_dmx_needs_refresh = true;
         
         Property_<gl::Color>::Ptr
+        m_led_full_bright = Property_<gl::Color>::create("LED full brightness", gl::Color(1.f, 0, 0, 1.f)),
         m_led_color = Property_<gl::Color>::create("LED color", gl::COLOR_BLACK),
         m_spot_color_01 = Property_<gl::Color>::create("spot 1", gl::COLOR_BLACK),
         m_spot_color_02 = Property_<gl::Color>::create("spot 2", gl::COLOR_BLACK);
