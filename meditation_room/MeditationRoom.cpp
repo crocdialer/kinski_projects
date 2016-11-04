@@ -40,6 +40,8 @@ void MeditationRoom::setup()
     register_property(m_timeout_meditation_cancel);
     register_property(m_duration_fade);
     register_property(m_led_color);
+    register_property(m_spot_color_01);
+    register_property(m_spot_color_02);
     register_property(m_volume);
     register_property(m_volume_max);
     register_property(m_bio_score);
@@ -118,6 +120,15 @@ void MeditationRoom::setup()
         m_motion_sensor.update(time_delta);
         m_cap_sense.update(time_delta);
         read_bio_sensor(time_delta);
+        
+        if(m_dmx_needs_refresh)
+        {
+            m_dmx_needs_refresh = false;
+            
+            m_dmx[1] = clamp<int>(m_spot_color_01->value().r * 255, 0, 255);
+            m_dmx[2] = clamp<int>(m_spot_color_02->value().r * 255, 0, 255);
+            m_dmx.update();
+        }
     });
     m_timer_sensor_update.set_periodic();
     m_timer_sensor_update.expires_from_now(1.0 / SENSOR_UPDATE_FREQUENCY);
@@ -362,7 +373,8 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_asset_dir)
     {
-        if(!load_assets()){ LOG_ERROR << "could not load assets"; }
+        m_assets_found = load_assets();
+        if(!m_assets_found){ LOG_ERROR << "could not load assets"; }
     }
     else if(theProperty == m_cap_sense_dev_name)
     {
@@ -407,7 +419,11 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     {
         create_animations();
     }
-    else if (theProperty == m_circle_radius){ m_current_circ_radius = *m_circle_radius; }
+    else if(theProperty == m_circle_radius){ m_current_circ_radius = *m_circle_radius; }
+    else if(theProperty == m_spot_color_01 || theProperty == m_spot_color_02)
+    {
+        m_dmx_needs_refresh = true;
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -463,13 +479,33 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
             
             case State::WELCOME:
                 //TODO: implement
-                main_queue().submit_with_delay([this]()
+//                main_queue().submit_with_delay([this]()
+//                {
+//                    change_state(State::MANDALA_ILLUMINATED);
+//                }, 2.0);
+                
+                if(m_assets_found)
                 {
-                    change_state(State::MANDALA_ILLUMINATED);
-                }, 2.0);
+                    m_audio->load(m_audio_paths[AUDIO_WELCOME], true, false);
+                    m_audio->set_on_load_callback([this](media::MediaControllerPtr m)
+                    {
+                        m->set_volume(*m_volume_max);
+                    });
+                    m_audio->set_media_ended_callback([this](media::MediaControllerPtr m)
+                    {
+                        main_queue().submit([this](){ change_state(State::MANDALA_ILLUMINATED); });
+                    });
+                }
                 break;
                 
             case State::MANDALA_ILLUMINATED:
+                
+                // load background chanting audio
+                if(m_assets_found)
+                {
+                    m_audio->load(m_audio_paths[AUDIO_CHANTING], true, true);
+                    m_audio->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); });
+                }
                 animations()[AUDIO_FADE_IN]->stop();
                 animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_OUT]->stop();
@@ -678,12 +714,13 @@ bool MeditationRoom::load_assets()
     
     auto audio_files = fs::get_directory_entries(*m_asset_dir, fs::FileType::AUDIO, true);
     
-    if(!audio_files.empty())
+    bool ret = true;
+    
+    if(audio_files.size() == 3)
     {
-        // background chanting audio
-        m_audio->load(audio_files.front(), true, true);
-        m_audio->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); });
-    }
+        m_audio_paths.assign(audio_files.begin(), audio_files.end());
+        
+    }else{ LOG_DEBUG << "found " << audio_files.size() << "audio-files, expected 3"; ret = false; }
     
     auto video_files = fs::get_directory_entries(*m_asset_dir, fs::FileType::MOVIE, true);
     
@@ -693,7 +730,8 @@ bool MeditationRoom::load_assets()
         m_movie->load(video_files.front());
         m_movie->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); });
     }
-    return true;
+    else{ ret = false; }
+    return ret;
 }
 
 void MeditationRoom::create_animations()
@@ -703,7 +741,7 @@ void MeditationRoom::create_animations()
                                                     m_volume_max->value(), *m_duration_fade);
     animations()[AUDIO_FADE_OUT] = animation::create(m_volume, m_volume->value(), 0.f,
                                                      *m_duration_fade);
-    animations()[LIGHT_FADE_IN] = animation::create(m_led_color, m_led_color->value(), gl::Color(0, 0, 0, .4),
+    animations()[LIGHT_FADE_IN] = animation::create(m_led_color, m_led_color->value(), gl::Color(0, 0, 0, 1.),
                                                     *m_duration_fade);
     animations()[LIGHT_FADE_OUT] = animation::create(m_led_color, m_led_color->value(), gl::Color(0),
                                                      *m_duration_fade);

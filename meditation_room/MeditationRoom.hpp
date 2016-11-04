@@ -14,6 +14,7 @@
 // modules
 #include "media/media.h"
 #include "sensors/sensors.h"
+#include "dmx/dmx.h"
 #include "gl_post_process/WarpComponent.hpp"
 
 namespace kinski
@@ -27,6 +28,8 @@ namespace kinski
         enum AnimationEnum{ AUDIO_FADE_IN = 0, AUDIO_FADE_OUT = 1, LIGHT_FADE_IN = 2,
             LIGHT_FADE_OUT = 3, PROJECTION_FADE_IN = 4, PROJECTION_FADE_OUT = 5};
         enum TextureEnum{ TEXTURE_BLANK = 0, TEXTURE_OUTPUT = 1};
+        
+        enum AudioEnum{ AUDIO_WELCOME = 0, AUDIO_CHANTING = 1, AUDIO_WIND = 2 };
         
         std::map<State, std::string> m_state_string_map =
         {
@@ -81,8 +84,13 @@ namespace kinski
         DistanceSensor m_motion_sensor;
         bool m_motion_detected = false;
         
+        DMXController m_dmx;
+        bool m_dmx_needs_refresh = true;
+        
         Property_<gl::Color>::Ptr
-        m_led_color = Property_<gl::Color>::create("LED color", gl::COLOR_BLACK);
+        m_led_color = Property_<gl::Color>::create("LED color", gl::COLOR_BLACK),
+        m_spot_color_01 = Property_<gl::Color>::create("spot 1", gl::COLOR_BLACK),
+        m_spot_color_02 = Property_<gl::Color>::create("spot 2", gl::COLOR_BLACK);
         
         Property_<float>::Ptr
         m_volume = Property_<float>::create("volume", 1.f),
@@ -102,6 +110,9 @@ namespace kinski
         media::MediaControllerPtr
         m_movie = media::MediaController::create(),
         m_audio = media::MediaController::create();
+        
+        std::vector<std::string> m_audio_paths;
+        bool m_assets_found = false;
         
         CapacitiveSensor m_cap_sense;
         
