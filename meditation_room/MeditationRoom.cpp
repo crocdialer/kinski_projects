@@ -812,7 +812,7 @@ bool MeditationRoom::load_assets()
     {
         // description movie
         m_movie->load(video_files.front());
-        m_movie->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); });
+        m_movie->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); m->pause(); });
     }
     else{ ret = false; }
     return ret;
