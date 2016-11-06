@@ -29,6 +29,7 @@ void MeditationRoom::setup()
     register_property(m_bio_sense_dev_name);
     register_property(m_led_dev_name);
     register_property(m_output_res);
+    register_property(m_output_crop);
     register_property(m_circle_radius);
     register_property(m_shift_angle);
     register_property(m_shift_amount);
@@ -49,6 +50,7 @@ void MeditationRoom::setup()
     register_property(m_bio_thresh);
     register_property(m_bio_sensitivity_accel);
     register_property(m_bio_sensitivity_elong);
+    register_property(m_cap_thresh);
     
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
@@ -122,6 +124,15 @@ void MeditationRoom::setup()
         m_cap_sense.update(time_delta);
         read_bio_sensor(time_delta);
         
+        if(m_cap_sense.is_touched())
+        {
+            if(m_timer_cap_trigger.has_expired())
+            {
+                m_timer_cap_trigger.expires_from_now(.4);
+            }
+        }
+        else{ m_timer_cap_trigger.cancel(); }
+        
         if(m_dmx_needs_refresh)
         {
             m_dmx_needs_refresh = false;
@@ -133,6 +144,11 @@ void MeditationRoom::setup()
     });
     m_timer_sensor_update.set_periodic();
     m_timer_sensor_update.expires_from_now(1.0 / SENSOR_UPDATE_FREQUENCY);
+    
+    m_timer_cap_trigger = Timer(main_queue().io_service(), [this]()
+    {
+        m_cap_sense_activated = true;
+    });
     
     // warp component
     m_warp = std::make_shared<WarpComponent>();
@@ -163,8 +179,15 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::MANDALA_ILLUMINATED:
-            if(m_cap_sense.is_touched(12)){ change_state(State::DESC_MOVIE); }
-            else if(*m_bio_score > *m_bio_thresh){ change_state(State::MEDITATION); }
+            if(m_cap_sense_activated)
+            {
+                change_state(State::DESC_MOVIE);
+            }
+            else
+            {
+                if(*m_bio_score > *m_bio_thresh){ change_state(State::MEDITATION); }
+            }
+                
             break;
             
         case State::DESC_MOVIE:
@@ -175,9 +198,16 @@ void MeditationRoom::update(float timeDelta)
             }
             
             // keep on restarting the timer while touched
-            if(m_cap_sense.is_touched(12))
+            if(m_cap_sense_activated)
             {
                 m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
+                
+                // touched -> fade out spot
+//                if(!animations()[SPOT_01_FADE_OUT]->is_playing())
+//                {
+//                    animations()[SPOT_01_FADE_IN]->stop();
+//                    animations()[SPOT_01_FADE_OUT]->start();
+//                }
                 
                 // movie began to fade out, but user wants to continue -> fade back in
                 if(animations()[PROJECTION_FADE_OUT]->is_playing())
@@ -188,6 +218,15 @@ void MeditationRoom::update(float timeDelta)
                     create_animations();
                     animations()[PROJECTION_FADE_IN]->start();
                 }
+            }
+            else if(!m_cap_sense.is_touched())
+            {
+                // not touched -> fade in spot
+//                if(!animations()[SPOT_01_FADE_IN]->is_playing())
+//                {
+//                    animations()[SPOT_01_FADE_OUT]->stop();
+//                    animations()[SPOT_01_FADE_IN]->start(.4);
+//                }
             }
             break;
             
@@ -209,6 +248,9 @@ void MeditationRoom::update(float timeDelta)
     
     // ensure correct fbo status here
     set_fbo_state();
+    
+    // reset cap sense indicator
+    m_cap_sense_activated = false;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -256,6 +298,13 @@ void MeditationRoom::draw()
             gl::draw_quad(m_mat_rgb_shift, gl::window_dimension());
         });
     }
+    
+    float scale_factor = (float)textures()[TEXTURE_OUTPUT].width() / gl::window_dimension().x;
+    
+    Area_<uint32_t> roi(scale_factor * *m_output_crop, 0,
+                        textures()[TEXTURE_OUTPUT].width() - 1 - scale_factor * *m_output_crop,
+                        textures()[TEXTURE_OUTPUT].height() - 1);
+    textures()[TEXTURE_OUTPUT].set_roi(roi);
     
     // draw final result
     m_warp->render_output(textures()[TEXTURE_OUTPUT], m_brightness);
@@ -379,7 +428,12 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_cap_sense_dev_name)
     {
         m_cap_sense.connect(*m_cap_sense_dev_name);
-        m_cap_sense.set_thresholds(24, 8);
+        m_cap_sense.set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
+        m_cap_sense.set_charge_current(63);
+    }
+    else if(theProperty == m_cap_thresh)
+    {
+        m_cap_sense.set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
         m_cap_sense.set_charge_current(63);
     }
     else if(theProperty == m_motion_sense_dev_name)
@@ -478,8 +532,10 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_IN]->stop();
                 animations()[LIGHT_FADE_OUT]->start();
-                *m_spot_color_01 = gl::COLOR_BLACK;
-                *m_spot_color_02 = gl::COLOR_BLACK;
+                animations()[SPOT_01_FADE_IN]->stop();
+                animations()[SPOT_01_FADE_OUT]->start();
+                animations()[SPOT_02_FADE_IN]->stop();
+                animations()[SPOT_02_FADE_OUT]->start();
                 if(m_movie){ m_movie->restart(); m_movie->pause(); m_movie->set_volume(0); }
                 break;
             
@@ -521,6 +577,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[LIGHT_FADE_IN]->start();
                 animations()[SPOT_01_FADE_OUT]->stop();
                 animations()[SPOT_01_FADE_IN]->start();
+                animations()[SPOT_02_FADE_OUT]->stop();
+                animations()[SPOT_02_FADE_IN]->start();
                 if(m_movie){ m_movie->pause(); }
                 else{ *m_volume = 0.f; }
                 m_timer_idle.expires_from_now(*m_timeout_idle);
@@ -537,6 +595,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[PROJECTION_FADE_IN]->start();
                 animations()[SPOT_01_FADE_IN]->stop();
                 animations()[SPOT_01_FADE_OUT]->start();
+                animations()[SPOT_02_FADE_IN]->stop();
+                animations()[SPOT_02_FADE_OUT]->start();
                 
                 m_timer_idle.cancel();
                 m_timer_audio_start.cancel();
@@ -562,6 +622,10 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[LIGHT_FADE_OUT]->start();
                 animations()[PROJECTION_FADE_OUT]->stop();
                 animations()[PROJECTION_FADE_IN]->start();
+                animations()[SPOT_01_FADE_IN]->stop();
+                animations()[SPOT_01_FADE_OUT]->start();
+                animations()[SPOT_02_FADE_IN]->stop();
+                animations()[SPOT_02_FADE_OUT]->start();
                 if(m_movie){ m_movie->pause(); }
                 
                 m_timer_idle.cancel();
@@ -686,11 +750,13 @@ void MeditationRoom::draw_status_info()
     bool cap_sensor_found = m_cap_sense.is_initialized();
     bool bio_sensor_found = m_bio_sense->is_initialized();
     bool led_device_found = m_led_device->is_initialized();
+    bool dmx_device_found = m_dmx.is_initialized();
     
-    string ms_string = motion_sensor_found ? "ok" : "not found";
-    string cs_string = cap_sensor_found ? "ok" : "not found";
+    string ms_string = motion_sensor_found ? to_string(m_motion_sensor.distance() / 1000, 1) : "not found";
+    string cs_string = cap_sensor_found ? "ok" + string(m_cap_sense_activated ? "*" : "") : "not found";
     string bs_string = bio_sensor_found ? to_string(m_bio_score->value(), 2) : "not found";
     string led_string = led_device_found ? "ok" : "not found";
+    string dmx_string = dmx_device_found ? "ok" : "not found";
     
     gl::Color cap_col = cap_sensor_found ?
         (m_cap_sense.is_touched() ? gl::COLOR_GREEN : gl::COLOR_WHITE) : gl::COLOR_RED;
@@ -699,6 +765,7 @@ void MeditationRoom::draw_status_info()
     gl::Color bio_col = bio_sensor_found ?
         (*m_bio_score > *m_bio_thresh ? gl::COLOR_GREEN : gl::COLOR_WHITE) : gl::COLOR_RED;
     gl::Color led_str_col = led_device_found ? gl::COLOR_WHITE : gl::COLOR_RED;
+    gl::Color dmx_str_col = dmx_device_found ? gl::COLOR_WHITE : gl::COLOR_RED;
     
     // motion sensor
     gl::draw_text_2D("motion-sensor: " + ms_string, fonts()[0], motion_col, offset);
@@ -710,6 +777,10 @@ void MeditationRoom::draw_status_info()
     // bio feedback sensor
     offset += step;
     gl::draw_text_2D("bio-feedback (accelo): " + bs_string, fonts()[0], bio_col, offset);
+    
+    // dmx control
+    offset += step;
+    gl::draw_text_2D("dmx: " + dmx_string, fonts()[0], dmx_str_col, offset);
     
     // LED device
     offset += step;

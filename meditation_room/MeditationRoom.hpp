@@ -43,7 +43,7 @@ namespace kinski
         
         State m_current_state = State::IDLE;
         Timer m_timer_idle, m_timer_audio_start, m_timer_motion_reset, m_timer_movie_pause,
-            m_timer_meditation_cancel, m_timer_sensor_update;
+            m_timer_meditation_cancel, m_timer_sensor_update, m_timer_cap_trigger;
         
         float m_last_sensor_reading = 0.f, m_sensor_timeout = 5.f;
         CircularBuffer<float> m_bio_acceleration, m_bio_elongation;
@@ -71,6 +71,8 @@ namespace kinski
         
         Property_<gl::vec2>::Ptr
         m_output_res = Property_<gl::vec2>::create("output resolution", gl::vec2(1280, 720));
+        Property_<uint32_t>::Ptr
+        m_output_crop = Property_<uint32_t>::create("output crop", 0);
         
         Property_<string>::Ptr
         m_asset_dir = Property_<string>::create("asset base directory"),
@@ -97,7 +99,8 @@ namespace kinski
         Property_<float>::Ptr
         m_volume = Property_<float>::create("volume", 1.f),
         m_volume_max = Property_<float>::create("volume max", 1.f),
-        m_bio_score = Property_<float>::create("bio score", 0.f);
+        m_bio_score = Property_<float>::create("bio score", 0.f),
+        m_cap_thresh = Property_<float>::create("cap thresh", 20.f);
         
         gl::MaterialPtr m_mat_rgb_shift;
         std::vector<gl::Fbo> m_fbos;
@@ -117,6 +120,7 @@ namespace kinski
         bool m_assets_found = false;
         
         CapacitiveSensor m_cap_sense;
+        bool m_cap_sense_activated = false;
         
         bool change_state(State the_the_state, bool force_change = false);
         
