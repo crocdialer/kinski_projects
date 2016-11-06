@@ -804,7 +804,7 @@ bool MeditationRoom::load_assets()
     {
         m_audio_paths.assign(audio_files.begin(), audio_files.end());
         
-    }else{ LOG_DEBUG << "found " << audio_files.size() << "audio-files, expected 3"; ret = false; }
+    }else{ LOG_WARNING << "found " << audio_files.size() << "audio-files, expected 3"; ret = false; }
     
     auto video_files = fs::get_directory_entries(*m_asset_dir, fs::FileType::MOVIE, true);
     
