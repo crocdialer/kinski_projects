@@ -133,6 +133,12 @@ void MeditationRoom::setup()
         }
         else{ m_timer_cap_trigger.cancel(); }
         
+        if(m_led_needs_refresh)
+        {
+            set_led_color(*m_led_color);
+            m_led_needs_refresh = false;
+        }
+        
         if(m_dmx_needs_refresh)
         {
             m_dmx_needs_refresh = false;
@@ -462,13 +468,12 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
             
             if(serial->is_initialized())
             {
-                serial->flush();
-                set_led_color(gl::COLOR_BLACK);
+                serial->drain();
             }
         }
         m_led_device = serial;
     }
-    else if(theProperty == m_led_color){ set_led_color(*m_led_color); }
+    else if(theProperty == m_led_color){ m_led_needs_refresh = true; }
     else if(theProperty == m_volume)
     {
         if(m_audio){ m_audio->set_volume(*m_volume); }
@@ -547,6 +552,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     m_audio->set_on_load_callback([this](media::MediaControllerPtr m)
                     {
                         m->set_volume(*m_volume_max);
+                        m->play();
                         
                         // start with delays
                         animations()[LIGHT_FADE_OUT]->stop();
@@ -727,6 +733,7 @@ void MeditationRoom::set_led_color(const gl::Color &the_color)
                                 (int)std::round(the_color.a * 255));
 //        int num_bytes = sprintf(buf, "%d\n", (int)std::round(the_color.a * 255));
         m_led_device->write_bytes(buf, num_bytes);
+        m_led_device->flush();
     }
 }
 
@@ -845,3 +852,39 @@ void MeditationRoom::create_animations()
     animations()[SPOT_02_FADE_OUT] = animation::create(m_spot_color_02, m_spot_color_02->value(),
                                                       gl::COLOR_BLACK, *m_duration_fade);
 }
+
+/////////////////////////////////////////////////////////////////
+
+bool MeditationRoom::save_settings(const std::string &the_path)
+{
+    bool ret = ViewerApp::save_settings(the_path);
+    std::string path_prefix = the_path.empty() ? m_default_config_path : the_path;
+    path_prefix = fs::get_directory_part(path_prefix);
+    try
+    {
+        Serializer::saveComponentState(m_warp,
+                                       fs::join_paths(path_prefix ,"warp_config.json"),
+                                       PropertyIO_GL());
+    }
+    catch(Exception &e){ LOG_ERROR << e.what(); return false; }
+    return ret;
+}
+
+/////////////////////////////////////////////////////////////////
+
+bool MeditationRoom::load_settings(const std::string &the_path)
+{
+    bool ret = ViewerApp::load_settings(the_path);
+    std::string path_prefix = the_path.empty() ? m_default_config_path : the_path;
+    path_prefix = fs::get_directory_part(path_prefix);
+    try
+    {
+        Serializer::loadComponentState(m_warp,
+                                       fs::join_paths(path_prefix, "warp_config.json"),
+                                       PropertyIO_GL());
+    }
+    catch(Exception &e){ LOG_ERROR << e.what(); return false; }
+    return ret;
+}
+
+/////////////////////////////////////////////////////////////////

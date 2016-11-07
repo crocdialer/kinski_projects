@@ -83,6 +83,7 @@ namespace kinski
         
         SerialPtr
         m_bio_sense = Serial::create(), m_led_device = Serial::create();
+        bool m_led_needs_refresh = true;
         
         DistanceSensor m_motion_sensor;
         bool m_motion_detected = false;
@@ -156,6 +157,9 @@ namespace kinski
         void fileDrop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void tearDown() override;
         void update_property(const Property::ConstPtr &theProperty) override;
+        
+        bool save_settings(const std::string &path = "") override;
+        bool load_settings(const std::string &path = "") override;
     };
 }// namespace kinski
 
