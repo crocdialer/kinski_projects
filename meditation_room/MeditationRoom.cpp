@@ -562,19 +562,19 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     {
                         m->set_volume(*m_volume_max);
                         m->play();
-                        
-                        // start with delays
-                        animations()[LIGHT_FADE_OUT]->stop();
-                        animations()[SPOT_01_FADE_OUT]->stop();
-                        animations()[SPOT_02_FADE_OUT]->stop();
-                        animations()[LIGHT_FADE_IN]->start(7.5f);
-                        animations()[SPOT_01_FADE_IN]->start(14.5f);
-                        animations()[SPOT_02_FADE_IN]->start(24.f);
                     });
                     m_audio->set_media_ended_callback([this](media::MediaControllerPtr m)
                     {
                         main_queue().submit([this](){ change_state(State::MANDALA_ILLUMINATED); });
                     });
+                    
+                    // start with delays
+                    animations()[LIGHT_FADE_OUT]->stop();
+                    animations()[SPOT_01_FADE_OUT]->stop();
+                    animations()[SPOT_02_FADE_OUT]->stop();
+                    animations()[LIGHT_FADE_IN]->start(7.5f);
+                    animations()[SPOT_01_FADE_IN]->start(14.5f);
+                    animations()[SPOT_02_FADE_IN]->start(24.f);
                 }
                 break;
                 
