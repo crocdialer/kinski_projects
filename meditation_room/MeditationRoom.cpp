@@ -568,12 +568,13 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                         animations()[SPOT_01_FADE_OUT]->stop();
                         animations()[SPOT_02_FADE_OUT]->stop();
                         
-                        main_queue().submit([this]()
+                        main_queue().submit_with_delay([this]()
                         {
+                            create_animations();
                             animations()[LIGHT_FADE_IN]->start(7.5f);
                             animations()[SPOT_01_FADE_IN]->start(14.5f);
                             animations()[SPOT_02_FADE_IN]->start(24.f);
-                        });
+                        }, 0.15);
                     });
                     m_audio->set_media_ended_callback([this](media::MediaControllerPtr m)
                     {
