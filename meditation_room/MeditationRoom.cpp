@@ -567,16 +567,9 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                         animations()[LIGHT_FADE_OUT]->stop();
                         animations()[SPOT_01_FADE_OUT]->stop();
                         animations()[SPOT_02_FADE_OUT]->stop();
-                        animations()[LIGHT_FADE_OUT]->stop();
-                        animations()[LIGHT_FADE_IN]->start();
-                        animations()[SPOT_01_FADE_OUT]->stop();
-                        animations()[SPOT_01_FADE_IN]->start();
-                        animations()[SPOT_02_FADE_OUT]->stop();
-                        animations()[SPOT_02_FADE_IN]->start();
-                        
-//                        animations()[LIGHT_FADE_IN]->start(7.5f);
-//                        animations()[SPOT_01_FADE_IN]->start(14.5f);
-//                        animations()[SPOT_02_FADE_IN]->start(24.f);
+                        animations()[LIGHT_FADE_IN]->start(7.5f);
+                        animations()[SPOT_01_FADE_IN]->start(14.5f);
+                        animations()[SPOT_02_FADE_IN]->start(24.f);
                     });
                     m_audio->set_media_ended_callback([this](media::MediaControllerPtr m)
                     {
