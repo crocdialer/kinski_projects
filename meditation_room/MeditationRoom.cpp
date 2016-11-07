@@ -182,6 +182,7 @@ void MeditationRoom::update(float timeDelta)
             break;
             
         case State::WELCOME:
+            if(m_audio){ m_audio->set_volume(*m_volume_max); }
             break;
             
         case State::MANDALA_ILLUMINATED:
