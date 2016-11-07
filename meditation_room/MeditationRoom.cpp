@@ -612,8 +612,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 
                 animations()[AUDIO_FADE_IN]->stop();
                 animations()[AUDIO_FADE_OUT]->start();
-                animations()[LIGHT_FADE_IN]->stop();
-                animations()[LIGHT_FADE_OUT]->start();
+                animations()[LIGHT_FADE_IN]->start();
+                animations()[LIGHT_FADE_OUT]->stop();
                 animations()[PROJECTION_FADE_OUT]->stop();
                 animations()[PROJECTION_FADE_IN]->start();
                 animations()[SPOT_01_FADE_IN]->stop();
