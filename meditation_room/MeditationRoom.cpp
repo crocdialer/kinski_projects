@@ -825,8 +825,8 @@ bool MeditationRoom::load_assets()
     if(audio_files.size() == 3)
     {
         m_audio_paths.assign(audio_files.begin(), audio_files.end());
-        
-        for(auto &p : m_audio_paths){ LOG_INFO << "asset: " + p; }
+        std::sort(m_audio_paths.begin(), m_audio_paths.end());
+//        for(auto &p : m_audio_paths){ LOG_INFO << "asset: " + p; }
         
     }else{ LOG_WARNING << "found " << audio_files.size() << "audio-files, expected 3"; ret = false; }
     
