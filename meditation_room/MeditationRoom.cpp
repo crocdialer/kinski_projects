@@ -474,6 +474,9 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
             if(serial->is_initialized())
             {
                 serial->drain();
+                serial->flush();
+                serial->write("255\n");
+                serial->write("255\n");
             }
         }
         m_led_device = serial;
