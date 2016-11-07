@@ -599,12 +599,6 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 break;
                 
             case State::DESC_MOVIE:
-                // load background chanting audio
-                if(m_assets_found)
-                {
-                    m_audio->load(m_audio_paths[AUDIO_WIND], true, true);
-                    m_audio->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); });
-                }
                 
                 animations()[AUDIO_FADE_IN]->stop();
                 animations()[AUDIO_FADE_OUT]->start();
@@ -635,6 +629,14 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 break;
                 
             case State::MEDITATION:
+                
+                // load background chanting audio
+                if(m_assets_found)
+                {
+                    m_audio->load(m_audio_paths[AUDIO_WIND], true, true);
+                    m_audio->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); });
+                }
+                
                 animations()[AUDIO_FADE_IN]->stop();
                 animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_IN]->stop();
@@ -645,7 +647,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[SPOT_01_FADE_OUT]->start();
                 animations()[SPOT_02_FADE_IN]->stop();
                 animations()[SPOT_02_FADE_OUT]->start();
-                if(m_movie){ m_movie->pause(); }
+//                if(m_movie){ m_movie->pause(); }
                 
                 m_timer_idle.cancel();
                 m_timer_audio_start.cancel();
