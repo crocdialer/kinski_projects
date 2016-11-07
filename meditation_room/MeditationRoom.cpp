@@ -550,7 +550,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[SPOT_01_FADE_OUT]->start();
                 animations()[SPOT_02_FADE_IN]->stop();
                 animations()[SPOT_02_FADE_OUT]->start();
-                if(m_movie){ m_movie->seek_to_time(0); /*m_movie->pause(); m_movie->set_volume(0);*/ }
+                if(m_movie){ m_movie->seek_to_time(0); }
                 break;
             
             case State::WELCOME:
@@ -570,7 +570,6 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                         
                         main_queue().submit([this]()
                         {
-                            create_animations();
                             animations()[LIGHT_FADE_IN]->start(7.5f);
                             animations()[SPOT_01_FADE_IN]->start(14.5f);
                             animations()[SPOT_02_FADE_IN]->start(24.f);
@@ -655,6 +654,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[SPOT_01_FADE_OUT]->start();
                 animations()[SPOT_02_FADE_IN]->stop();
                 animations()[SPOT_02_FADE_OUT]->start();
+
                 m_timer_idle.cancel();
                 m_timer_audio_start.cancel();
                 m_timer_meditation_cancel.expires_from_now(*m_timeout_meditation_cancel);
