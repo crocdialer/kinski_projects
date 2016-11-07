@@ -249,6 +249,11 @@ void MeditationRoom::update(float timeDelta)
             {
                 m_timer_meditation_cancel.expires_from_now(*m_timeout_meditation_cancel);
             }
+            
+            if(m_audio)
+            {
+                m_audio->set_volume(*m_volume_max * *m_bio_score);
+            }
             break;
     }
     
@@ -594,6 +599,13 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 break;
                 
             case State::DESC_MOVIE:
+                // load background chanting audio
+                if(m_assets_found)
+                {
+                    m_audio->load(m_audio_paths[AUDIO_WIND], true, true);
+                    m_audio->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); });
+                }
+                
                 animations()[AUDIO_FADE_IN]->stop();
                 animations()[AUDIO_FADE_OUT]->start();
                 animations()[LIGHT_FADE_IN]->stop();
