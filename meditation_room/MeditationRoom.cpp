@@ -209,13 +209,6 @@ void MeditationRoom::update(float timeDelta)
             {
                 m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
                 
-                // touched -> fade out spot
-//                if(!animations()[SPOT_01_FADE_OUT]->is_playing())
-//                {
-//                    animations()[SPOT_01_FADE_IN]->stop();
-//                    animations()[SPOT_01_FADE_OUT]->start();
-//                }
-                
                 // movie began to fade out, but user wants to continue -> fade back in
                 if(animations()[PROJECTION_FADE_OUT]->is_playing())
                 {
@@ -225,15 +218,6 @@ void MeditationRoom::update(float timeDelta)
                     create_animations();
                     animations()[PROJECTION_FADE_IN]->start();
                 }
-            }
-            else if(!m_cap_sense.is_touched())
-            {
-                // not touched -> fade in spot
-//                if(!animations()[SPOT_01_FADE_IN]->is_playing())
-//                {
-//                    animations()[SPOT_01_FADE_OUT]->stop();
-//                    animations()[SPOT_01_FADE_IN]->start(.4);
-//                }
             }
             break;
             
@@ -828,7 +812,6 @@ bool MeditationRoom::load_assets()
     {
         m_audio_paths.assign(audio_files.begin(), audio_files.end());
         std::sort(m_audio_paths.begin(), m_audio_paths.end());
-//        for(auto &p : m_audio_paths){ LOG_INFO << "asset: " + p; }
         
     }else{ LOG_WARNING << "found " << audio_files.size() << "audio-files, expected 3"; ret = false; }
     
