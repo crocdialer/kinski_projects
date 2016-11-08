@@ -541,12 +541,12 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 
                 if(m_assets_found)
                 {
-                    m_audio->load(m_audio_paths[AUDIO_WELCOME], true, false);
                     m_audio->set_on_load_callback([this](media::MediaControllerPtr m)
                     {
                         m->set_volume(*m_volume_max);
-                        m->play();
                     });
+                    m_audio->load(m_audio_paths[AUDIO_WELCOME], true, false);
+                    
                     m_audio->set_media_ended_callback([this](media::MediaControllerPtr m)
                     {
                         main_queue().submit([this](){ change_state(State::MANDALA_ILLUMINATED); });
