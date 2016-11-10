@@ -110,7 +110,7 @@ namespace kinski
         float m_brightness = 0.f;
         
         //! ouput warping
-        WarpComponent::Ptr m_warp;
+        WarpComponentPtr m_warp;
         
         // our content
         media::MediaControllerPtr
