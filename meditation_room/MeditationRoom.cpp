@@ -298,7 +298,7 @@ void MeditationRoom::draw()
     textures()[TEXTURE_OUTPUT].set_roi(roi);
     
     // draw final result
-    m_warp_component->render_output(textures()[TEXTURE_OUTPUT], m_brightness);
+    m_warp_component->render_output(0, textures()[TEXTURE_OUTPUT], m_brightness);
     
     if(Logger::get()->severity() >= Severity::DEBUG)
     {
