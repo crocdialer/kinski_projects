@@ -156,13 +156,8 @@ void MeditationRoom::setup()
         m_cap_sense_activated = true;
     });
     
-    // warp component
-    m_warp = std::make_shared<WarpComponent>();
-    m_warp->observe_properties();
-    add_tweakbar_for_component(m_warp);
-    
     // web interface
-    remote_control().set_components({shared_from_this(), m_warp});
+    remote_control().set_components({shared_from_this(), m_warp_component});
     load_settings();
     
     change_state(State::IDLE, true);
@@ -303,7 +298,7 @@ void MeditationRoom::draw()
     textures()[TEXTURE_OUTPUT].set_roi(roi);
     
     // draw final result
-    m_warp->render_output(textures()[TEXTURE_OUTPUT], m_brightness);
+    m_warp_component->render_output(textures()[TEXTURE_OUTPUT], m_brightness);
     
     if(Logger::get()->severity() >= Severity::DEBUG)
     {
@@ -854,39 +849,3 @@ void MeditationRoom::create_animations()
     animations()[SPOT_02_FADE_OUT] = animation::create(m_spot_color_02, m_spot_color_02->value(),
                                                       gl::COLOR_BLACK, *m_duration_fade);
 }
-
-/////////////////////////////////////////////////////////////////
-
-bool MeditationRoom::save_settings(const std::string &the_path)
-{
-    bool ret = ViewerApp::save_settings(the_path);
-    std::string path_prefix = the_path.empty() ? m_default_config_path : the_path;
-    path_prefix = fs::get_directory_part(path_prefix);
-    try
-    {
-        Serializer::saveComponentState(m_warp,
-                                       fs::join_paths(path_prefix ,"warp_config.json"),
-                                       PropertyIO_GL());
-    }
-    catch(Exception &e){ LOG_ERROR << e.what(); return false; }
-    return ret;
-}
-
-/////////////////////////////////////////////////////////////////
-
-bool MeditationRoom::load_settings(const std::string &the_path)
-{
-    bool ret = ViewerApp::load_settings(the_path);
-    std::string path_prefix = the_path.empty() ? m_default_config_path : the_path;
-    path_prefix = fs::get_directory_part(path_prefix);
-    try
-    {
-        Serializer::loadComponentState(m_warp,
-                                       fs::join_paths(path_prefix, "warp_config.json"),
-                                       PropertyIO_GL());
-    }
-    catch(Exception &e){ LOG_ERROR << e.what(); return false; }
-    return ret;
-}
-
-/////////////////////////////////////////////////////////////////

@@ -15,7 +15,6 @@
 #include "media/media.h"
 #include "sensors/sensors.h"
 #include "dmx/dmx.h"
-#include "gl_post_process/WarpComponent.hpp"
 
 namespace kinski
 {
@@ -109,9 +108,6 @@ namespace kinski
         // current brightness
         float m_brightness = 0.f;
         
-        //! ouput warping
-        WarpComponentPtr m_warp;
-        
         // our content
         media::MediaControllerPtr
         m_movie = media::MediaController::create(),
@@ -157,9 +153,6 @@ namespace kinski
         void fileDrop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void tearDown() override;
         void update_property(const Property::ConstPtr &theProperty) override;
-        
-        bool save_settings(const std::string &path = "") override;
-        bool load_settings(const std::string &path = "") override;
     };
 }// namespace kinski
 
