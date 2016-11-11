@@ -44,3 +44,10 @@ namespace kinski
         void update_property(const Property::ConstPtr &theProperty) override;
     };
 }// namespace kinski
+
+int main(int argc, char *argv[])
+{
+    auto theApp = std::make_shared<kinski::BluetoothApp>(argc, argv);
+    LOG_INFO << "local ip: " << kinski::net::local_ip();
+    return theApp->run();
+}
