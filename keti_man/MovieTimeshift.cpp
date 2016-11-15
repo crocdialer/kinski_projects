@@ -179,7 +179,7 @@ void MovieTimeshift::update(float timeDelta)
 
 void MovieTimeshift::draw()
 {
-    if(*m_use_syphon && m_offscreen_fbo)
+    if((*m_use_warping || *m_use_syphon) && m_offscreen_fbo)
     {
         textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_offscreen_fbo, [this]()
         {
@@ -187,8 +187,21 @@ void MovieTimeshift::draw()
             gl::draw_quad(m_custom_mat, gl::window_dimension());
         });
         
-        m_syphon_out.publish_texture(textures()[TEXTURE_OUTPUT]);
-        gl::draw_texture(textures()[TEXTURE_OUTPUT], gl::window_dimension());
+        if(*m_use_warping)
+        {
+            for(uint32_t i = 0; i < m_warp_component->num_warps(); i++)
+            {
+                if(m_warp_component->enabled(i))
+                {
+                    m_warp_component->render_output(i, textures()[TEXTURE_INPUT]);
+                }
+            }
+        }
+        else
+        {
+            m_syphon_out.publish_texture(textures()[TEXTURE_OUTPUT]);
+            gl::draw_texture(textures()[TEXTURE_OUTPUT], gl::window_dimension());
+        }
     }
     else
     {
@@ -210,11 +223,6 @@ void MovieTimeshift::keyPress(const KeyEvent &e)
     
     switch (e.getCode())
     {
-        case GLFW_KEY_P:
-            if(m_movie->is_playing()){ m_movie->pause(); }
-            else{ m_movie->play(); }
-            break;
-            
         default:
             break;
     }
@@ -241,31 +249,6 @@ void MovieTimeshift::on_movie_load()
     m_needs_movie_refresh = true;
     m_movie->set_rate(*m_movie_speed);
 }
-
-/////////////////////////////////////////////////////////////////
-
-//gl::Texture MovieTimeshift::create_noise_tex(float seed)
-//{
-//    
-//    gl::Texture noise_tex;
-//
-//    int w = m_noise_map_size->value().x, h = m_noise_map_size->value().y;
-//    float data[w * h];
-//    
-//    for (int i = 0; i < h; i++)
-//    {
-//        for (int j = 0; j < w; j++)
-//        {
-//            data[i * h + j] = (glm::simplex( vec3(vec2(i * *m_noise_scale_x,
-//                                                       j * * m_noise_scale_y), seed)) + 1) / 2.f;
-//        }
-//    }
-//    gl::Texture::Format fmt;
-//    fmt.setInternalFormat(GL_RED);
-//    noise_tex = gl::Texture (w, h, fmt);
-//    noise_tex.update(data, GL_RED, w, h, true);
-//    return noise_tex;
-//}
 
 /////////////////////////////////////////////////////////////////
 
@@ -422,26 +405,26 @@ void MovieTimeshift::update_property(const Property::ConstPtr &theProperty)
         m_noise.set_tex_size(*m_noise_map_size);
         m_noise.set_scale(vec2(m_noise_scale_x->value(), m_noise_scale_y->value()));
     }
-//    else if(theProperty == m_offscreen_size)
-//    {
-//        m_offscreen_fbo = gl::Fbo(m_offscreen_size->value().x,
-//                                  m_offscreen_size->value().y);
-//    }
-//    else if(theProperty == m_use_syphon)
-//    {
-//        m_syphon_out = *m_use_syphon ? syphon::Output(*m_syphon_server_name) : syphon::Output();
-//    }
-//    else if(theProperty == m_syphon_server_name)
-//    {
-//        try{m_syphon_out.setName(*m_syphon_server_name);}
-//        catch(syphon::SyphonNotRunningException &e){LOG_WARNING<<e.what();}
-//    }
-//    else if(theProperty == m_cam_id)
-//    {
-//        m_input_source_changed = true;
-//    }
-//    else if(theProperty == m_flip_image)
-//    {
-//        m_needs_array_refresh = true;
-//    }
+    else if(theProperty == m_offscreen_size)
+    {
+        m_offscreen_fbo = gl::Fbo(m_offscreen_size->value().x,
+                                  m_offscreen_size->value().y);
+    }
+    else if(theProperty == m_use_syphon)
+    {
+        m_syphon_out = *m_use_syphon ? syphon::Output(*m_syphon_server_name) : syphon::Output();
+    }
+    else if(theProperty == m_syphon_server_name)
+    {
+        try{m_syphon_out.setName(*m_syphon_server_name);}
+        catch(syphon::SyphonNotRunningException &e){LOG_WARNING<<e.what();}
+    }
+    else if(theProperty == m_cam_id)
+    {
+        m_input_source_changed = true;
+    }
+    else if(theProperty == m_flip_image)
+    {
+        m_needs_array_refresh = true;
+    }
 }
