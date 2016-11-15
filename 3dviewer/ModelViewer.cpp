@@ -88,23 +88,25 @@ void ModelViewer::update(float timeDelta)
     ViewerApp::update(timeDelta);
     update_shader();
     
-    if(*m_use_post_process)
+    // check fbo
+    gl::vec2 sz = m_offscreen_resolution->value() != gl::vec2() ?
+    m_offscreen_resolution->value() : gl::window_dimension();
+    
+    if(*m_use_warping)
     {
-        // check fbo
-        
-        gl::vec2 sz = m_offscreen_resolution->value() != gl::vec2() ?
-                      m_offscreen_resolution->value() : gl::window_dimension();
-        bool needs_refresh = !m_post_process_fbo || m_post_process_fbo.size() != sz;
-        
-        if(needs_refresh)
+        if(!m_offscreen_fbo || m_offscreen_fbo.size() != sz)
         {
             gl::Fbo::Format fmt;
-//            fmt.setSamples(8);
-            try
-            {
-                m_post_process_fbo = gl::Fbo(sz, fmt);
-                m_offscreen_fbo = gl::Fbo(sz, fmt);
-            }
+            try{ m_offscreen_fbo = gl::Fbo(sz, fmt); }
+            catch(Exception &e){ LOG_WARNING << e.what(); }
+        }
+    }
+    if(*m_use_post_process)
+    {
+        if(!m_post_process_fbo || m_post_process_fbo.size() != sz)
+        {
+            gl::Fbo::Format fmt;
+            try{ m_post_process_fbo = gl::Fbo(sz, fmt); }
             catch(Exception &e){ LOG_WARNING << e.what(); }
         }
         
