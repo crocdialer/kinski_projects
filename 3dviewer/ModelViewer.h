@@ -21,12 +21,12 @@ namespace kinski
     {
     private:
         
-        enum TextureEnum{ TEXTURE_OFFSCREEN = 0 };
+        enum TextureEnum{ TEXTURE_OFFSCREEN = 0, TEXTURE_OUTPUT = 1 };
         
         gl::MeshPtr m_mesh;
         gl::Texture m_cube_map, m_normal_map;
         
-        gl::Fbo m_post_process_fbo;
+        gl::Fbo m_post_process_fbo, m_offscreen_fbo;
         gl::MaterialPtr m_post_process_mat;
         
         Property_<float>::Ptr
@@ -41,6 +41,9 @@ namespace kinski
         m_debug_focus = Property_<bool>::create("debug focus", false),
         m_auto_focus = Property_<bool>::create("auto focus", false),
         m_use_post_process = Property_<bool>::create("use post process", false);
+        
+        Property_<gl::vec2>::Ptr
+        m_offscreen_resolution = Property_<gl::vec2>::create("offscreen resolution", gl::vec2(0));
         
         bool m_dirty_shader = true;
         

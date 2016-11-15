@@ -30,6 +30,7 @@ void ModelViewer::setup()
     register_property(m_model_path);
     register_property(m_use_lighting);
     register_property(m_use_post_process);
+    register_property(m_offscreen_resolution);
     register_property(m_use_normal_map);
     register_property(m_use_ground_plane);
     register_property(m_use_bones);
@@ -90,11 +91,21 @@ void ModelViewer::update(float timeDelta)
     if(*m_use_post_process)
     {
         // check fbo
-        if(!m_post_process_fbo || m_post_process_fbo.size() != gl::window_dimension())
+        
+        gl::vec2 sz = m_offscreen_resolution->value() != gl::vec2() ?
+                      m_offscreen_resolution->value() : gl::window_dimension();
+        bool needs_refresh = !m_post_process_fbo || m_post_process_fbo.size() != sz;
+        
+        if(needs_refresh)
         {
             gl::Fbo::Format fmt;
 //            fmt.setSamples(8);
-            m_post_process_fbo = gl::Fbo(gl::window_dimension(), fmt);
+            try
+            {
+                m_post_process_fbo = gl::Fbo(sz, fmt);
+                m_offscreen_fbo = gl::Fbo(sz, fmt);
+            }
+            catch(Exception &e){ LOG_WARNING << e.what(); }
         }
         
         // check material
@@ -137,18 +148,40 @@ void ModelViewer::draw()
         auto tex = gl::render_to_texture(scene(), m_post_process_fbo, camera());
         
         // draw texture with post-processing
-//        gl::draw_texture(tex, gl::window_dimension());
         m_post_process_mat->textures() =
         {
             m_post_process_fbo.texture(),
             m_post_process_fbo.depth_texture()
         };
-        gl::draw_quad(m_post_process_mat, gl::window_dimension());
-        
         textures()[TEXTURE_OFFSCREEN] = tex;
-        textures()[1] = m_post_process_fbo.depth_texture();
     }
-    else{ scene()->render(camera()); }
+    if(*m_use_warping)
+    {
+        if(*m_use_post_process)
+        {
+            textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_offscreen_fbo, [this]()
+            {
+                gl::draw_quad(m_post_process_mat, gl::window_dimension());
+            });
+        }
+        else
+        {
+            textures()[TEXTURE_OUTPUT] = gl::render_to_texture(scene(), m_offscreen_fbo, camera());
+        }
+        
+        for(uint32_t i = 0; i < m_warp_component->num_warps(); i++)
+        {
+            if(m_warp_component->enabled(i))
+            {
+                m_warp_component->render_output(i, textures()[TEXTURE_OUTPUT]);
+            }
+        }
+    }
+    else
+    {
+        if(*m_use_post_process){ gl::draw_quad(m_post_process_mat, gl::window_dimension()); }
+        else{ scene()->render(camera()); }
+    }
     
     if(m_light_component->draw_light_dummies())
     {

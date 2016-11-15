@@ -197,10 +197,11 @@ void MovieTimeshift::draw()
                 }
             }
         }
-        else
+        else{ gl::draw_texture(textures()[TEXTURE_OUTPUT], gl::window_dimension()); }
+        
+        if(*m_use_syphon)
         {
             m_syphon_out.publish_texture(textures()[TEXTURE_OUTPUT]);
-            gl::draw_texture(textures()[TEXTURE_OUTPUT], gl::window_dimension());
         }
     }
     else
