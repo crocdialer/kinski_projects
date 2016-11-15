@@ -193,7 +193,7 @@ void MovieTimeshift::draw()
             {
                 if(m_warp_component->enabled(i))
                 {
-                    m_warp_component->render_output(i, textures()[TEXTURE_INPUT]);
+                    m_warp_component->render_output(i, textures()[TEXTURE_OUTPUT]);
                 }
             }
         }
