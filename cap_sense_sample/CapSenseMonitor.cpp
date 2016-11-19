@@ -257,7 +257,7 @@ void CapSenseMonitor::send_udp_broadcast()
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::connect_sensor(UART_Ptr the_uart)
+void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
 {
     CapacitiveSensor cs;
     auto sensor_index = m_sensors.size();
@@ -289,17 +289,14 @@ void CapSenseMonitor::reset_sensors()
 //    if(!m_uart || !m_uart->is_initialized())
     {
         auto blue_uart = bluetooth::Bluetooth_UART::create();
-        blue_uart->set_connect_cb([this](bluetooth::Bluetooth_UART_Ptr p)
-        {
-            connect_sensor(p);
-        });
+        blue_uart->set_connect_cb([this](UARTPtr p){ connect_sensor(p); });
         blue_uart->setup();
         m_uart = blue_uart;
     }
     
     for(const auto &d : device_names)
     {
-        auto serial_uart = kinski::Serial::create();
+        auto serial_uart = kinski::Serial::create(main_queue().io_service());
         serial_uart->setup(d, 57600);
         connect_sensor(serial_uart);
     }

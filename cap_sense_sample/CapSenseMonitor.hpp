@@ -23,7 +23,7 @@ namespace kinski
         enum State{STATE_IDLE = 0, STATE_IMAGE = 1};
         enum FontEnum{FONT_SMALL = 0, FONT_MEDIUM = 1, FONT_LARGE = 2};
         
-        UART_Ptr m_uart;
+        UARTPtr m_uart;
         
         std::vector<CapacitiveSensor> m_sensors;
         bool m_needs_sensor_reset = true;
@@ -51,7 +51,7 @@ namespace kinski
         m_cap_sense_proxi_multiplier = RangedProperty<float>::create("capsense: proximity multiplier",
                                                                      1.f , 0.f, 100.f);
         
-        void connect_sensor(UART_Ptr);
+        void connect_sensor(UARTPtr);
         void reset_sensors();
         void send_udp_broadcast();
         
@@ -77,3 +77,10 @@ namespace kinski
         void sensor_release(int the_sensor_index, int the_pad_index);
     };
 }// namespace kinski
+
+int main(int argc, char *argv[])
+{
+    auto theApp = std::make_shared<kinski::CapSenseMonitor>(argc, argv);
+    LOG_INFO << "local ip: " << kinski::net::local_ip();
+    return theApp->run();
+}

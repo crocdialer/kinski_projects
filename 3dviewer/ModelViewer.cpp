@@ -106,6 +106,7 @@ void ModelViewer::update(float timeDelta)
         if(!m_post_process_fbo || m_post_process_fbo.size() != sz)
         {
             gl::Fbo::Format fmt;
+            fmt.set_num_samples(8);
             try{ m_post_process_fbo = gl::Fbo(sz, fmt); }
             catch(Exception &e){ LOG_WARNING << e.what(); }
         }
@@ -530,7 +531,8 @@ void ModelViewer::async_load_asset(const std::string &the_path,
             for(auto &mat : m->materials())
             {
                 std::vector<ImagePtr> tex_imgs;
-
+                mat->set_wireframe(wireframe());
+                
                 for(auto &p : mat->texture_paths())
                 {
                     try
