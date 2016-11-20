@@ -81,13 +81,14 @@ namespace kinski
         m_bio_sense_dev_name = Property_<string>::create("bio sensor device");
         
         SerialPtr
-        m_bio_sense = Serial::create(), m_led_device = Serial::create();
+        m_bio_sense = Serial::create(background_queue().io_service()),
+        m_led_device = Serial::create(background_queue().io_service());
         bool m_led_needs_refresh = true;
         
-        DistanceSensor m_motion_sensor;
+        DistanceSensorPtr m_motion_sensor = DistanceSensor::create();
         bool m_motion_detected = false;
         
-        DMXController m_dmx;
+        DMXController m_dmx{background_queue().io_service()};
         bool m_dmx_needs_refresh = true;
         
         Property_<gl::Color>::Ptr
@@ -116,7 +117,7 @@ namespace kinski
         std::vector<std::string> m_audio_paths;
         bool m_assets_found = false;
         
-        CapacitiveSensor m_cap_sense;
+        CapacitiveSensorPtr m_cap_sense = CapacitiveSensor::create();
         bool m_cap_sense_activated = false;
         
         bool change_state(State the_the_state, bool force_change = false);

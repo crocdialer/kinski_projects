@@ -62,7 +62,7 @@ void MeditationRoom::setup()
     // buffer incoming bytes from serial connection (used for bio-feedback)
     m_serial_read_buf.resize(1 << 16);
     
-    m_motion_sensor.set_motion_callback([this](int v)
+    m_motion_sensor->set_distance_callback([this](int v)
     {
         if(v > 0)
         {
@@ -120,11 +120,12 @@ void MeditationRoom::setup()
         m_sensor_read_timestamp = now;
         
         // update sensor status
-        m_motion_sensor.update(time_delta);
-        m_cap_sense.update(time_delta);
+//        m_motion_sensor->update(time_delta);
+//        m_cap_sense->update(time_delta);
+        
         read_bio_sensor(time_delta);
         
-        if(m_cap_sense.is_touched())
+        if(m_cap_sense->is_touched())
         {
             if(m_timer_cap_trigger.has_expired())
             {
@@ -418,44 +419,41 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_cap_sense_dev_name)
     {
-        m_cap_sense.connect(*m_cap_sense_dev_name);
-        m_cap_sense.set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
-        m_cap_sense.set_charge_current(63);
+        auto serial = Serial::create(background_queue().io_service());
+        serial->open(*m_cap_sense_dev_name);
+        m_cap_sense->connect(serial);
+        m_cap_sense->set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
+        m_cap_sense->set_charge_current(63);
     }
     else if(theProperty == m_cap_thresh)
     {
-        m_cap_sense.set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
-        m_cap_sense.set_charge_current(63);
+        m_cap_sense->set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
+        m_cap_sense->set_charge_current(63);
     }
     else if(theProperty == m_motion_sense_dev_name)
     {
-        m_motion_sensor.connect(*m_motion_sense_dev_name);
+        auto serial = Serial::create(background_queue().io_service());
+        
+        if(serial->open(*m_motion_sense_dev_name)){ m_motion_sensor->connect(serial); }
     }
     else if(theProperty == m_bio_sense_dev_name)
     {
-        auto serial = Serial::create();
+        auto serial = Serial::create(background_queue().io_service());
         
         if(!m_bio_sense_dev_name->value().empty())
         {
-            serial->setup(*m_bio_sense_dev_name, 57600);
-            
-            if(serial->is_initialized()){ serial->flush(); }
+            serial->open(*m_bio_sense_dev_name, 57600);
         }
         m_bio_sense = serial;
     }
     else if(theProperty == m_led_dev_name)
     {
-        auto serial = Serial::create();
+        auto serial = Serial::create(background_queue().io_service());
         
         if(!m_led_dev_name->value().empty())
         {
-            serial->setup(*m_led_dev_name, 57600);
-            
-            if(serial->is_initialized())
+            if(serial->open(*m_led_dev_name, 57600))
             {
-                serial->drain();
-                serial->flush();
-                serial->write("255\n");
                 serial->write("255\n");
             }
         }
@@ -700,8 +698,8 @@ void MeditationRoom::read_bio_sensor(float time_delta)
             
             if(splits.size() == 2)
             {
-                m_bio_acceleration.push(string_to<float>(splits[0]));
-                m_bio_elongation.push(string_to<float>(splits[1]));
+                m_bio_acceleration.push_back(string_to<float>(splits[0]));
+                m_bio_elongation.push_back(string_to<float>(splits[1]));
                 *m_bio_score = median<float>(m_bio_acceleration) + median<float>(m_bio_elongation);
                 LOG_TRACE_1 << m_bio_score->value() << " - " <<  median<float>(m_bio_elongation);
             }
@@ -720,7 +718,7 @@ void MeditationRoom::read_bio_sensor(float time_delta)
 
 void MeditationRoom::set_led_color(const gl::Color &the_color)
 {
-    if(m_led_device->is_initialized())
+    if(m_led_device->is_open())
     {
         char buf[32];
         int num_bytes = sprintf(buf, "%d %d %d %d\n", (int)std::round(the_color.r * 255),
@@ -729,7 +727,6 @@ void MeditationRoom::set_led_color(const gl::Color &the_color)
                                 (int)std::round(the_color.a * 255));
 //        int num_bytes = sprintf(buf, "%d\n", (int)std::round(the_color.a * 255));
         m_led_device->write_bytes(buf, num_bytes);
-        m_led_device->flush();
     }
 }
 
@@ -749,20 +746,20 @@ void MeditationRoom::draw_status_info()
     gl::draw_text_2D(state_str, fonts()[0], gl::COLOR_WHITE, offset);
     offset += step;
     
-    bool motion_sensor_found = m_motion_sensor.is_initialized();
-    bool cap_sensor_found = m_cap_sense.is_initialized();
-    bool bio_sensor_found = m_bio_sense->is_initialized();
-    bool led_device_found = m_led_device->is_initialized();
+    bool motion_sensor_found = m_motion_sensor->is_initialized();
+    bool cap_sensor_found = m_cap_sense->is_initialized();
+    bool bio_sensor_found = m_bio_sense->is_open();
+    bool led_device_found = m_led_device->is_open();
     bool dmx_device_found = m_dmx.is_initialized();
     
-    string ms_string = motion_sensor_found ? to_string(m_motion_sensor.distance() / 1000, 1) : "not found";
+    string ms_string = motion_sensor_found ? to_string(m_motion_sensor->distance() / 1000, 1) : "not found";
     string cs_string = cap_sensor_found ? "ok" + string(m_cap_sense_activated ? "*" : "") : "not found";
     string bs_string = bio_sensor_found ? to_string(m_bio_score->value(), 2) : "not found";
     string led_string = led_device_found ? "ok" : "not found";
     string dmx_string = dmx_device_found ? "ok" : "not found";
     
     gl::Color cap_col = cap_sensor_found ?
-        (m_cap_sense.is_touched() ? gl::COLOR_GREEN : gl::COLOR_WHITE) : gl::COLOR_RED;
+        (m_cap_sense->is_touched() ? gl::COLOR_GREEN : gl::COLOR_WHITE) : gl::COLOR_RED;
     gl::Color motion_col = motion_sensor_found ?
         (m_motion_detected ? gl::COLOR_GREEN : gl::COLOR_WHITE) : gl::COLOR_RED;
     gl::Color bio_col = bio_sensor_found ?
