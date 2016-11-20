@@ -292,7 +292,7 @@ void CapSenseMonitor::reset_sensors()
     
     for(const auto &d : device_names)
     {
-        auto serial_uart = kinski::Serial::create(main_queue().io_service());
+        auto serial_uart = kinski::Serial::create(background_queue().io_service());
         serial_uart->open(d, 57600);
         connect_sensor(serial_uart);
     }

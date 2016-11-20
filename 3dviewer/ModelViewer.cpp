@@ -468,7 +468,7 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
             break;
 
         case fs::FileType::IMAGE:
-            
+        
         {
             auto geom = gl::Geometry::create_plane(1.f, 1.f, 100, 100);
             auto mat = gl::Material::create();
