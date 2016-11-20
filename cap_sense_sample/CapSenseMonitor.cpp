@@ -286,14 +286,14 @@ void CapSenseMonitor::reset_sensors()
     {
         auto blue_uart = bluetooth::Bluetooth_UART::create();
         blue_uart->set_connect_cb([this](UARTPtr p){ connect_sensor(p); });
-        blue_uart->setup();
+        blue_uart->open();
         m_uart = blue_uart;
     }
     
     for(const auto &d : device_names)
     {
         auto serial_uart = kinski::Serial::create(main_queue().io_service());
-        serial_uart->setup(d, 57600);
+        serial_uart->open(d, 57600);
         connect_sensor(serial_uart);
     }
 }
