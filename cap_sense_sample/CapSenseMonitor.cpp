@@ -47,11 +47,7 @@ void CapSenseMonitor::setup()
 void CapSenseMonitor::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    
     if(m_needs_sensor_reset){ reset_sensors(); m_needs_sensor_reset = false; }
-    
-    // read sensor values, trigger callbacks
-    for(auto &s : m_sensors){ s.update(timeDelta); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -71,13 +67,13 @@ void CapSenseMonitor::draw()
     {
         for(int i = 0; i < 13; i++)
         {
-            auto color = s.is_touched(i) ? gl::COLOR_ORANGE : gl::COLOR_GRAY;
+            auto color = s->is_touched(i) ? gl::COLOR_ORANGE : gl::COLOR_GRAY;
             
-            float proxi_val = clamp(*m_cap_sense_proxi_multiplier * s.proximity_values()[12 - i] / 100.f,
+            float proxi_val = clamp(*m_cap_sense_proxi_multiplier * s->proximity_values()[12 - i] / 100.f,
                                     0.f, 1.f);
             
             vec2 pos = offset - sz / 2.f,
-            sz_frac = s.is_touched(i) ? vec2(sz) : sz * vec2(1.f, proxi_val);
+            sz_frac = s->is_touched(i) ? vec2(sz) : sz * vec2(1.f, proxi_val);
             
             
             gl::draw_quad(gl::COLOR_ORANGE, sz, pos, false);
@@ -192,9 +188,9 @@ void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
     {
         for(auto &s : m_sensors)
         {
-            if(s.is_initialized())
+            if(s->is_initialized())
             {
-                s.set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
+                s->set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
             }
         }
     }
@@ -202,9 +198,9 @@ void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
     {
         for(auto &s : m_sensors)
         {
-            if(s.is_initialized())
+            if(s->is_initialized())
             {
-                s.set_charge_current(*m_cap_sense_charge_current);
+                s->set_charge_current(*m_cap_sense_charge_current);
             }
         }
     }
@@ -242,9 +238,9 @@ void CapSenseMonitor::send_udp_broadcast()
     {
         float vals[3];
         for(int j = 0; j < 3; ++j)
-        { vals[j] = clamp(s.proximity_values()[j] * *m_cap_sense_proxi_multiplier / 100.f, 0.f, 1.f); }
+        { vals[j] = clamp(s->proximity_values()[j] * *m_cap_sense_proxi_multiplier / 100.f, 0.f, 1.f); }
         
-        str += to_string(i++) + ": " + to_string(s.touch_state()) + " " +
+        str += to_string(i++) + ": " + to_string(s->touch_state()) + " " +
         to_string(vals[0], 3) + " " + to_string(vals[1], 3) + " " + to_string(vals[2], 3) + "\n";
     }
     if(!str.empty())
@@ -259,17 +255,17 @@ void CapSenseMonitor::send_udp_broadcast()
 
 void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
 {
-    CapacitiveSensor cs;
+    auto cs = CapacitiveSensor::create();
     auto sensor_index = m_sensors.size();
-    cs.set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
-    cs.set_charge_current(*m_cap_sense_charge_current);
-    cs.set_touch_callback(std::bind(&CapSenseMonitor::sensor_touch, this,
+    cs->set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
+    cs->set_charge_current(*m_cap_sense_charge_current);
+    cs->set_touch_callback(std::bind(&CapSenseMonitor::sensor_touch, this,
                                     sensor_index, std::placeholders::_1));
-    cs.set_release_callback(std::bind(&CapSenseMonitor::sensor_release, this,
+    cs->set_release_callback(std::bind(&CapSenseMonitor::sensor_release, this,
                                       sensor_index, std::placeholders::_1));
-    cs.set_timeout_reconnect(5.f);
+    cs->set_timeout_reconnect(5.f);
     
-    if(cs.connect(the_uart)){ m_sensors.push_back(cs); }
+    if(cs->connect(the_uart)){ m_sensors.push_back(cs); }
 }
 
 /////////////////////////////////////////////////////////////////

@@ -25,7 +25,7 @@ namespace kinski
         
         UARTPtr m_uart;
         
-        std::vector<CapacitiveSensor> m_sensors;
+        std::vector<CapacitiveSensorPtr> m_sensors;
         bool m_needs_sensor_reset = true;
         
         //! used for http-requests
