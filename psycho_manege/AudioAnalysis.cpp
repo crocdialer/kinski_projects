@@ -84,7 +84,7 @@ void ModelViewer::update_audio()
         
         for(int i = 0; i < m_sound_spectrum.size(); i++)
         {
-            m_sound_values[i].push(m_sound_spectrum[i]);
+            m_sound_values[i].push_back(m_sound_spectrum[i]);
         }
         
         std::vector<FrequencyBand> freq_bands = {FREQ_LOW, FREQ_MID_LOW, FREQ_MID_HIGH, FREQ_HIGH};

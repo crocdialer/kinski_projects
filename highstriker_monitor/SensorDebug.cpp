@@ -277,12 +277,10 @@ void SensorDebug::update_property(const Property::ConstPtr &theProperty)
         
         if(!m_device_name_sensor->value().empty())
         {
-            auto serial = Serial::create();
-            serial->setup(*m_device_name_sensor, 57600);
+            auto serial = Serial::create(background_queue().io_service());
             
-            if(serial->is_initialized())
+            if(serial->open(*m_device_name_sensor))
             {
-                serial->flush();
                 m_serial_sensor = serial;
             }
         }
@@ -295,9 +293,11 @@ void SensorDebug::update_property(const Property::ConstPtr &theProperty)
     {
         if(!m_device_name_nixie->value().empty())
         {
-            auto serial = Serial::create();
-            serial->setup(*m_device_name_nixie, 57600);
-            m_serial_nixie = serial;
+            auto serial = Serial::create(background_queue().io_service());
+            if(serial->open(*m_device_name_nixie))
+            {
+                m_serial_nixie = serial;
+            }
         }
     }
     else if(theProperty == m_device_name_dmx)
@@ -317,7 +317,7 @@ void SensorDebug::update_sensor_values(float time_delta)
     std::string reading_str;
     
     // parse sensor input
-    if(m_serial_sensor->is_initialized())
+    if(m_serial_sensor->is_open())
     {
         size_t bytes_to_read = std::min(m_serial_sensor->available(), m_serial_read_buf.size());
         uint8_t *buf_ptr = &m_serial_read_buf[0];
@@ -360,7 +360,7 @@ void SensorDebug::update_sensor_values(float time_delta)
             {
                 auto v = string_to<float>(splits[i]);
                 v = clamp(*m_force_multiplier * v / 16.f, 0.f, 1.f);
-                m_measurements[i].push(v);
+                m_measurements[i].push_back(v);
                 m_sensor_last_max = std::max(m_sensor_last_max, v);
             }
         }
@@ -378,7 +378,7 @@ void SensorDebug::update_sensor_values(float time_delta)
 
 void SensorDebug::update_score_display()
 {
-    if(m_serial_nixie->is_initialized())
+    if(m_serial_nixie->is_open())
     {
         auto out_str = to_string(final_score(m_display_value)) + "\n";
 

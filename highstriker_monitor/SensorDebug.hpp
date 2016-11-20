@@ -27,12 +27,12 @@ namespace kinski
         
         //////////////////////// serial IO //////////////////////////////////////
         
-        UART_Ptr
-        m_serial_sensor = Serial::create(),
-        m_serial_nixie = Serial::create();
+        UARTPtr
+        m_serial_sensor = Serial::create(background_queue().io_service()),
+        m_serial_nixie = Serial::create(background_queue().io_service());
         
         float m_last_sensor_reading = 0.f, m_sensor_timeout = 5.f;
-        DMXController m_dmx;
+        DMXController m_dmx{background_queue().io_service()};
         
         //////////////////////// sensor input ///////////////////////////////////
 
