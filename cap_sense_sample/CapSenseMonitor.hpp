@@ -12,7 +12,7 @@
 
 // modules
 #include "curl/Downloader.h"
-#include "sensors/CapacitiveSensor.hpp"
+#include "sensors/sensors.h"
 
 namespace kinski
 {
@@ -37,7 +37,6 @@ namespace kinski
         gl::ScenePtr m_gui_scene = gl::Scene::create();
         
         Property_<string>::Ptr
-        m_device_prefix = Property_<string>::create("device prefix", "tty.usb"),
         m_img_url = Property_<string>::create("image url");
         
         Property_<uint32_t>::Ptr

@@ -23,7 +23,6 @@ void CapSenseMonitor::setup()
     fonts()[FONT_LARGE].load(fonts()[FONT_SMALL].path(), 54);
     register_property(m_broadcast_udp_port);
     register_property(m_broadcast_frequency);
-    register_property(m_device_prefix);
     register_property(m_cap_sense_thresh_touch);
     register_property(m_cap_sense_thresh_release);
     register_property(m_cap_sense_charge_current);
@@ -179,10 +178,6 @@ void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
         }
         else{ textures()[0].reset(); }
     }
-    else if(theProperty == m_device_prefix)
-    {
-        m_needs_sensor_reset = true;
-    }
     else if(theProperty == m_cap_sense_thresh_touch ||
             theProperty == m_cap_sense_thresh_release)
     {
@@ -273,27 +268,19 @@ void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
 void CapSenseMonitor::reset_sensors()
 {
     m_sensors.clear();
-    auto device_names = fs::get_directory_entries("/dev");
-    device_names.erase(std::remove_if(device_names.begin(), device_names.end(),
-                                      [this](const std::string &str)
-                                      {
-                                          return str.find(*m_device_prefix) == string::npos;
-                                      }),
-                       device_names.end());
     
+//    {
+//        auto blue_uart = bluetooth::Bluetooth_UART::create();
+//        blue_uart->set_connect_cb([this](UARTPtr p){ connect_sensor(p); });
+//        blue_uart->open();
+//        m_uart = blue_uart;
+//    }
     
-//    if(!m_uart || !m_uart->is_initialized())
+    sensors::scan_for_devices(background_queue().io_service(),
+                              [this](const std::string &the_id, UARTPtr the_uart)
     {
-        auto blue_uart = bluetooth::Bluetooth_UART::create();
-        blue_uart->set_connect_cb([this](UARTPtr p){ connect_sensor(p); });
-        blue_uart->open();
-        m_uart = blue_uart;
-    }
-    
-    for(const auto &d : device_names)
-    {
-        auto serial_uart = kinski::Serial::create(background_queue().io_service());
-        serial_uart->open(d, 57600);
-        connect_sensor(serial_uart);
-    }
+        LOG_DEBUG << "discovered device: <" << the_id << "> (" << the_uart->description() << ")";
+        
+        if(the_id == CapacitiveSensor::id()){ connect_sensor(the_uart); }
+    });
 }
