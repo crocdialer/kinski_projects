@@ -26,13 +26,12 @@ namespace kinski
         UARTPtr m_uart;
         
         std::vector<CapacitiveSensorPtr> m_sensors;
-        bool m_needs_sensor_reset = true;
         
         //! used for http-requests
         net::Downloader m_downloader;
         
         //! timer for periodic udp broadcasts
-        Timer m_broadcast_timer;
+        Timer m_broadcast_timer, m_scan_for_device_timer;
         
         gl::ScenePtr m_gui_scene = gl::Scene::create();
         

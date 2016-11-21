@@ -14,6 +14,11 @@ using namespace std;
 using namespace kinski;
 using namespace glm;
 
+namespace
+{
+    const double g_scan_for_device_interval = 3.0;
+}
+
 /////////////////////////////////////////////////////////////////
 
 void CapSenseMonitor::setup()
@@ -38,6 +43,12 @@ void CapSenseMonitor::setup()
                               std::bind(&CapSenseMonitor::send_udp_broadcast, this));
     m_broadcast_timer.set_periodic(true);
     
+    m_scan_for_device_timer = Timer(main_queue().io_service(),
+                                    std::bind(&CapSenseMonitor::reset_sensors, this));
+    m_scan_for_device_timer.set_periodic();
+    m_scan_for_device_timer.expires_from_now(g_scan_for_device_interval);
+    
+    reset_sensors();
     load_settings();
 }
 
@@ -46,7 +57,7 @@ void CapSenseMonitor::setup()
 void CapSenseMonitor::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    if(m_needs_sensor_reset){ reset_sensors(); m_needs_sensor_reset = false; }
+//    if(m_needs_sensor_reset){ reset_sensors(); m_needs_sensor_reset = false; }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -260,7 +271,15 @@ void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
                                       sensor_index, std::placeholders::_1));
     cs->set_timeout_reconnect(5.f);
     
-    if(cs->connect(the_uart)){ m_sensors.push_back(cs); }
+    if(cs->connect(the_uart))
+    {
+        the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+        {
+            m_scan_for_device_timer.expires_from_now(g_scan_for_device_interval);
+        });
+        m_sensors.push_back(cs);
+        m_scan_for_device_timer.cancel();
+    }
 }
 
 /////////////////////////////////////////////////////////////////
