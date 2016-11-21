@@ -6,7 +6,6 @@
 //
 //
 
-#include <mutex>
 #include "CapSenseMonitor.hpp"
 #include "core/Serial.hpp"
 #include "bluetooth/Bluetooth_UART.hpp"
@@ -18,7 +17,6 @@ using namespace glm;
 namespace
 {
     const double g_scan_for_device_interval = 3.0;
-    std::mutex g_mutex;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -75,7 +73,6 @@ void CapSenseMonitor::draw()
 
     gl::vec2 offset(offset_x, 90), step = sz * 1.2f;
     
-    std::unique_lock<std::mutex> lock(g_mutex);
     for(auto &s : m_sensors)
     {
         for(int i = 0; i < 13; i++)
@@ -195,7 +192,6 @@ void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_cap_sense_thresh_touch ||
             theProperty == m_cap_sense_thresh_release)
     {
-        std::unique_lock<std::mutex> lock(g_mutex);
         for(auto &s : m_sensors)
         {
             if(s->is_initialized())
@@ -206,7 +202,6 @@ void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_cap_sense_charge_current)
     {
-        std::unique_lock<std::mutex> lock(g_mutex);
         for(auto &s : m_sensors)
         {
             if(s->is_initialized())
@@ -245,7 +240,6 @@ void CapSenseMonitor::send_udp_broadcast()
     string str;
     int i = 0;
     
-    std::unique_lock<std::mutex> lock(g_mutex);
     for(auto &s : m_sensors)
     {
         float vals[3];
@@ -267,8 +261,6 @@ void CapSenseMonitor::send_udp_broadcast()
 
 void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
 {
-    std::cout << "connect_sensor: " << the_uart->description() << " ... ";
-    std::unique_lock<std::mutex> lock(g_mutex);
     auto cs = CapacitiveSensor::create();
     auto sensor_index = m_sensors.size();
     cs->set_thresholds(*m_cap_sense_thresh_touch, *m_cap_sense_thresh_release);
@@ -281,7 +273,6 @@ void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
     
     if(cs->connect(the_uart))
     {
-        std::cout << "success!\n";
         the_uart->set_disconnect_cb([this](UARTPtr the_uart)
         {
             m_scan_for_device_timer.expires_from_now(g_scan_for_device_interval);
@@ -295,7 +286,6 @@ void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
 
 void CapSenseMonitor::reset_sensors()
 {
-    std::unique_lock<std::mutex> lock(g_mutex);
     m_sensors.clear();
     
 //    {
@@ -310,6 +300,9 @@ void CapSenseMonitor::reset_sensors()
     {
         LOG_DEBUG << "discovered device: <" << the_id << "> (" << the_uart->description() << ")";
         
-        if(the_id == CapacitiveSensor::id()){ connect_sensor(the_uart); }
+        if(the_id == CapacitiveSensor::id())
+        {
+            main_queue().submit([this, the_uart]{ connect_sensor(the_uart); });
+        }
     });
 }
