@@ -34,20 +34,19 @@ void CapSenseMonitor::setup()
     register_property(m_cap_sense_proxi_multiplier);
     register_property(m_img_url);
     observe_properties();
-    
+
     add_tweakbar_for_component(shared_from_this());
     remote_control().set_components({shared_from_this()});
-    
+
     m_downloader.set_io_service(main_queue().io_service());
     m_broadcast_timer = Timer(main_queue().io_service(),
                               std::bind(&CapSenseMonitor::send_udp_broadcast, this));
     m_broadcast_timer.set_periodic(true);
-    
-    m_scan_for_device_timer = Timer(main_queue().io_service(),
-                                    std::bind(&CapSenseMonitor::reset_sensors, this));
+
+    m_scan_for_device_timer = Timer(main_queue().io_service(), [this](){ reset_sensors(); });
     m_scan_for_device_timer.set_periodic();
     m_scan_for_device_timer.expires_from_now(g_scan_for_device_interval);
-    
+
     reset_sensors();
     load_settings();
 }
@@ -57,7 +56,6 @@ void CapSenseMonitor::setup()
 void CapSenseMonitor::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-//    if(m_needs_sensor_reset){ reset_sensors(); m_needs_sensor_reset = false; }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -65,30 +63,30 @@ void CapSenseMonitor::update(float timeDelta)
 void CapSenseMonitor::draw()
 {
     if(textures()[0]){ gl::draw_texture(textures()[0], gl::window_dimension()); }
-    
+
     const int offset_x = 40;
     const gl::vec2 sz = gl::vec2(60, 35);
-    
+
     gl::draw_text_2D(name(), fonts()[FONT_LARGE], gl::COLOR_WHITE, gl::vec2(25, 20));
 
     gl::vec2 offset(offset_x, 90), step = sz * 1.2f;
-    
+
     for(auto &s : m_sensors)
     {
         for(int i = 0; i < 13; i++)
         {
             auto color = s->is_touched(i) ? gl::COLOR_ORANGE : gl::COLOR_GRAY;
-            
+
             float proxi_val = clamp(*m_cap_sense_proxi_multiplier * s->proximity_values()[12 - i] / 100.f,
                                     0.f, 1.f);
-            
+
             vec2 pos = offset - sz / 2.f,
             sz_frac = s->is_touched(i) ? vec2(sz) : sz * vec2(1.f, proxi_val);
-            
-            
+
+
             gl::draw_quad(gl::COLOR_ORANGE, sz, pos, false);
             gl::draw_quad(color, sz_frac, pos + vec2(0.f, sz.y - sz_frac.y));
-            
+
             if(i == 12)
             {
                 gl::draw_text_2D(to_string(int(std::round(proxi_val * 100.f))) + "%", fonts()[FONT_MEDIUM],
@@ -176,7 +174,7 @@ void CapSenseMonitor::tearDown()
 void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
-    
+
     if(theProperty == m_img_url)
     {
         if(!m_img_url->value().empty())
@@ -239,13 +237,13 @@ void CapSenseMonitor::send_udp_broadcast()
 {
     string str;
     int i = 0;
-    
+
     for(auto &s : m_sensors)
     {
         float vals[3];
         for(int j = 0; j < 3; ++j)
         { vals[j] = clamp(s->proximity_values()[j] * *m_cap_sense_proxi_multiplier / 100.f, 0.f, 1.f); }
-        
+
         str += to_string(i++) + ": " + to_string(s->touch_state()) + " " +
         to_string(vals[0], 3) + " " + to_string(vals[1], 3) + " " + to_string(vals[2], 3) + "\n";
     }
@@ -269,10 +267,11 @@ void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
                                     sensor_index, std::placeholders::_1));
     cs->set_release_callback(std::bind(&CapSenseMonitor::sensor_release, this,
                                       sensor_index, std::placeholders::_1));
-    cs->set_timeout_reconnect(5.f);
-    
+
     if(cs->connect(the_uart))
     {
+        LOG_DEBUG << "connected sensor: " << the_uart->description();
+
         the_uart->set_disconnect_cb([this](UARTPtr the_uart)
         {
             m_scan_for_device_timer.expires_from_now(g_scan_for_device_interval);
@@ -287,19 +286,18 @@ void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
 void CapSenseMonitor::reset_sensors()
 {
     m_sensors.clear();
-    
+
 //    {
 //        auto blue_uart = bluetooth::Bluetooth_UART::create();
 //        blue_uart->set_connect_cb([this](UARTPtr p){ connect_sensor(p); });
 //        blue_uart->open();
-//        m_uart = blue_uart;
 //    }
-    
+
     sensors::scan_for_devices(background_queue().io_service(),
                               [this](const std::string &the_id, UARTPtr the_uart)
     {
-        LOG_DEBUG << "discovered device: <" << the_id << "> (" << the_uart->description() << ")";
-        
+        LOG_TRACE_1 << "discovered device: <" << the_id << "> (" << the_uart->description() << ")";
+
         if(the_id == CapacitiveSensor::id())
         {
             main_queue().submit([this, the_uart]{ connect_sensor(the_uart); });
