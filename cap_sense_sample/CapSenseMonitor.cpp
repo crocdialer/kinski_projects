@@ -6,6 +6,7 @@
 //
 //
 
+#include <mutex>
 #include "CapSenseMonitor.hpp"
 #include "core/Serial.hpp"
 #include "bluetooth/Bluetooth_UART.hpp"
