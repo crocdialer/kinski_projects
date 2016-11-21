@@ -267,6 +267,7 @@ void CapSenseMonitor::send_udp_broadcast()
 
 void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
 {
+    LOG_DEBUG << "connect_sensor: " << the_uart->description();
     std::unique_lock<std::mutex> lock(g_mutex);
     auto cs = CapacitiveSensor::create();
     auto sensor_index = m_sensors.size();
@@ -280,6 +281,7 @@ void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
     
     if(cs->connect(the_uart))
     {
+        LOG_DEBUG << "success";
         the_uart->set_disconnect_cb([this](UARTPtr the_uart)
         {
             m_scan_for_device_timer.expires_from_now(g_scan_for_device_interval);
