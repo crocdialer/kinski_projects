@@ -838,10 +838,13 @@ void MeditationRoom::connect_devices()
                     did_connect = true;
                 }
                 
-                the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+                if(did_connect)
                 {
-                    m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
-                });
+                    the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+                    {
+                        m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
+                    });
+                }
                 
                 auto is_complete = [this]() -> bool
                 {
