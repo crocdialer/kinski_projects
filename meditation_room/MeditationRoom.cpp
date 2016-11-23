@@ -677,7 +677,7 @@ void MeditationRoom::read_bio_sensor(UARTPtr the_uart, const std::vector<uint8_t
 
 void MeditationRoom::set_led_color(const gl::Color &the_color)
 {
-    if(m_led_device->is_open())
+    if(m_led_device && m_led_device->is_open())
     {
         char buf[32];
         int num_bytes = sprintf(buf, "%d %d %d %d\n", (int)std::round(the_color.r * 255),
@@ -707,8 +707,8 @@ void MeditationRoom::draw_status_info()
     
     bool motion_sensor_found = m_motion_sensor->is_initialized();
     bool cap_sensor_found = m_cap_sense->is_initialized();
-    bool bio_sensor_found = m_bio_sense->is_open();
-    bool led_device_found = m_led_device->is_open();
+    bool bio_sensor_found = m_bio_sense && m_bio_sense->is_open();
+    bool led_device_found = m_led_device && m_led_device->is_open();
     bool dmx_device_found = m_dmx.is_initialized();
     
     string ms_string = motion_sensor_found ? to_string(m_motion_sensor->distance() / 1000, 1) : "not found";
