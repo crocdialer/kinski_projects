@@ -760,6 +760,10 @@ void MeditationRoom::create_animations()
     
     animations()[PROJECTION_FADE_OUT] = animation::create(&m_brightness, m_brightness, 0.f,
                                                           *m_duration_fade);
+    animations()[PROJECTION_FADE_OUT]->set_finish_callback([this]()
+    {
+        textures()[TEXTURE_OUTPUT].reset();
+    });
     
     animations()[SPOT_01_FADE_IN] = animation::create(m_spot_color_01, m_spot_color_01->value(),
                                                       gl::COLOR_WHITE, *m_duration_fade);
