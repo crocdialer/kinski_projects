@@ -822,13 +822,13 @@ void MeditationRoom::connect_devices()
                     });
                     did_connect = true;
                 }
-                else if(the_id == g_led_device_id && !m_led_device->is_open())
+                else if(the_id == g_led_device_id && !(m_led_device && m_led_device->is_open()))
                 {
                     m_led_device = the_uart;
                     m_led_device->write("0\n");
                     did_connect = true;
                 }
-                else if(the_id == g_bio_device_id && !m_bio_sense->is_open())
+                else if(the_id == g_bio_device_id && !(m_bio_sense && m_bio_sense->is_open()))
                 {
                     m_bio_sense = the_uart;
                     m_bio_sense->set_receive_cb(std::bind(&MeditationRoom::read_bio_sensor,
