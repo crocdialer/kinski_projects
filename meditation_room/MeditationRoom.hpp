@@ -42,11 +42,10 @@ namespace kinski
         
         State m_current_state = State::IDLE;
         Timer m_timer_idle, m_timer_audio_start, m_timer_motion_reset, m_timer_movie_pause,
-            m_timer_meditation_cancel, m_timer_sensor_update, m_timer_cap_trigger;
+            m_timer_meditation_cancel, m_timer_scan_for_device, m_timer_cap_trigger;
         
-        float m_last_sensor_reading = 0.f, m_sensor_timeout = 5.f;
         CircularBuffer<float> m_bio_acceleration, m_bio_elongation;
-        std::vector<uint8_t> m_serial_accumulator, m_serial_read_buf;
+        std::vector<uint8_t> m_serial_accumulator;
         
         double m_sensor_read_timestamp = getApplicationTime();
         
@@ -70,19 +69,11 @@ namespace kinski
         
         Property_<gl::vec2>::Ptr
         m_output_res = Property_<gl::vec2>::create("output resolution", gl::vec2(1280, 720));
-        Property_<uint32_t>::Ptr
-        m_output_crop = Property_<uint32_t>::create("output crop", 0);
         
         Property_<string>::Ptr
-        m_asset_dir = Property_<string>::create("asset base directory"),
-        m_cap_sense_dev_name = Property_<string>::create("touch sensor device"),
-        m_led_dev_name = Property_<string>::create("led device"),
-        m_motion_sense_dev_name = Property_<string>::create("motion sensor device"),
-        m_bio_sense_dev_name = Property_<string>::create("bio sensor device");
+        m_asset_dir = Property_<string>::create("asset base directory");
         
-        SerialPtr
-        m_bio_sense = Serial::create(background_queue().io_service()),
-        m_led_device = Serial::create(background_queue().io_service());
+        UARTPtr m_bio_sense, m_led_device;
         bool m_led_needs_refresh = true;
         
         DistanceSensorPtr m_motion_sensor = DistanceSensor::create();
@@ -118,11 +109,13 @@ namespace kinski
         bool m_assets_found = false;
         
         CapacitiveSensorPtr m_cap_sense = CapacitiveSensor::create();
+        void sensor_touch(int the_pad_index);
+        void sensor_release(int the_pad_index);
         bool m_cap_sense_activated = false;
         
         bool change_state(State the_the_state, bool force_change = false);
         
-        void read_bio_sensor(float time_delta);
+        void read_bio_sensor(UARTPtr the_uart, const std::vector<uint8_t> &data);
         
         void update_bio_visuals(float accel, float elong);
         
@@ -137,6 +130,8 @@ namespace kinski
         bool load_assets();
         
         void create_animations();
+        
+        void connect_devices();
         
     public:
         MeditationRoom(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};

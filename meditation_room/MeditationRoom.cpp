@@ -9,7 +9,6 @@
 #include "gl/ShaderLibrary.h"
 #include "MeditationRoom.hpp"
 
-#define SENSOR_UPDATE_FREQUENCY 50.0
 #define SERIAL_END_CODE '\n'
 
 using namespace std;
@@ -18,18 +17,20 @@ using namespace glm;
 
 /////////////////////////////////////////////////////////////////
 
+namespace
+{
+    const double g_scan_for_device_interval = 3.0;
+    const std::string g_led_device_id = "LED_CONTROL";
+    const std::string g_bio_device_id = "BIO_FEEDBACK";
+}
+
 void MeditationRoom::setup()
 {
     ViewerApp::setup();
     
     fonts()[1].load(fonts()[0].path(), 64);
     register_property(m_asset_dir);
-    register_property(m_cap_sense_dev_name);
-    register_property(m_motion_sense_dev_name);
-    register_property(m_bio_sense_dev_name);
-    register_property(m_led_dev_name);
     register_property(m_output_res);
-    register_property(m_output_crop);
     register_property(m_circle_radius);
     register_property(m_shift_angle);
     register_property(m_shift_amount);
@@ -58,19 +59,6 @@ void MeditationRoom::setup()
     // create 2 empty fbos
     m_fbos.resize(2);
     set_fbo_state();
-    
-    // buffer incoming bytes from serial connection (used for bio-feedback)
-    m_serial_read_buf.resize(1 << 16);
-    
-    m_motion_sensor->set_distance_callback([this](int v)
-    {
-        if(v > 0)
-        {
-            m_motion_detected = true;
-            m_timer_motion_reset.expires_from_now(5.f);
-            m_timer_idle.expires_from_now(*m_timeout_idle);
-        }
-    });
     
     gl::Shader rgb_shader;
     
@@ -113,49 +101,14 @@ void MeditationRoom::setup()
     m_timer_movie_pause = Timer(main_queue().io_service(), fade_out_func);
     m_timer_meditation_cancel = Timer(main_queue().io_service(), fade_out_func);
     
-    m_timer_sensor_update = Timer(background_queue().io_service(), [this]()
-    {
-        double now = getApplicationTime();
-        double time_delta = now - m_sensor_read_timestamp;
-        m_sensor_read_timestamp = now;
-        
-        // update sensor status
-//        m_motion_sensor->update(time_delta);
-//        m_cap_sense->update(time_delta);
-        
-        read_bio_sensor(time_delta);
-        
-        if(m_cap_sense->is_touched())
-        {
-            if(m_timer_cap_trigger.has_expired())
-            {
-                m_timer_cap_trigger.expires_from_now(.4);
-            }
-        }
-        else{ m_timer_cap_trigger.cancel(); }
-        
-        if(m_led_needs_refresh)
-        {
-            set_led_color(*m_led_color);
-            m_led_needs_refresh = false;
-        }
-        
-        if(m_dmx_needs_refresh)
-        {
-            m_dmx_needs_refresh = false;
-            
-            m_dmx[1] = clamp<int>(m_spot_color_01->value().r * 255, 0, 255);
-            m_dmx[2] = clamp<int>(m_spot_color_02->value().r * 255, 0, 255);
-            m_dmx.update();
-        }
-    });
-    m_timer_sensor_update.set_periodic();
-    m_timer_sensor_update.expires_from_now(1.0 / SENSOR_UPDATE_FREQUENCY);
-    
     m_timer_cap_trigger = Timer(main_queue().io_service(), [this]()
     {
         m_cap_sense_activated = true;
     });
+    
+    m_timer_scan_for_device = Timer(main_queue().io_service(), [this](){ connect_devices(); });
+    m_timer_scan_for_device.set_periodic();
+    m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
     
     // web interface
     remote_control().set_components({shared_from_this(), m_warp_component});
@@ -238,6 +191,21 @@ void MeditationRoom::update(float timeDelta)
             break;
     }
     
+    if(m_led_needs_refresh)
+    {
+        set_led_color(*m_led_color);
+        m_led_needs_refresh = false;
+    }
+    
+    if(m_dmx_needs_refresh)
+    {
+        m_dmx_needs_refresh = false;
+        
+        m_dmx[1] = clamp<int>(m_spot_color_01->value().r * 255, 0, 255);
+        m_dmx[2] = clamp<int>(m_spot_color_02->value().r * 255, 0, 255);
+        m_dmx.update();
+    }
+    
     // ensure correct fbo status here
     set_fbo_state();
     
@@ -290,13 +258,6 @@ void MeditationRoom::draw()
             gl::draw_quad(m_mat_rgb_shift, gl::window_dimension());
         });
     }
-    
-    float scale_factor = (float)textures()[TEXTURE_OUTPUT].width() / gl::window_dimension().x;
-    
-    Area_<uint32_t> roi(scale_factor * *m_output_crop, 0,
-                        textures()[TEXTURE_OUTPUT].width() - 1 - scale_factor * *m_output_crop,
-                        textures()[TEXTURE_OUTPUT].height() - 1);
-    textures()[TEXTURE_OUTPUT].set_roi(roi);
     
     // draw final result
     m_warp_component->render_output(0, textures()[TEXTURE_OUTPUT], m_brightness);
@@ -417,47 +378,47 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
         m_assets_found = load_assets();
         if(!m_assets_found){ LOG_ERROR << "could not load assets"; }
     }
-    else if(theProperty == m_cap_sense_dev_name)
-    {
-        auto serial = Serial::create(background_queue().io_service());
-        serial->open(*m_cap_sense_dev_name);
-        m_cap_sense->connect(serial);
-        m_cap_sense->set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
-        m_cap_sense->set_charge_current(63);
-    }
+//    else if(theProperty == m_cap_sense_dev_name)
+//    {
+//        auto serial = Serial::create(background_queue().io_service());
+//        serial->open(*m_cap_sense_dev_name);
+//        m_cap_sense->connect(serial);
+//        m_cap_sense->set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
+//        m_cap_sense->set_charge_current(63);
+//    }
+//    else if(theProperty == m_motion_sense_dev_name)
+//    {
+//        auto serial = Serial::create(background_queue().io_service());
+//        
+//        if(serial->open(*m_motion_sense_dev_name)){ m_motion_sensor->connect(serial); }
+//    }
+//    else if(theProperty == m_bio_sense_dev_name)
+//    {
+//        auto serial = Serial::create(background_queue().io_service());
+//        
+//        if(!m_bio_sense_dev_name->value().empty())
+//        {
+//            serial->open(*m_bio_sense_dev_name, 57600);
+//        }
+//        m_bio_sense = serial;
+//    }
+//    else if(theProperty == m_led_dev_name)
+//    {
+//        auto serial = Serial::create(background_queue().io_service());
+//        
+//        if(!m_led_dev_name->value().empty())
+//        {
+//            if(serial->open(*m_led_dev_name, 57600))
+//            {
+//                serial->write("0\n");
+//            }
+//        }
+//        m_led_device = serial;
+//    }
     else if(theProperty == m_cap_thresh)
     {
         m_cap_sense->set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
         m_cap_sense->set_charge_current(63);
-    }
-    else if(theProperty == m_motion_sense_dev_name)
-    {
-        auto serial = Serial::create(background_queue().io_service());
-        
-        if(serial->open(*m_motion_sense_dev_name)){ m_motion_sensor->connect(serial); }
-    }
-    else if(theProperty == m_bio_sense_dev_name)
-    {
-        auto serial = Serial::create(background_queue().io_service());
-        
-        if(!m_bio_sense_dev_name->value().empty())
-        {
-            serial->open(*m_bio_sense_dev_name, 57600);
-        }
-        m_bio_sense = serial;
-    }
-    else if(theProperty == m_led_dev_name)
-    {
-        auto serial = Serial::create(background_queue().io_service());
-        
-        if(!m_led_dev_name->value().empty())
-        {
-            if(serial->open(*m_led_dev_name, 57600))
-            {
-                serial->write("255\n");
-            }
-        }
-        m_led_device = serial;
     }
     else if(theProperty == m_led_color){ m_led_needs_refresh = true; }
     else if(theProperty == m_volume)
@@ -659,58 +620,56 @@ void MeditationRoom::set_fbo_state()
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::read_bio_sensor(float time_delta)
+void MeditationRoom::sensor_touch(int the_pad_index)
 {
-    m_last_sensor_reading += time_delta;
+    if(m_timer_cap_trigger.has_expired())
+    {
+        m_timer_cap_trigger.expires_from_now(.4);
+    }
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MeditationRoom::sensor_release(int the_pad_index)
+{
+    m_timer_cap_trigger.cancel();
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MeditationRoom::read_bio_sensor(UARTPtr the_uart, const std::vector<uint8_t> &data)
+{
     std::string reading_str;
     
-    // parse sensor input
-    while(m_bio_sense->available())
+    for(auto byte : data)
     {
-        size_t bytes_to_read = std::min(m_bio_sense->available(), m_serial_read_buf.size());
-        uint8_t *buf_ptr = &m_serial_read_buf[0];
-        
-        m_bio_sense->read_bytes(&m_serial_read_buf[0], bytes_to_read);
-        if(bytes_to_read){ m_last_sensor_reading = 0.f; }
-        bool reading_complete = false;
-        
-        for(uint32_t i = 0; i < bytes_to_read; i++)
+        switch(byte)
         {
-            const uint8_t &byte = *buf_ptr++;
-            
-            switch(byte)
-            {
-                case SERIAL_END_CODE:
-                    reading_str = string(m_serial_accumulator.begin(), m_serial_accumulator.end());
-                    m_serial_accumulator.clear();
-                    reading_complete = true;
-                    break;
-                    
-                default:
-                    m_serial_accumulator.push_back(byte);
-                    break;
-            }
+            case SERIAL_END_CODE:
+                reading_str = string(m_serial_accumulator.begin(), m_serial_accumulator.end());
+                m_serial_accumulator.clear();
+                break;
+                
+            default:
+                m_serial_accumulator.push_back(byte);
+                break;
         }
+    }
+    
+    if(!reading_str.empty())
+    {
+        auto splits = split(reading_str, ' ');
         
-        if(reading_complete)
+        if(splits.size() == 2)
         {
-            auto splits = split(reading_str, ' ');
-            
-            if(splits.size() == 2)
+            main_queue().submit([this, splits]()
             {
                 m_bio_acceleration.push_back(string_to<float>(splits[0]));
                 m_bio_elongation.push_back(string_to<float>(splits[1]));
                 *m_bio_score = median<float>(m_bio_acceleration) + median<float>(m_bio_elongation);
                 LOG_TRACE_1 << m_bio_score->value() << " - " <<  median<float>(m_bio_elongation);
-            }
+            });
         }
-    }
-
-    // reconnect
-    if((m_last_sensor_reading > m_sensor_timeout) && (m_sensor_timeout > 0.f))
-    {
-        m_last_sensor_reading = 0.f;
-        m_bio_sense_dev_name->notify_observers();
     }
 }
 
@@ -845,4 +804,81 @@ void MeditationRoom::create_animations()
                                                       gl::COLOR_WHITE, *m_duration_fade);
     animations()[SPOT_02_FADE_OUT] = animation::create(m_spot_color_02, m_spot_color_02->value(),
                                                       gl::COLOR_BLACK, *m_duration_fade);
+}
+
+void MeditationRoom::connect_devices()
+{
+    sensors::scan_for_devices(background_queue().io_service(),
+                              [this](const std::string &the_id, UARTPtr the_uart)
+    {
+        std::vector<std::string> device_ids =
+        {
+            CapacitiveSensor::id(),
+            DistanceSensor::id(),
+            g_led_device_id,
+            g_bio_device_id
+        };
+        
+        auto is_complete = [this]() -> bool
+        {
+            return m_cap_sense->is_initialized() && m_motion_sensor->is_initialized() &&
+                   m_led_device && m_led_device->is_open();
+//                   && m_bio_sense && m_bio_sense->is_open() ;
+        };
+        
+        if(contains(device_ids, the_id))
+        {
+            LOG_TRACE_1 << "discovered device: <" << the_id << "> (" << the_uart->description() << ")";
+            main_queue().submit([this, the_id, the_uart]
+            {
+                if(the_id == CapacitiveSensor::id())
+                {
+                    m_cap_sense->connect(the_uart);
+                    m_cap_sense->set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
+                    m_cap_sense->set_charge_current(63);
+                    
+                    m_cap_sense->set_touch_callback(std::bind(&MeditationRoom::sensor_touch,
+                                                              this, std::placeholders::_1));
+                    m_cap_sense->set_release_callback(std::bind(&MeditationRoom::sensor_release,
+                                                                this, std::placeholders::_1));
+                }
+                else if(the_id == DistanceSensor::id())
+                {
+                    m_motion_sensor->connect(the_uart);
+                    m_motion_sensor->set_distance_callback([this](int v)
+                    {
+                        if(v > 0)
+                        {
+                            m_motion_detected = true;
+                            m_timer_motion_reset.expires_from_now(5.f);
+                            m_timer_idle.expires_from_now(*m_timeout_idle);
+                        }
+                    });
+                }
+                else if(the_id == g_led_device_id)
+                {
+                    m_led_device = the_uart;
+                    m_led_device->write("0\n");
+                }
+                else if(the_id == g_bio_device_id)
+                {
+                    m_bio_sense = the_uart;
+                    m_bio_sense->set_receive_cb(std::bind(&MeditationRoom::read_bio_sensor,
+                                                          this,
+                                                          std::placeholders::_1,
+                                                          std::placeholders::_2));
+                }
+            });
+            
+            the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+            {
+                if(m_timer_scan_for_device.has_expired())
+                {
+                    m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
+                }
+            });
+            
+            if(is_complete()){ m_timer_scan_for_device.cancel(); }
+        }
+    });
 }
