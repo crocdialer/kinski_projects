@@ -71,7 +71,7 @@ namespace kinski
         m_output_res = Property_<gl::vec2>::create("output resolution", gl::vec2(1280, 720));
         
         Property_<string>::Ptr
-        m_asset_dir = Property_<string>::create("asset base directory");
+        m_asset_dir = Property_<string>::create("asset base directory", "mkb_assets");
         
         UARTPtr m_bio_sense, m_led_device;
         bool m_led_needs_refresh = true;

@@ -378,43 +378,6 @@ void MeditationRoom::update_property(const Property::ConstPtr &theProperty)
         m_assets_found = load_assets();
         if(!m_assets_found){ LOG_ERROR << "could not load assets"; }
     }
-//    else if(theProperty == m_cap_sense_dev_name)
-//    {
-//        auto serial = Serial::create(background_queue().io_service());
-//        serial->open(*m_cap_sense_dev_name);
-//        m_cap_sense->connect(serial);
-//        m_cap_sense->set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
-//        m_cap_sense->set_charge_current(63);
-//    }
-//    else if(theProperty == m_motion_sense_dev_name)
-//    {
-//        auto serial = Serial::create(background_queue().io_service());
-//        
-//        if(serial->open(*m_motion_sense_dev_name)){ m_motion_sensor->connect(serial); }
-//    }
-//    else if(theProperty == m_bio_sense_dev_name)
-//    {
-//        auto serial = Serial::create(background_queue().io_service());
-//        
-//        if(!m_bio_sense_dev_name->value().empty())
-//        {
-//            serial->open(*m_bio_sense_dev_name, 57600);
-//        }
-//        m_bio_sense = serial;
-//    }
-//    else if(theProperty == m_led_dev_name)
-//    {
-//        auto serial = Serial::create(background_queue().io_service());
-//        
-//        if(!m_led_dev_name->value().empty())
-//        {
-//            if(serial->open(*m_led_dev_name, 57600))
-//            {
-//                serial->write("0\n");
-//            }
-//        }
-//        m_led_device = serial;
-//    }
     else if(theProperty == m_cap_thresh)
     {
         m_cap_sense->set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
