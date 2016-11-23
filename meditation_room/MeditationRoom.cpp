@@ -786,7 +786,8 @@ void MeditationRoom::connect_devices()
         {
             return m_cap_sense->is_initialized() && m_motion_sensor->is_initialized() &&
                    m_led_device && m_led_device->is_open();
-//                   && m_bio_sense && m_bio_sense->is_open() ;
+//                   && m_dmx.is_initialized;
+//                   && m_bio_sense && m_bio_sense->is_open()
         };
         
         if(contains(device_ids, the_id))
@@ -841,7 +842,11 @@ void MeditationRoom::connect_devices()
                 }
             });
             
-            if(is_complete()){ m_timer_scan_for_device.cancel(); }
+            if(is_complete())
+            {
+                LOG_DEBUG << "sensor setup complete";
+                m_timer_scan_for_device.cancel();
+            }
         }
     });
 }
