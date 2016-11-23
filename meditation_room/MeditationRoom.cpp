@@ -208,9 +208,6 @@ void MeditationRoom::update(float timeDelta)
     
     // ensure correct fbo status here
     set_fbo_state();
-    
-    // reset cap sense indicator
-    m_cap_sense_activated = false;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -595,7 +592,12 @@ void MeditationRoom::sensor_touch(int the_pad_index)
 
 void MeditationRoom::sensor_release(int the_pad_index)
 {
-    m_timer_cap_trigger.cancel();
+    // reset cap sense indicator
+    if(!m_cap_sense->is_touched())
+    {
+        m_timer_cap_trigger.cancel();
+        m_cap_sense_activated = false;
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -793,6 +795,7 @@ void MeditationRoom::connect_devices()
         if(contains(device_ids, the_id))
         {
             LOG_TRACE_1 << "discovered device: <" << the_id << "> (" << the_uart->description() << ")";
+            
             main_queue().submit([this, the_id, the_uart]
             {
                 if(the_id == CapacitiveSensor::id())
@@ -834,13 +837,11 @@ void MeditationRoom::connect_devices()
                 }
             });
             
-            the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+            auto disconnect_cb = [this](UARTPtr the_uart)
             {
-                if(m_timer_scan_for_device.has_expired())
-                {
-                    m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
-                }
-            });
+                m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
+            };
+            the_uart->set_disconnect_cb(disconnect_cb);
             
             if(is_complete())
             {
