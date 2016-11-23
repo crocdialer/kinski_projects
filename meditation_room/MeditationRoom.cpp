@@ -788,21 +788,15 @@ void MeditationRoom::connect_devices()
             g_bio_device_id
         };
         
-        auto is_complete = [this]() -> bool
-        {
-            return m_cap_sense->is_initialized() && m_motion_sensor->is_initialized() &&
-                   m_led_device && m_led_device->is_open();
-//                   && m_dmx.is_initialized;
-//                   && m_bio_sense && m_bio_sense->is_open()
-        };
-        
         if(contains(device_ids, the_id))
         {
             LOG_TRACE_1 << "discovered device: <" << the_id << "> (" << the_uart->description() << ")";
             
             main_queue().submit([this, the_id, the_uart]
             {
-                if(the_id == CapacitiveSensor::id())
+                bool did_connect = false;
+                
+                if(the_id == CapacitiveSensor::id() && !m_cap_sense->is_initialized())
                 {
                     m_cap_sense->connect(the_uart);
                     m_cap_sense->set_thresholds(*m_cap_thresh, *m_cap_thresh * 0.9);
@@ -812,8 +806,9 @@ void MeditationRoom::connect_devices()
                                                               this, std::placeholders::_1));
                     m_cap_sense->set_release_callback(std::bind(&MeditationRoom::sensor_release,
                                                                 this, std::placeholders::_1));
+                    did_connect = true;
                 }
-                else if(the_id == DistanceSensor::id())
+                else if(the_id == DistanceSensor::id() && !m_motion_sensor->is_initialized())
                 {
                     m_motion_sensor->connect(the_uart);
                     m_motion_sensor->set_distance_callback([this](int v)
@@ -825,33 +820,43 @@ void MeditationRoom::connect_devices()
                             m_timer_idle.expires_from_now(*m_timeout_idle);
                         }
                     });
+                    did_connect = true;
                 }
-                else if(the_id == g_led_device_id)
+                else if(the_id == g_led_device_id && !m_led_device->is_open())
                 {
                     m_led_device = the_uart;
                     m_led_device->write("0\n");
+                    did_connect = true;
                 }
-                else if(the_id == g_bio_device_id)
+                else if(the_id == g_bio_device_id && !m_bio_sense->is_open())
                 {
                     m_bio_sense = the_uart;
                     m_bio_sense->set_receive_cb(std::bind(&MeditationRoom::read_bio_sensor,
                                                           this,
                                                           std::placeholders::_1,
                                                           std::placeholders::_2));
+                    did_connect = true;
+                }
+                
+                the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+                {
+                    m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
+                });
+                
+                auto is_complete = [this]() -> bool
+                {
+                    return m_cap_sense->is_initialized() && m_motion_sensor->is_initialized() &&
+                    m_led_device && m_led_device->is_open();
+                    //                   && m_dmx.is_initialized;
+                    //                   && m_bio_sense && m_bio_sense->is_open()
+                };
+                
+                if(is_complete())
+                {
+                    LOG_DEBUG << "sensor setup complete";
+                    m_timer_scan_for_device.cancel();
                 }
             });
-            
-            auto disconnect_cb = [this](UARTPtr the_uart)
-            {
-                m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
-            };
-            the_uart->set_disconnect_cb(disconnect_cb);
-            
-            if(is_complete())
-            {
-                LOG_DEBUG << "sensor setup complete";
-                m_timer_scan_for_device.cancel();
-            }
         }
     });
 }
