@@ -535,6 +535,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                             change_state(State::MANDALA_ILLUMINATED);
                         }, 10.0);
                     });
+                    m_movie->play();
+                    m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
                     
                     // jump back a few seconds, in case movie was paused
                     if(m_movie->current_time() > *m_duration_movie_rewind &&
@@ -542,8 +544,6 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     {
                         m_movie->seek_to_time(m_movie->current_time() - *m_duration_movie_rewind);
                     }
-                    m_movie->play();
-                    m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
                 }
                 break;
                 
