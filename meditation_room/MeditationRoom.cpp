@@ -544,8 +544,11 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                         
                         main_queue().submit_with_delay([this]()
                         {
-                            m_movie->restart();
                             change_state(State::MANDALA_ILLUMINATED);
+                            animations()[PROJECTION_FADE_OUT]->set_finish_callback([this]()
+                            {
+                                m_movie->seek_to_time(0);
+                            });
                         }, 10.0);
                     });
                     m_movie->play();
