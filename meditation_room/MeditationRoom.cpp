@@ -519,7 +519,10 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[LIGHT_FADE_IN]->start();
                 animations()[LIGHT_FADE_OUT]->stop();
                 animations()[PROJECTION_FADE_OUT]->stop();
-                animations()[PROJECTION_FADE_IN]->start();
+                main_queue().submit_with_delay([this]()
+                {
+                    animations()[PROJECTION_FADE_IN]->start();
+                }, .4);
                 animations()[SPOT_01_FADE_IN]->stop();
                 animations()[SPOT_01_FADE_OUT]->start();
                 animations()[SPOT_02_FADE_IN]->stop();
