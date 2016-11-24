@@ -56,8 +56,6 @@ void MeditationRoom::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     
-    // create 2 empty fbos
-    m_fbos.resize(2);
     set_fbo_state();
     
     gl::Shader rgb_shader;
@@ -261,8 +259,15 @@ void MeditationRoom::draw()
     
     if(Logger::get()->severity() >= Severity::DEBUG)
     {
+        textures()[TEXTURE_DEBUG] = gl::render_to_texture(m_fbos[2], [this]()
+        {
+            gl::clear_color(gl::Color(0));
+            gl::clear();
+            draw_status_info();
+        });
+        
         // draw status overlay
-        draw_status_info();
+        m_warp_component->render_output(1, textures()[TEXTURE_DEBUG]);
     }
     
     if(displayTweakBar())
@@ -564,6 +569,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
 
 void MeditationRoom::set_fbo_state()
 {
+    m_fbos.resize(3);
+    
     if(!m_fbos[0] || m_fbos[0].size() != m_output_res->value())
     {
         gl::Fbo::Format fmt;
@@ -575,6 +582,14 @@ void MeditationRoom::set_fbo_state()
         gl::Fbo::Format fmt;
 //        fmt.set_num_samples(8);
         m_fbos[1] = gl::Fbo(*m_output_res, fmt);
+    }
+    
+    gl::vec2 info_sz = gl::vec2(400, 300);
+    
+    if(!m_fbos[2] || m_fbos[2].size() != info_sz)
+    {
+        gl::Fbo::Format fmt;
+        m_fbos[2] = gl::Fbo(info_sz, fmt);
     }
 }
 
@@ -700,7 +715,7 @@ void MeditationRoom::draw_status_info()
     
     // bio feedback sensor
     offset += step;
-    gl::draw_text_2D("bio-feedback (accelo): " + bs_string, fonts()[0], bio_col, offset);
+    gl::draw_text_2D("bio-feedback (chestbelt): " + bs_string, fonts()[0], bio_col, offset);
     
     // dmx control
     offset += step;
@@ -794,8 +809,6 @@ void MeditationRoom::connect_devices()
             
             main_queue().submit([this, the_id, the_uart]
             {
-                bool did_connect = false;
-                
                 if(the_id == CapacitiveSensor::id() && !m_cap_sense->is_initialized())
                 {
                     m_cap_sense->connect(the_uart);
@@ -806,7 +819,12 @@ void MeditationRoom::connect_devices()
                                                               this, std::placeholders::_1));
                     m_cap_sense->set_release_callback(std::bind(&MeditationRoom::sensor_release,
                                                                 this, std::placeholders::_1));
-                    did_connect = true;
+                    the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+                    {
+                        m_cap_sense->connect(nullptr);
+                        m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
+                    });
+
                 }
                 else if(the_id == DistanceSensor::id() && !m_motion_sensor->is_initialized())
                 {
@@ -820,13 +838,21 @@ void MeditationRoom::connect_devices()
                             m_timer_idle.expires_from_now(*m_timeout_idle);
                         }
                     });
-                    did_connect = true;
+                    the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+                    {
+                        m_motion_sensor->connect(nullptr);
+                        m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
+                    });
                 }
                 else if(the_id == g_led_device_id && !(m_led_device && m_led_device->is_open()))
                 {
                     m_led_device = the_uart;
                     m_led_device->write("0\n");
-                    did_connect = true;
+                    the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+                    {
+                        m_led_device.reset();
+                        m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
+                    });
                 }
                 else if(the_id == g_bio_device_id && !(m_bio_sense && m_bio_sense->is_open()))
                 {
@@ -835,13 +861,9 @@ void MeditationRoom::connect_devices()
                                                           this,
                                                           std::placeholders::_1,
                                                           std::placeholders::_2));
-                    did_connect = true;
-                }
-                
-                if(did_connect)
-                {
                     the_uart->set_disconnect_cb([this](UARTPtr the_uart)
                     {
+                        m_bio_sense.reset();
                         m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
                     });
                 }

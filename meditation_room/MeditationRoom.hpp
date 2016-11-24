@@ -27,7 +27,7 @@ namespace kinski
         enum AnimationEnum{ AUDIO_FADE_IN = 0, AUDIO_FADE_OUT = 1, LIGHT_FADE_IN = 2,
             LIGHT_FADE_OUT = 3, PROJECTION_FADE_IN = 4, PROJECTION_FADE_OUT = 5,
             SPOT_01_FADE_IN = 6, SPOT_01_FADE_OUT = 7, SPOT_02_FADE_IN = 8, SPOT_02_FADE_OUT = 9};
-        enum TextureEnum{ TEXTURE_BLANK = 0, TEXTURE_OUTPUT = 1};
+        enum TextureEnum{ TEXTURE_BLANK = 0, TEXTURE_OUTPUT = 1, TEXTURE_DEBUG = 2};
         
         enum AudioEnum{ AUDIO_WELCOME = 0, AUDIO_CHANTING = 1, AUDIO_WIND = 2 };
         
