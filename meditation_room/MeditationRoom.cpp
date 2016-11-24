@@ -264,6 +264,7 @@ void MeditationRoom::draw()
             gl::clear_color(gl::Color(0));
             gl::clear();
             draw_status_info();
+            gl::clear_color(clear_color());
         });
         
         // draw status overlay
