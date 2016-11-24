@@ -522,7 +522,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 main_queue().submit_with_delay([this]()
                 {
                     animations()[PROJECTION_FADE_IN]->start();
-                }, .4);
+                }, (m_movie && m_movie->current_time() > 0.0) ? .4 : 0);
                 animations()[SPOT_01_FADE_IN]->stop();
                 animations()[SPOT_01_FADE_OUT]->start();
                 animations()[SPOT_02_FADE_IN]->stop();
@@ -539,6 +539,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                         
                         main_queue().submit_with_delay([this]()
                         {
+                            m_movie->restart();
                             change_state(State::MANDALA_ILLUMINATED);
                         }, 10.0);
                     });
