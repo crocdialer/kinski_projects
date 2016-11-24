@@ -51,10 +51,11 @@ namespace kinski
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),
-        m_timeout_movie_pause = Property_<float>::create("timeout movie pause", 5.f),
+        m_timeout_movie_pause = Property_<float>::create("timeout movie pause", 15.f),
         m_timeout_audio = Property_<float>::create("timeout for audio start", 10.f),
         m_timeout_meditation_cancel = Property_<float>::create("timeout for meditation cancel", 30.f),
-        m_duration_fade = Property_<float>::create("duration fade audio/video/light", 2.f);
+        m_duration_fade = Property_<float>::create("duration fade audio/video/light", 2.f),
+        m_duration_movie_rewind = Property_<float>::create("duration movie rewind", 3.f);
         
         Property_<float>::Ptr
         m_shift_angle = Property_<float>::create("shift angle", 0.f),

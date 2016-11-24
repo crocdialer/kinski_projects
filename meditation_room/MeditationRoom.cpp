@@ -41,6 +41,7 @@ void MeditationRoom::setup()
     register_property(m_timeout_movie_pause);
     register_property(m_timeout_meditation_cancel);
     register_property(m_duration_fade);
+    register_property(m_duration_movie_rewind);
     register_property(m_led_color);
     register_property(m_led_full_bright);
     register_property(m_spot_color_01);
@@ -533,9 +534,9 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     });
                     
                     // jump back a few seconds, in case movie was paused
-                    if(m_movie->current_time() > 3.0)
+                    if(m_movie->current_time() > *m_duration_movie_rewind)
                     {
-                        m_movie->seek_to_time(m_movie->current_time() - 3.0);
+                        m_movie->seek_to_time(m_movie->current_time() - *m_duration_movie_rewind);
                     }
                     m_movie->play();
                     m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
