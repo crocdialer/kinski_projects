@@ -477,7 +477,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     animations()[SPOT_02_FADE_OUT]->stop();
                     animations()[LIGHT_FADE_IN]->start(7.5f);
                     animations()[SPOT_01_FADE_IN]->start(14.5f);
-                    animations()[SPOT_02_FADE_IN]->start(24.f);
+//                    animations()[SPOT_02_FADE_IN]->start(24.f);
                 }
                 break;
                 
@@ -744,7 +744,7 @@ bool MeditationRoom::load_assets()
         m_audio_paths.assign(audio_files.begin(), audio_files.end());
         std::sort(m_audio_paths.begin(), m_audio_paths.end());
         
-    }else{ LOG_WARNING << "found " << audio_files.size() << "audio-files, expected 3"; ret = false; }
+    }else{ LOG_WARNING << "found " << audio_files.size() << " audio-files, expected 3"; ret = false; }
     
     auto video_files = fs::get_directory_entries(*m_asset_dir, fs::FileType::MOVIE, true);
     
