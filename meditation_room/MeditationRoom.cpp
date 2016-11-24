@@ -538,18 +538,15 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 
                 if(m_movie)
                 {
-                    m_movie->set_media_ended_callback([this](media::MovieControllerPtr)
+                    m_movie->set_media_ended_callback([this](media::MovieControllerPtr mc)
                     {
                         LOG_DEBUG << "movie ended";
                         m_timer_movie_pause.cancel();
+                        m_movie->seek_to_time(0);
                         
                         main_queue().submit_with_delay([this]()
                         {
                             change_state(State::MANDALA_ILLUMINATED);
-                            animations()[PROJECTION_FADE_OUT]->set_finish_callback([this]()
-                            {
-                                m_movie->seek_to_time(0);
-                            });
                         }, 10.0);
                     });
                     m_movie->play();
