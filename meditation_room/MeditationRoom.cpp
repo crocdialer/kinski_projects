@@ -306,7 +306,12 @@ void MeditationRoom::keyPress(const KeyEvent &e)
             case Key::_5:
                 next_state = e.getCode() - Key::_1;
                 break;
-                
+            case Key::_P:
+                if(m_current_state == State::DESC_MOVIE && m_movie)
+                {
+                    m_movie->is_playing() ? m_movie->pause() : m_movie->play();
+                }
+                break;
             default:
                 break;
         }
