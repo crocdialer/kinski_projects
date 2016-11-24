@@ -534,7 +534,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     });
                     
                     // jump back a few seconds, in case movie was paused
-                    if(m_movie->current_time() > *m_duration_movie_rewind)
+                    if(m_movie->current_time() > *m_duration_movie_rewind &&
+                       *m_duration_movie_rewind > 0.f)
                     {
                         m_movie->seek_to_time(m_movie->current_time() - *m_duration_movie_rewind);
                     }
