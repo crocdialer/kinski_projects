@@ -588,7 +588,7 @@ void MeditationRoom::set_fbo_state()
         m_fbos[1] = gl::Fbo(*m_output_res, fmt);
     }
     
-    gl::vec2 info_sz = gl::vec2(430, 300);
+    gl::vec2 info_sz = gl::vec2(440, 300);
     
     if(!m_fbos[2] || m_fbos[2].size() != info_sz)
     {
@@ -684,7 +684,7 @@ void MeditationRoom::draw_status_info()
     if((m_current_state == State::DESC_MOVIE) && m_movie)
     {
         state_str += " (" + to_string(m_movie->current_time(),1) + "/" +
-            to_string(m_movie->duration(), 1) + ") (" +
+            to_string(m_movie->duration(), 1) + ")(" +
             to_string(m_timer_movie_pause.expires_from_now(), 1) + ")";
     }
     else if((m_current_state == State::WELCOME) && m_audio)
