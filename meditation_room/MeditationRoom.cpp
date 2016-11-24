@@ -530,7 +530,10 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 {
                     m_movie->set_media_ended_callback([this](media::MovieControllerPtr)
                     {
-                        change_state(State::MANDALA_ILLUMINATED);
+                        main_queue().submit_with_delay([this]()
+                        {
+                            change_state(State::MANDALA_ILLUMINATED);
+                        }, 10.0);
                     });
                     
                     // jump back a few seconds, in case movie was paused
