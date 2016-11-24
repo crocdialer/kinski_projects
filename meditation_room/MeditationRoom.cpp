@@ -454,7 +454,11 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[SPOT_01_FADE_OUT]->start();
                 animations()[SPOT_02_FADE_IN]->stop();
                 animations()[SPOT_02_FADE_OUT]->start();
-                if(m_movie){ m_movie->seek_to_time(0); }
+                
+                animations()[AUDIO_FADE_OUT]->set_finish_callback([this]()
+                {
+                    if(m_movie){ m_movie->seek_to_time(0); }
+                });
                 break;
             
             case State::WELCOME:
@@ -588,7 +592,7 @@ void MeditationRoom::set_fbo_state()
         m_fbos[1] = gl::Fbo(*m_output_res, fmt);
     }
     
-    gl::vec2 info_sz = gl::vec2(440, 300);
+    gl::vec2 info_sz = gl::vec2(460, 300);
     
     if(!m_fbos[2] || m_fbos[2].size() != info_sz)
     {
