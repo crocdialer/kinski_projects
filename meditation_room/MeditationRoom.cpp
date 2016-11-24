@@ -542,7 +542,6 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     {
                         LOG_DEBUG << "movie ended";
                         m_timer_movie_pause.cancel();
-                        m_movie->seek_to_time(0);
                         
                         main_queue().submit_with_delay([this]()
                         {
