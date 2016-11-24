@@ -503,6 +503,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 animations()[SPOT_01_FADE_IN]->start();
                 animations()[SPOT_02_FADE_OUT]->stop();
                 animations()[SPOT_02_FADE_IN]->start();
+                animations()[PROJECTION_FADE_IN]->stop();
+                animations()[PROJECTION_FADE_OUT]->start();
                 if(m_movie){ m_movie->pause(); }
                 else{ *m_volume = 0.f; }
                 m_timer_idle.expires_from_now(*m_timeout_idle);
@@ -530,6 +532,8 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 {
                     m_movie->set_media_ended_callback([this](media::MovieControllerPtr)
                     {
+                        m_timer_movie_pause.cancel();
+                        
                         main_queue().submit_with_delay([this]()
                         {
                             change_state(State::MANDALA_ILLUMINATED);
