@@ -542,6 +542,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     m_movie->set_media_ended_callback([this](media::MovieControllerPtr mc)
                     {
                         LOG_DEBUG << "movie ended";
+                        m_timer_movie_pause.cancel();
                         m_movie->pause();
                         
                         main_queue().submit_with_delay([this]()
