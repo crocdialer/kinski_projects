@@ -22,6 +22,7 @@ namespace
     const double g_scan_for_device_interval = 3.0;
     const std::string g_led_device_id = "LED_CONTROL";
     const std::string g_bio_device_id = "BIO_FEEDBACK";
+    std::function<void()> g_fade_out_func;
 }
 
 void MeditationRoom::setup()
@@ -84,7 +85,7 @@ void MeditationRoom::setup()
     m_timer_motion_reset = Timer(main_queue().io_service(), [this](){ m_motion_detected = false; });
     
     // fade movie in/out
-    auto fade_out_func = [this]()
+    g_fade_out_func = [this]()
     {
         animations()[PROJECTION_FADE_IN]->stop();
         
@@ -97,8 +98,8 @@ void MeditationRoom::setup()
             change_state(State::MANDALA_ILLUMINATED);
         });
     };
-    m_timer_movie_pause = Timer(main_queue().io_service(), fade_out_func);
-    m_timer_meditation_cancel = Timer(main_queue().io_service(), fade_out_func);
+    m_timer_movie_pause = Timer(main_queue().io_service(), g_fade_out_func);
+    m_timer_meditation_cancel = Timer(main_queue().io_service(), g_fade_out_func);
     
     m_timer_cap_trigger = Timer(main_queue().io_service(), [this]()
     {
@@ -541,8 +542,12 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                     m_movie->set_media_ended_callback([this](media::MovieControllerPtr mc)
                     {
                         LOG_DEBUG << "movie ended";
-                        m_timer_movie_pause.expires_from_now(5.0);
-                        m_movie->seek_to_time(0);
+                        m_movie->pause();
+                        
+                        main_queue().submit_with_delay([this]()
+                        {
+                            g_fade_out_func();
+                        }, 5.0);
                     });
                     m_movie->play();
                     m_timer_movie_pause.expires_from_now(*m_timeout_movie_pause);
@@ -779,8 +784,8 @@ bool MeditationRoom::load_assets()
     if(!video_files.empty())
     {
         // description movie
-        m_movie->load(video_files.front());
-        m_movie->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); m->pause(); });
+        m_movie->set_on_load_callback([](media::MediaControllerPtr m){ m->set_volume(0); });
+        m_movie->load(video_files.front(), false, true);
     }
     else{ ret = false; }
     return ret;
