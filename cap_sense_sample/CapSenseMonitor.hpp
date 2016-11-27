@@ -13,6 +13,7 @@
 // modules
 #include "curl/Downloader.h"
 #include "sensors/sensors.h"
+#include "bluetooth/Bluetooth_UART.hpp"
 
 namespace kinski
 {
@@ -22,9 +23,11 @@ namespace kinski
 
         enum State{STATE_IDLE = 0, STATE_IMAGE = 1};
         enum FontEnum{FONT_SMALL = 0, FONT_MEDIUM = 1, FONT_LARGE = 2};
-
+        
         std::vector<CapacitiveSensorPtr> m_sensors;
-
+        
+        bluetooth::Bluetooth_UARTPtr m_bluetooth = bluetooth::Bluetooth_UART::create();
+        
         //! used for http-requests
         net::Downloader m_downloader;
 

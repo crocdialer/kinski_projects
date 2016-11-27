@@ -8,7 +8,6 @@
 
 #include "CapSenseMonitor.hpp"
 #include "core/Serial.hpp"
-#include "bluetooth/Bluetooth_UART.hpp"
 
 using namespace std;
 using namespace kinski;
@@ -49,6 +48,9 @@ void CapSenseMonitor::setup()
 
     reset_sensors();
     load_settings();
+    
+//    m_bluetooth->set_connect_cb([this](UARTPtr p){ connect_sensor(p); });
+//    m_bluetooth->open();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -286,12 +288,6 @@ void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
 void CapSenseMonitor::reset_sensors()
 {
     m_sensors.clear();
-
-//    {
-//        auto blue_uart = bluetooth::Bluetooth_UART::create();
-//        blue_uart->set_connect_cb([this](UARTPtr p){ connect_sensor(p); });
-//        blue_uart->open();
-//    }
 
     sensors::scan_for_devices(background_queue().io_service(),
                               [this](const std::string &the_id, UARTPtr the_uart)
