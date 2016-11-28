@@ -15,7 +15,7 @@ using namespace glm;
 
 namespace
 {
-    const double g_scan_for_device_interval = 3.0;
+    const double g_scan_for_device_interval = 5.0;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -48,9 +48,6 @@ void CapSenseMonitor::setup()
 
     reset_sensors();
     load_settings();
-    
-//    m_bluetooth->set_connect_cb([this](UARTPtr p){ connect_sensor(p); });
-//    m_bluetooth->open();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -288,15 +285,23 @@ void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
 void CapSenseMonitor::reset_sensors()
 {
     m_sensors.clear();
-
-    sensors::scan_for_devices(background_queue().io_service(),
-                              [this](const std::string &the_id, UARTPtr the_uart)
+    
+    auto query_cb = [this](const std::string &the_id, UARTPtr the_uart)
     {
         LOG_TRACE_1 << "discovered device: <" << the_id << "> (" << the_uart->description() << ")";
-
+        
         if(the_id == CapacitiveSensor::id())
         {
             main_queue().submit([this, the_uart]{ connect_sensor(the_uart); });
         }
+    };
+    
+    m_bluetooth->set_connect_cb([this, query_cb](UARTPtr p)
+    {
+//        sensors::query_device(p, background_queue().io_service(), query_cb);
+        connect_sensor(p);
     });
+    m_bluetooth->open();
+    
+    sensors::scan_for_devices(background_queue().io_service(), query_cb);
 }

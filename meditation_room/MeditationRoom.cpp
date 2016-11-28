@@ -442,11 +442,11 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
     if(!ret){ LOG_DEBUG << "invalid state change requested"; }
     if(force_change){ LOG_DEBUG << "forced state change"; }
     
-    // create the fade in/out animations based on current values
-    create_animations();
-    
     if(ret || force_change)
     {
+        // create the fade in/out animations based on current values
+        create_animations();
+        
         textures()[TEXTURE_OUTPUT].reset();
         
         // handle state transition
