@@ -65,10 +65,10 @@ void ModelViewer::setup()
     // rearrange standard lights as carussel
     for(auto l : lights())
     {
-        scene()->removeObject(l);
+        scene()->remove_object(l);
         light_root->add_child(l);
     }
-    scene()->addObject(light_root);
+    scene()->add_object(light_root);
 
     // add groundplane
     auto ground_mesh = gl::Mesh::create(gl::Geometry::create_plane(400, 400),
@@ -76,7 +76,7 @@ void ModelViewer::setup()
     ground_mesh->transform() = glm::rotate(mat4(), -glm::half_pi<float>(), gl::X_AXIS);
     ground_mesh->add_tag(tag_ground_plane);
     
-    scene()->addObject(ground_mesh);
+    scene()->add_object(ground_mesh);
 
     load_settings();
 }
@@ -365,9 +365,9 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
         {
             if(m)
             {
-                scene()->removeObject(m_mesh);
+                scene()->remove_object(m_mesh);
                 m_mesh = m;
-                scene()->addObject(m_mesh);
+                scene()->add_object(m_mesh);
                 m_dirty_shader = true;
             }
         });

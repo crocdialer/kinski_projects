@@ -272,7 +272,7 @@ void AsteroidField::create_scene(int num_objects)
     scene()->clear();
     
     // add lights to scene
-    for (auto l : lights()){ scene()->addObject(l ); }
+    for (auto l : lights()){ scene()->add_object(l ); }
     m_light_component->set_lights(lights());
     
     int m = 0;
@@ -298,6 +298,6 @@ void AsteroidField::create_scene(int num_objects)
         {
             test_mesh->transform() = glm::rotate(test_mesh->transform(), rot_speed * t, rot_vec);
         });
-        scene()->addObject(test_mesh);
+        scene()->add_object(test_mesh);
     }
 }

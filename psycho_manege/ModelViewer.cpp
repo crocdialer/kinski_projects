@@ -90,7 +90,7 @@ void ModelViewer::setup()
     add_tweakbar_for_component(m_light_component);
     
     // add lights to scene
-    for (auto l : lights()){ scene()->addObject(l ); }
+    for (auto l : lights()){ scene()->add_object(l ); }
     
     // roots for our scene
     m_roots.resize(NUM_LVLS);
@@ -99,7 +99,7 @@ void ModelViewer::setup()
     for(auto &r : m_roots)
     {
         r = gl::Object3D::create();
-        scene()->addObject(r);
+        scene()->add_object(r);
     }
     
     // pre-create our shaders
@@ -569,7 +569,7 @@ void ModelViewer::build_skeleton(gl::BonePtr currentBone, vector<vec3> &points,
 void ModelViewer::setup_offscreen_cameras(int num_screens, bool as_circle)
 {
     // remove old objects
-    for(auto &m : m_offscreen_meshes){ m_debug_scene->removeObject(m); }
+    for(auto &m : m_offscreen_meshes){ m_debug_scene->remove_object(m); }
     
     m_offscreen_cams.resize(num_screens);
     m_offscreen_meshes.resize(num_screens);
@@ -586,7 +586,7 @@ void ModelViewer::setup_offscreen_cameras(int num_screens, bool as_circle)
         // create debug mesh
         m_offscreen_meshes[i] = gl::create_frustum_mesh(m_offscreen_cams[i]);
         m_offscreen_meshes[i]->material()->set_diffuse(m_cam_colors[i]);
-        m_debug_scene->addObject(m_offscreen_meshes[i]);
+        m_debug_scene->add_object(m_offscreen_meshes[i]);
     }
     
     // create our FBO
@@ -712,7 +712,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
 
 void ModelViewer::update_select_indicator()
 {
-    scene()->removeObject(m_select_indicator);
+    scene()->remove_object(m_select_indicator);
     
     if(auto m = selected_mesh())
     {

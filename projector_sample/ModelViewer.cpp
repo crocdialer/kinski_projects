@@ -37,7 +37,7 @@ void ModelViewer::setup()
     m_fbos[1] = gl::Fbo(1024, 1024);
     
     // add lights to scene
-    for (auto l : lights()){ scene()->addObject(l ); }
+    for (auto l : lights()){ scene()->add_object(l ); }
     
     m_draw_depth_mat = gl::Material::create();
     m_draw_depth_mat->set_blending();
@@ -114,9 +114,9 @@ void ModelViewer::keyPress(const KeyEvent &e)
     {
         case GLFW_KEY_P:
             m_projector = create_camera_from_viewport();
-            scene()->removeObject(m_projector_mesh);
+            scene()->remove_object(m_projector_mesh);
             m_projector_mesh = gl::create_frustum_mesh(m_projector);
-            scene()->addObject(m_projector_mesh);
+            scene()->add_object(m_projector_mesh);
             
             break;
             
@@ -238,9 +238,9 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
             
             for(auto &t : m->material()->textures()){ textures()[0] = t; }
             
-            scene()->removeObject(m_mesh);
+            scene()->remove_object(m_mesh);
             m_mesh = m;
-            scene()->addObject(m_mesh);
+            scene()->add_object(m_mesh);
             
             auto aabb = m->bounding_box();
             
