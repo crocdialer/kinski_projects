@@ -43,7 +43,7 @@ namespace kinski
         Property_<string>::Ptr
         m_movie_directory = Property_<string>::create("movie directory", "/mnt/movies"),
         m_movie_path = Property_<string>::create("movie path", ""),
-        m_movie_playlist = Property_<string>::create("play list indices", "");
+        m_movie_playlist = Property_<string>::create("movie playlist", "");
 
         Property_<bool>::Ptr
         m_loop = Property_<bool>::create("loop", false),
