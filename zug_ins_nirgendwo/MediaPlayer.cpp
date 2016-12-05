@@ -70,7 +70,7 @@ void MediaPlayer::update(float timeDelta)
     {
         set_clear_color(gl::Color(clear_color().rgb(), 0.f));
         m_movie->load(*m_movie_path, *m_auto_play, *m_loop,
-                      media::MediaController::RenderTarget::SCREEN,
+                      media::MediaController::RenderTarget::TEXTURE,
                       media::MediaController::AudioTarget::AUDIO_JACK);
         m_movie->set_rate(*m_movie_speed);
         m_movie->set_volume(*m_movie_volume);
