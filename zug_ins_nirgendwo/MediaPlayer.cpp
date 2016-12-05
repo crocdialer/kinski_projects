@@ -76,8 +76,6 @@ void MediaPlayer::update(float timeDelta)
         m_movie->set_volume(*m_movie_volume);
         m_movie->set_media_ended_callback([this](media::MediaControllerPtr mc)
         {
-            LOG_DEBUG << "movie ended";
-
             // parse loop string
             auto splits = kinski::split(*m_movie_playlist, ',');
             std::vector<int> indices;
@@ -87,16 +85,16 @@ void MediaPlayer::update(float timeDelta)
                 indices.push_back(string_to<uint32_t>(s));
             }
 
-            int next_index = *m_movie_index ;
+            int next_index = indices.empty() ? *m_movie_index : 0;
 
             for(uint32_t i = 0; i < indices.size(); i++)
             {
                 if(indices[i] == m_movie_index->value())
                 {
-                    LOG_DEBUG << "found our index: " << indices[i];
                     next_index = indices[(i + 1) % indices.size()];
                 }
             }
+            LOG_DEBUG << "next index: " << next_index;
             *m_movie_index = next_index;
         });
         m_reload_movie = false;
