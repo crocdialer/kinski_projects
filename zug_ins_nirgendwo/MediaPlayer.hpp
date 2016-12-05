@@ -7,8 +7,8 @@
 //
 #pragma once
 
-#include "app/ViewerApp.h"
-#include "app/WarpComponent.h"
+#include "app/ViewerApp.hpp"
+#include "app/WarpComponent.hpp"
 #include "gl/Texture.hpp"
 
 #include "media/media.h"
@@ -21,10 +21,8 @@ namespace kinski
 
         enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_OUTPUT = 1};
 
-        WarpComponent::Ptr m_warp;
-
         media::MediaControllerPtr m_movie = media::MovieController::create();
-        video::CameraControllerPtr m_camera_control = video::CameraController::create();
+
         bool m_reload_movie = false;
         std::vector<Timer> m_movie_start_timers;
 
@@ -82,12 +80,16 @@ namespace kinski
         void tearDown() override;
         void update_property(const Property::ConstPtr &theProperty) override;
 
-        bool save_settings(const std::string &path = "") override;
-        bool load_settings(const std::string &path = "") override;
-
         void start_playback(const std::string &the_path);
         void stop_playback();
         void search_movies();
 
     };
 }// namespace kinski
+
+int main(int argc, char *argv[])
+{
+    auto theApp = std::make_shared<kinski::MediaPlayer>(argc, argv);
+    LOG_INFO << "local ip: " << kinski::net::local_ip();
+    return theApp->run();
+}

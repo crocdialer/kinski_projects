@@ -25,8 +25,8 @@ void MediaPlayer::setup()
     fonts()[1].load(fonts()[0].path(), 44);
 //    Logger::get()->set_use_log_file(true);
 
-    m_movie_library->setTweakable(false);
-    m_ip_adresses->setTweakable(false);
+    m_movie_library->set_tweakable(false);
+    m_ip_adresses->set_tweakable(false);
     register_property(m_movie_library);
     register_property(m_ip_adresses);
 
@@ -43,12 +43,8 @@ void MediaPlayer::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
 
-    // warp component
-    m_warp = std::make_shared<WarpComponent>();
-    m_warp->observe_properties();
-
     // check for command line input
-    if(args().size() > 1 && file_exists(args()[1])){ *m_movie_path = args()[1]; }
+    if(args().size() > 1 && fs::exists(args()[1])){ *m_movie_path = args()[1]; }
 
     // setup our components to receive rpc calls
     setup_rpc_interface();
@@ -56,7 +52,7 @@ void MediaPlayer::setup()
     // scan for movie files
     search_movies();
 
-    remote_control().set_components({ shared_from_this(), m_warp });
+    remote_control().set_components({ shared_from_this(), m_warp_component });
     load_settings();
 
     if(*m_movie_index >= 0 && *m_movie_index < (int)m_movie_library->value().size())
@@ -72,16 +68,41 @@ void MediaPlayer::update(float timeDelta)
 {
     if(m_reload_movie)
     {
-        m_movie->load(*m_movie_path, *m_auto_play, *m_loop);
+        set_clear_color(gl::Color(clear_color().rgb(), 0.f));
+        m_movie->load(*m_movie_path, *m_auto_play, *m_loop,
+                      media::MediaController::RenderTarget::SCREEN,
+                      media::MediaController::AudioTarget::AUDIO_JACK);
         m_movie->set_rate(*m_movie_speed);
         m_movie->set_volume(*m_movie_volume);
+        m_movie->set_media_ended_callback([this](media::MediaControllerPtr mc)
+        {
+            LOG_DEBUG << "movie ended";
+
+            // parse loop string
+            auto splits = kinski::split(*m_movie_playlist, ',');
+            std::vector<int> indices;
+
+            for(const auto &s : splits)
+            {
+                indices.push_back(string_to<uint32_t>(s));
+            }
+
+            int next_index = *m_movie_index ;
+
+            for(uint32_t i = 0; i < indices.size(); i++)
+            {
+                if(indices[i] == m_movie_index->value())
+                {
+                    LOG_DEBUG << "found our index: " << indices[i];
+                    next_index = indices[(i + 1) % indices.size()];
+                }
+            }
+            *m_movie_index = next_index;
+        });
         m_reload_movie = false;
     }
 
-    if(m_camera_control && m_camera_control->is_capturing())
-        m_camera_control->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
-    else
-        m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
+    m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -91,12 +112,12 @@ void MediaPlayer::draw()
     // background text
     gl::draw_text_2D(name(), fonts()[1], gl::COLOR_WHITE, vec2(35, 55));
 
-    if(*m_use_warping){ m_warp->render_output(textures()[TEXTURE_INPUT]); }
+    if(*m_use_warping){ m_warp_component->render_output(0, textures()[TEXTURE_INPUT]); }
     else{ gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension()); }
 
     if(!m_movie_start_timers.empty() && !m_movie_start_timers[0].has_expired())
     {
-        gl::draw_text_2D(as_string(m_movie_start_timers[0].expires_from_now(), 1), fonts()[1],
+        gl::draw_text_2D(to_string(m_movie_start_timers[0].expires_from_now(), 1), fonts()[1],
                          gl::COLOR_WHITE, gl::window_dimension() / 2.f - vec2(50));
     }
 
@@ -104,7 +125,7 @@ void MediaPlayer::draw()
     {
         gl::draw_text_2D(secs_to_time_str(m_movie->current_time()) + " / " +
                          secs_to_time_str(m_movie->duration()) + " - " +
-                         get_filename_part(m_movie->path()),
+                         fs::get_filename_part(m_movie->path()),
                          fonts()[1], gl::COLOR_WHITE, gl::vec2(10));
         draw_textures(textures());
     }
@@ -118,13 +139,6 @@ void MediaPlayer::keyPress(const KeyEvent &e)
 
     switch (e.getCode())
     {
-        case Key::_C:
-            if(m_camera_control->is_capturing())
-                m_camera_control->stop_capture();
-            else
-                m_camera_control->start_capture();
-            break;
-
         case Key::_P:
             m_movie->is_playing() ? m_movie->pause() : m_movie->play();
             break;
@@ -255,7 +269,7 @@ void MediaPlayer::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_movie_directory)
     {
         search_movies();
-        add_search_path(*m_movie_directory);
+        fs::add_search_path(*m_movie_directory);
     }
     else if(theProperty == m_loop)
     {
@@ -267,39 +281,9 @@ void MediaPlayer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_use_warping)
     {
-        remove_tweakbar_for_component(m_warp);
-        if(*m_use_warping){ add_tweakbar_for_component(m_warp); }
+        remove_tweakbar_for_component(m_warp_component);
+        if(*m_use_warping){ add_tweakbar_for_component(m_warp_component); }
     }
-}
-
-/////////////////////////////////////////////////////////////////
-
-bool MediaPlayer::save_settings(const std::string &path)
-{
-    bool ret = ViewerApp::save_settings(path);
-    try
-    {
-        Serializer::saveComponentState(m_warp,
-                                       join_paths(path ,"warp_config.json"),
-                                       PropertyIO_GL());
-    }
-    catch(Exception &e){ LOG_ERROR << e.what(); return false; }
-    return ret;
-}
-
-/////////////////////////////////////////////////////////////////
-
-bool MediaPlayer::load_settings(const std::string &path)
-{
-    bool ret = ViewerApp::load_settings(path);
-    try
-    {
-        Serializer::loadComponentState(m_warp,
-                                       join_paths(path , "warp_config.json"),
-                                       PropertyIO_GL());
-    }
-    catch(Exception &e){ LOG_ERROR << e.what(); return false; }
-    return ret;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -339,7 +323,7 @@ void MediaPlayer::start_playback(const std::string &the_path)
         auto ip = ip_adresses[i];
 
         // load movies
-        net::async_send_tcp(background_queue().io_service(), "load " + get_filename_part(the_path),
+        net::async_send_tcp(background_queue().io_service(), "load " + fs::get_filename_part(the_path),
                             ip, g_remote_port);
 
 
@@ -367,7 +351,7 @@ void MediaPlayer::stop_playback()
 
 void MediaPlayer::search_movies()
 {
-    auto movs = get_directory_entries(*m_movie_directory, FileType::MOVIE, false);
+    auto movs = fs::get_directory_entries(*m_movie_directory, fs::FileType::MOVIE, false);
     m_movie_library->value().assign(movs.begin(), movs.end());
 }
 
@@ -410,27 +394,27 @@ void MediaPlayer::setup_rpc_interface()
     remote_control().add_command("set_volume");
     register_function("set_volume", [this](const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ m_movie->set_volume(kinski::string_as<float>(rpc_args.front())); }
+        if(!rpc_args.empty()){ m_movie->set_volume(kinski::string_to<float>(rpc_args.front())); }
     });
 
     remote_control().add_command("volume", [this](net::tcp_connection_ptr con,
                                                   const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ m_movie->set_volume(kinski::string_as<float>(rpc_args.front())); }
-        con->send(as_string(m_movie->volume()));
+        if(!rpc_args.empty()){ m_movie->set_volume(kinski::string_to<float>(rpc_args.front())); }
+        con->write(to_string(m_movie->volume()));
     });
 
     remote_control().add_command("set_rate");
     register_function("set_rate", [this](const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ m_movie->set_rate(kinski::string_as<float>(rpc_args.front())); }
+        if(!rpc_args.empty()){ m_movie->set_rate(kinski::string_to<float>(rpc_args.front())); }
     });
 
     remote_control().add_command("rate", [this](net::tcp_connection_ptr con,
                                                 const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ m_movie->set_rate(kinski::string_as<float>(rpc_args.front())); }
-        con->send(as_string(m_movie->rate()));
+        if(!rpc_args.empty()){ m_movie->set_rate(kinski::string_to<float>(rpc_args.front())); }
+        con->write(to_string(m_movie->rate()));
     });
 
     remote_control().add_command("seek_to_time");
@@ -445,18 +429,18 @@ void MediaPlayer::setup_rpc_interface()
             switch (splits.size())
             {
                 case 3:
-                    secs = kinski::string_as<float>(splits[2]) +
-                           60.f * kinski::string_as<float>(splits[1]) +
-                           3600.f * kinski::string_as<float>(splits[0]) ;
+                    secs = kinski::string_to<float>(splits[2]) +
+                           60.f * kinski::string_to<float>(splits[1]) +
+                           3600.f * kinski::string_to<float>(splits[0]) ;
                     break;
 
                 case 2:
-                    secs = kinski::string_as<float>(splits[1]) +
-                    60.f * kinski::string_as<float>(splits[0]);
+                    secs = kinski::string_to<float>(splits[1]) +
+                    60.f * kinski::string_to<float>(splits[0]);
                     break;
 
                 case 1:
-                    secs = kinski::string_as<float>(splits[0]);
+                    secs = kinski::string_to<float>(splits[0]);
                     break;
 
                 default:
@@ -469,31 +453,31 @@ void MediaPlayer::setup_rpc_interface()
     remote_control().add_command("current_time", [this](net::tcp_connection_ptr con,
                                                         const std::vector<std::string> &rpc_args)
     {
-        con->send(as_string(m_movie->current_time(), 1));
+        con->write(to_string(m_movie->current_time(), 1));
     });
 
     remote_control().add_command("duration", [this](net::tcp_connection_ptr con,
                                                     const std::vector<std::string> &rpc_args)
     {
-        con->send(as_string(m_movie->duration(), 1));
+        con->write(to_string(m_movie->duration(), 1));
     });
 
     remote_control().add_command("set_loop");
     register_function("set_loop", [this](const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ m_movie->set_loop(kinski::string_as<bool>(rpc_args.front())); }
+        if(!rpc_args.empty()){ m_movie->set_loop(kinski::string_to<bool>(rpc_args.front())); }
     });
 
     remote_control().add_command("loop", [this](net::tcp_connection_ptr con,
                                                 const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ m_movie->set_loop(kinski::string_as<bool>(rpc_args.front())); }
-        con->send(as_string(m_movie->loop()));
+        if(!rpc_args.empty()){ m_movie->set_loop(kinski::string_to<bool>(rpc_args.front())); }
+        con->write(to_string(m_movie->loop()));
     });
 
     remote_control().add_command("is_playing", [this](net::tcp_connection_ptr con,
                                                 const std::vector<std::string> &rpc_args)
     {
-        con->send(as_string(m_movie->is_playing()));
+        con->write(to_string(m_movie->is_playing()));
     });
 }
