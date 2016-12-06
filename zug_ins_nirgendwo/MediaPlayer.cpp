@@ -55,11 +55,6 @@ void MediaPlayer::setup()
     remote_control().set_components({ shared_from_this(), m_warp_component });
     load_settings();
 
-//    if(*m_movie_index >= 0 && *m_movie_index < (int)m_movie_library->value().size())
-//    {
-//        start_playback(m_movie_library->value()[*m_movie_index]);
-//    }
-    m_initiated = true;
     play_next_item();
 }
 
@@ -289,10 +284,11 @@ void MediaPlayer::play_next_item()
     {
         if(indices[i].first == m_movie_index->value())
         {
-            next_index = indices[(i + 1) % indices.size()].first;
-            next_delay = indices[(i + 1) % indices.size()].second;
+            next_index = indices[(i + (m_initiated ? 1 : 0)) % indices.size()].first;
+            next_delay = indices[(i + (m_initiated ? 1 : 0)) % indices.size()].second;
         }
     }
+    m_initiated = true;
     LOG_DEBUG << "next index: " << next_index;
     *m_movie_delay = next_delay;
     *m_movie_index = next_index;
