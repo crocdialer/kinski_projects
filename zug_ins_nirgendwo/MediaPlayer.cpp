@@ -78,23 +78,29 @@ void MediaPlayer::update(float timeDelta)
         {
             // parse loop string
             auto splits = kinski::split(*m_movie_playlist, ',');
-            std::vector<int> indices;
+            std::vector<std::pair<int,float>> indices;
 
             for(const auto &s : splits)
             {
-                indices.push_back(string_to<uint32_t>(s));
+                auto values = split(s, ':');
+                std::pair<int,float> v = std::make_pair(string_to<uint32_t>(values[0]), 0.0f);
+                
+                if(values.size() > 1){ v.second = string_to<float>(values[1]); }
+                indices.push_back(v);
             }
-
             int next_index = indices.empty() ? *m_movie_index : 0;
-
+            float next_delay = indices.empty() ? *m_movie_delay : 0;
+            
             for(uint32_t i = 0; i < indices.size(); i++)
             {
-                if(indices[i] == m_movie_index->value())
+                if(indices[i].first == m_movie_index->value())
                 {
-                    next_index = indices[(i + 1) % indices.size()];
+                    next_index = indices[(i + 1) % indices.size()].first;
+                    next_delay = indices[(i + 1) % indices.size()].second;
                 }
             }
             LOG_DEBUG << "next index: " << next_index;
+            *m_movie_delay = next_delay;
             *m_movie_index = next_index;
         });
         m_reload_movie = false;
