@@ -55,11 +55,12 @@ void MediaPlayer::setup()
     remote_control().set_components({ shared_from_this(), m_warp_component });
     load_settings();
 
-    if(*m_movie_index >= 0 && *m_movie_index < (int)m_movie_library->value().size())
-    {
-        start_playback(m_movie_library->value()[*m_movie_index]);
-    }
+//    if(*m_movie_index >= 0 && *m_movie_index < (int)m_movie_library->value().size())
+//    {
+//        start_playback(m_movie_library->value()[*m_movie_index]);
+//    }
     m_initiated = true;
+    play_next_item();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -76,32 +77,7 @@ void MediaPlayer::update(float timeDelta)
         m_movie->set_volume(*m_movie_volume);
         m_movie->set_media_ended_callback([this](media::MediaControllerPtr mc)
         {
-            // parse loop string
-            auto splits = kinski::split(*m_movie_playlist, ',');
-            std::vector<std::pair<int,float>> indices;
-
-            for(const auto &s : splits)
-            {
-                auto values = split(s, ':');
-                std::pair<int,float> v = std::make_pair(string_to<uint32_t>(values[0]), 0.0f);
-                
-                if(values.size() > 1){ v.second = string_to<float>(values[1]); }
-                indices.push_back(v);
-            }
-            int next_index = indices.empty() ? *m_movie_index : 0;
-            float next_delay = indices.empty() ? *m_movie_delay : 0;
-            
-            for(uint32_t i = 0; i < indices.size(); i++)
-            {
-                if(indices[i].first == m_movie_index->value())
-                {
-                    next_index = indices[(i + 1) % indices.size()].first;
-                    next_delay = indices[(i + 1) % indices.size()].second;
-                }
-            }
-            LOG_DEBUG << "next index: " << next_index;
-            *m_movie_delay = next_delay;
-            *m_movie_index = next_index;
+            play_next_item();
         });
         m_reload_movie = false;
     }
@@ -288,6 +264,38 @@ void MediaPlayer::update_property(const Property::ConstPtr &theProperty)
         remove_tweakbar_for_component(m_warp_component);
         if(*m_use_warping){ add_tweakbar_for_component(m_warp_component); }
     }
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MediaPlayer::play_next_item()
+{
+    // parse loop string
+    auto splits = kinski::split(*m_movie_playlist, ',');
+    std::vector<std::pair<int,float>> indices;
+    
+    for(const auto &s : splits)
+    {
+        auto values = split(s, ':');
+        std::pair<int,float> v = std::make_pair(string_to<uint32_t>(values[0]), 0.0f);
+        
+        if(values.size() > 1){ v.second = string_to<float>(values[1]); }
+        indices.push_back(v);
+    }
+    int next_index = indices.empty() ? *m_movie_index : 0;
+    float next_delay = indices.empty() ? *m_movie_delay : 0;
+    
+    for(uint32_t i = 0; i < indices.size(); i++)
+    {
+        if(indices[i].first == m_movie_index->value())
+        {
+            next_index = indices[(i + 1) % indices.size()].first;
+            next_delay = indices[(i + 1) % indices.size()].second;
+        }
+    }
+    LOG_DEBUG << "next index: " << next_index;
+    *m_movie_delay = next_delay;
+    *m_movie_index = next_index;
 }
 
 /////////////////////////////////////////////////////////////////

@@ -58,6 +58,7 @@ namespace kinski
 
         std::string secs_to_time_str(float the_secs) const;
         void setup_rpc_interface();
+        void play_next_item();
 
     public:
 
