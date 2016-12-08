@@ -77,7 +77,7 @@ void MediaPlayer::update(float timeDelta)
         m_reload_movie = false;
     }
 
-    m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
+    m_needs_redraw = m_movie->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -104,6 +104,8 @@ void MediaPlayer::draw()
                          fonts()[1], gl::COLOR_WHITE, gl::vec2(10));
         draw_textures(textures());
     }
+    
+    m_needs_redraw = false;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -362,6 +364,14 @@ void MediaPlayer::search_movies()
     auto movs = fs::get_directory_entries(*m_movie_directory, fs::FileType::MOVIE, false);
     m_movie_library->value().assign(movs.begin(), movs.end());
 }
+
+/////////////////////////////////////////////////////////////////
+
+bool MediaPlayer::needs_redraw() const
+{
+    return (m_movie && (!m_movie->is_playing() || !m_movie->has_video())) || !*m_use_warping
+    || m_needs_redraw;
+};
 
 /////////////////////////////////////////////////////////////////
 

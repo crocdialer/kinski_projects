@@ -23,7 +23,7 @@ namespace kinski
 
         media::MediaControllerPtr m_movie = media::MovieController::create();
 
-        bool m_reload_movie = false;
+        bool m_reload_movie = false, m_needs_redraw = true;
         std::vector<Timer> m_movie_start_timers;
 
         // properties
@@ -84,6 +84,8 @@ namespace kinski
         void start_playback(const std::string &the_path);
         void stop_playback();
         void search_movies();
+        
+        bool needs_redraw() const override;
 
     };
 }// namespace kinski
