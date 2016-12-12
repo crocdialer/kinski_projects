@@ -9,7 +9,6 @@
 #include "core/Image.hpp"
 #include "ModelViewer.h"
 #include "AssimpConnector.h"
-#include "gl/ShaderLibrary.h"
 
 using namespace std;
 using namespace kinski;
