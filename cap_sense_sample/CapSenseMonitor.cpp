@@ -37,7 +37,6 @@ void CapSenseMonitor::setup()
     add_tweakbar_for_component(shared_from_this());
     remote_control().set_components({shared_from_this()});
 
-    m_downloader.set_io_service(main_queue().io_service());
     m_broadcast_timer = Timer(main_queue().io_service(),
                               std::bind(&CapSenseMonitor::send_udp_broadcast, this));
     m_broadcast_timer.set_periodic(true);
@@ -178,10 +177,13 @@ void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
     {
         if(!m_img_url->value().empty())
         {
-            m_downloader.async_get_url(*m_img_url, [&](net::Downloader::ConnectionInfo c,
-                                                       const std::vector<uint8_t> &data)
+            m_downloader.async_get(*m_img_url, [&](net::http::ConnectionInfo c,
+                                                   const std::vector<uint8_t> &data)
             {
-                textures()[0] = gl::create_texture_from_data(data);
+                main_queue().submit([this, data]()
+                {
+                    textures()[0] = gl::create_texture_from_data(data);
+                });
             });
         }
         else{ textures()[0].reset(); }
