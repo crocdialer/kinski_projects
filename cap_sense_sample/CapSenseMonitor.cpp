@@ -177,12 +177,14 @@ void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
     {
         if(!m_img_url->value().empty())
         {
-            m_downloader.async_get(*m_img_url, [&](net::http::ConnectionInfo c,
-                                                   const std::vector<uint8_t> &data)
+            m_http.async_get(*m_img_url, [this](const net::http::connection_info_t &c,
+                                                      const net::http::response_t &response)
             {
-                main_queue().submit([this, data]()
+                auto img = create_image_from_data(response.data);
+                
+                main_queue().submit([this, img]()
                 {
-                    textures()[0] = gl::create_texture_from_data(data);
+                    textures()[0] = gl::create_texture_from_image(img);
                 });
             });
         }

@@ -29,7 +29,7 @@ namespace kinski
         bluetooth::Bluetooth_UARTPtr m_bluetooth = bluetooth::Bluetooth_UART::create();
         
         //! used for http-requests
-        net::http::Client m_downloader{background_queue().io_service()};
+        net::http::Client m_http{background_queue().io_service()};
 
         //! timer for periodic udp broadcasts
         Timer m_broadcast_timer, m_scan_for_device_timer;
