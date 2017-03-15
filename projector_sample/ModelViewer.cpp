@@ -106,9 +106,9 @@ void ModelViewer::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::keyPress(const KeyEvent &e)
+void ModelViewer::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
     
     switch (e.getCode())
     {
@@ -127,49 +127,49 @@ void ModelViewer::keyPress(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::keyRelease(const KeyEvent &e)
+void ModelViewer::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::mousePress(const MouseEvent &e)
+void ModelViewer::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::mouseRelease(const MouseEvent &e)
+void ModelViewer::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::mouseMove(const MouseEvent &e)
+void ModelViewer::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::mouseDrag(const MouseEvent &e)
+void ModelViewer::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::mouseWheel(const MouseEvent &e)
+void ModelViewer::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void ModelViewer::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     for(const string &f : files)
     {
@@ -215,7 +215,7 @@ void ModelViewer::fileDrop(const MouseEvent &e, const std::vector<std::string> &
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::tearDown()
+void ModelViewer::teardown()
 {
     LOG_PRINT<<"ciao model viewer";
 }

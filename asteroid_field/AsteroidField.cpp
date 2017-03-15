@@ -129,63 +129,63 @@ void AsteroidField::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void AsteroidField::keyPress(const KeyEvent &e)
+void AsteroidField::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void AsteroidField::keyRelease(const KeyEvent &e)
+void AsteroidField::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void AsteroidField::mousePress(const MouseEvent &e)
+void AsteroidField::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void AsteroidField::mouseRelease(const MouseEvent &e)
+void AsteroidField::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void AsteroidField::mouseMove(const MouseEvent &e)
+void AsteroidField::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void AsteroidField::mouseDrag(const MouseEvent &e)
+void AsteroidField::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void AsteroidField::mouseWheel(const MouseEvent &e)
+void AsteroidField::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void AsteroidField::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void AsteroidField::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     for(const string &f : files){ LOG_INFO << f; }
 }
 
 /////////////////////////////////////////////////////////////////
 
-void AsteroidField::tearDown()
+void AsteroidField::teardown()
 {
     LOG_PRINT<<"ciao asteroid field";
 }

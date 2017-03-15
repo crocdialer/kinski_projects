@@ -110,9 +110,9 @@ void MediaPlayer::draw()
 
 /////////////////////////////////////////////////////////////////
 
-void MediaPlayer::keyPress(const KeyEvent &e)
+void MediaPlayer::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
 
     switch (e.getCode())
     {
@@ -149,44 +149,44 @@ void MediaPlayer::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void MediaPlayer::keyRelease(const KeyEvent &e)
+void MediaPlayer::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MediaPlayer::mousePress(const MouseEvent &e)
+void MediaPlayer::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MediaPlayer::mouseRelease(const MouseEvent &e)
+void MediaPlayer::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MediaPlayer::mouseMove(const MouseEvent &e)
+void MediaPlayer::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MediaPlayer::mouseDrag(const MouseEvent &e)
+void MediaPlayer::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MediaPlayer::mouseWheel(const MouseEvent &e)
+void MediaPlayer::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -212,14 +212,14 @@ void MediaPlayer::touch_move(const MouseEvent &e, const std::set<const Touch*> &
 
 /////////////////////////////////////////////////////////////////
 
-void MediaPlayer::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void MediaPlayer::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     start_playback(files.back());
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MediaPlayer::tearDown()
+void MediaPlayer::teardown()
 {
     stop_playback();
     LOG_PRINT << "ciao " << name();

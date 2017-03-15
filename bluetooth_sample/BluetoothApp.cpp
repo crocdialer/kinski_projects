@@ -66,9 +66,9 @@ void BluetoothApp::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::keyPress(const KeyEvent &e)
+void BluetoothApp::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
 
     switch (e.getCode())
     {
@@ -91,44 +91,44 @@ void BluetoothApp::keyPress(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::keyRelease(const KeyEvent &e)
+void BluetoothApp::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::mousePress(const MouseEvent &e)
+void BluetoothApp::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::mouseRelease(const MouseEvent &e)
+void BluetoothApp::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::mouseMove(const MouseEvent &e)
+void BluetoothApp::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::mouseDrag(const MouseEvent &e)
+void BluetoothApp::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::mouseWheel(const MouseEvent &e)
+void BluetoothApp::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -154,14 +154,14 @@ void BluetoothApp::touch_move(const MouseEvent &e, const std::set<const Touch*> 
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void BluetoothApp::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     for(const string &f : files){ LOG_INFO << f; }
 }
 
 /////////////////////////////////////////////////////////////////
 
-void BluetoothApp::tearDown()
+void BluetoothApp::teardown()
 {
     LOG_PRINT << "ciao " << name();
 }

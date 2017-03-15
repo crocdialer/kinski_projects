@@ -62,7 +62,7 @@ public:
         
     }
     
-    void tearDown()
+    void teardown()
     {
         printf("ciao colorHisto\n");
     }

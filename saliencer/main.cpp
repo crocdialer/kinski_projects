@@ -80,7 +80,7 @@ public:
         }
     }
     
-    void tearDown()
+    void teardown()
     {
         m_cvThread->stop();
         Serializer::saveComponentState(shared_from_this(), "config.json", PropertyIO_GL());
@@ -134,7 +134,7 @@ public:
         }
     }
     
-    void keyPress(const KeyEvent &e)
+    void key_press(const KeyEvent &e)
     {
         if(e.getChar() == GLFW_KEY_SPACE)
         {

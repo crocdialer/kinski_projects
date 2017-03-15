@@ -349,9 +349,9 @@ public:
     
     /////////////////////////////////////////////////////////////////
     
-    void keyPress(const KeyEvent &e) override
+    void key_press(const KeyEvent &e) override
     {
-        ViewerApp::keyPress(e);
+        ViewerApp::key_press(e);
         
         int number = 0;
         switch (e.getCode())
@@ -396,9 +396,9 @@ public:
     
     /////////////////////////////////////////////////////////////////
     
-    void keyRelease(const KeyEvent &e) override
+    void key_release(const KeyEvent &e) override
     {
-        ViewerApp::keyRelease(e);
+        ViewerApp::key_release(e);
 
         switch (e.getChar())
         {
@@ -420,7 +420,7 @@ public:
     
     /////////////////////////////////////////////////////////////////
     
-    void tearDown() override
+    void teardown() override
     {
         midi_mute_all();
         LOG_PRINT << "ciao " << name();

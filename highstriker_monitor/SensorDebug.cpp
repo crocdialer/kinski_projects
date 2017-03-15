@@ -170,16 +170,16 @@ void SensorDebug::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::keyPress(const KeyEvent &e)
+void SensorDebug::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::keyRelease(const KeyEvent &e)
+void SensorDebug::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 
     switch (e.getCode())
     {
@@ -197,37 +197,37 @@ void SensorDebug::keyRelease(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::mousePress(const MouseEvent &e)
+void SensorDebug::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::mouseRelease(const MouseEvent &e)
+void SensorDebug::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::mouseMove(const MouseEvent &e)
+void SensorDebug::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::mouseDrag(const MouseEvent &e)
+void SensorDebug::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::mouseWheel(const MouseEvent &e)
+void SensorDebug::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -253,14 +253,14 @@ void SensorDebug::touch_move(const MouseEvent &e, const std::set<const Touch*> &
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void SensorDebug::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     for(const string &f : files){ LOG_INFO << f; }
 }
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::tearDown()
+void SensorDebug::teardown()
 {
     LOG_PRINT << "ciao " << name();
 }

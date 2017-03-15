@@ -218,9 +218,9 @@ void MovieTimeshift::draw()
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTimeshift::keyPress(const KeyEvent &e)
+void MovieTimeshift::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
     
     switch (e.getCode())
     {
@@ -231,14 +231,14 @@ void MovieTimeshift::keyPress(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTimeshift::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void MovieTimeshift::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     *m_movie_path = files.back();
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTimeshift::tearDown()
+void MovieTimeshift::teardown()
 {
     LOG_PRINT << "ciao " << name();
 }

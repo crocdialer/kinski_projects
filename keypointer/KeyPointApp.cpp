@@ -116,58 +116,58 @@ void KeyPointApp::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::keyPress(const KeyEvent &e)
+void KeyPointApp::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::keyRelease(const KeyEvent &e)
+void KeyPointApp::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::mousePress(const MouseEvent &e)
+void KeyPointApp::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::mouseRelease(const MouseEvent &e)
+void KeyPointApp::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::mouseMove(const MouseEvent &e)
+void KeyPointApp::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::mouseDrag(const MouseEvent &e)
+void KeyPointApp::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::mouseWheel(const MouseEvent &e)
+void KeyPointApp::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void KeyPointApp::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
-    ViewerApp::fileDrop(e, files);
+    ViewerApp::file_drop(e, files);
     
     for(const string &f : files)
     {
@@ -186,7 +186,7 @@ void KeyPointApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &
 
 /////////////////////////////////////////////////////////////////
 
-void KeyPointApp::tearDown()
+void KeyPointApp::teardown()
 {
     m_cvThread->stop();
     LOG_PRINT << "ciao " << name();

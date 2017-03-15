@@ -126,9 +126,9 @@ void GrowthApp::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void GrowthApp::keyPress(const KeyEvent &e)
+void GrowthApp::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
     
     if(!displayTweakBar())
     {
@@ -205,44 +205,44 @@ void GrowthApp::keyPress(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void GrowthApp::keyRelease(const KeyEvent &e)
+void GrowthApp::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void GrowthApp::mousePress(const MouseEvent &e)
+void GrowthApp::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void GrowthApp::mouseRelease(const MouseEvent &e)
+void GrowthApp::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void GrowthApp::mouseMove(const MouseEvent &e)
+void GrowthApp::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void GrowthApp::mouseDrag(const MouseEvent &e)
+void GrowthApp::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void GrowthApp::mouseWheel(const MouseEvent &e)
+void GrowthApp::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -268,7 +268,7 @@ void GrowthApp::touch_move(const MouseEvent &e, const std::set<const Touch*> &th
 
 /////////////////////////////////////////////////////////////////
 
-void GrowthApp::tearDown()
+void GrowthApp::teardown()
 {
     LOG_PRINT<<"ciao procedural growth";
 }

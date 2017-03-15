@@ -65,37 +65,37 @@ void FontSample::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void FontSample::keyPress(const KeyEvent &e)
+void FontSample::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FontSample::keyRelease(const KeyEvent &e)
+void FontSample::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FontSample::mousePress(const MouseEvent &e)
+void FontSample::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FontSample::mouseRelease(const MouseEvent &e)
+void FontSample::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FontSample::mouseMove(const MouseEvent &e)
+void FontSample::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -121,28 +121,28 @@ void FontSample::touch_move(const MouseEvent &e, const std::set<const Touch*> &t
 
 /////////////////////////////////////////////////////////////////
 
-void FontSample::mouseDrag(const MouseEvent &e)
+void FontSample::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FontSample::mouseWheel(const MouseEvent &e)
+void FontSample::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FontSample::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void FontSample::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     for(const string &f : files){ LOG_INFO << f; }
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FontSample::tearDown()
+void FontSample::teardown()
 {
     LOG_PRINT << "ciao " << name();
 }

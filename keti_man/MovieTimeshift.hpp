@@ -124,10 +124,10 @@ namespace kinski
         void setup() override;
         void update(float timeDelta) override;
         void draw() override;
-        void fileDrop(const MouseEvent &e, const std::vector<std::string> &files) override;
-        void tearDown() override;
+        void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
+        void teardown() override;
         void update_property(const Property::ConstPtr &theProperty) override;
-        void keyPress(const KeyEvent &e) override;
+        void key_press(const KeyEvent &e) override;
         
         void on_movie_load();
         

@@ -181,9 +181,9 @@ void FractureApp::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void FractureApp::keyPress(const KeyEvent &e)
+void FractureApp::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
     
     if(!displayTweakBar())
     {
@@ -204,16 +204,16 @@ void FractureApp::keyPress(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void FractureApp::keyRelease(const KeyEvent &e)
+void FractureApp::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FractureApp::mousePress(const MouseEvent &e)
+void FractureApp::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
     
     if(e.isRight())
     {
@@ -226,35 +226,35 @@ void FractureApp::mousePress(const MouseEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void FractureApp::mouseRelease(const MouseEvent &e)
+void FractureApp::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FractureApp::mouseMove(const MouseEvent &e)
+void FractureApp::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FractureApp::mouseDrag(const MouseEvent &e)
+void FractureApp::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FractureApp::mouseWheel(const MouseEvent &e)
+void FractureApp::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void FractureApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void FractureApp::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     m_texture_paths->value().clear();
     
@@ -286,7 +286,7 @@ void FractureApp::fileDrop(const MouseEvent &e, const std::vector<std::string> &
 
 /////////////////////////////////////////////////////////////////
 
-void FractureApp::tearDown()
+void FractureApp::teardown()
 {
     LOG_PRINT << "ciao " << name();
 }
@@ -567,7 +567,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
         mesh_copy->materials() = {outer_mat, inner_mat};
         
         
-        auto col_shape = physics::createConvexCollisionShape(mesh_copy);
+        auto col_shape = physics::create_convex_collision_shape(mesh_copy);
         btRigidBody* rb = m_physics.add_mesh_to_simulation(mesh_copy, density * s.volume, col_shape);
 
         rb->getCollisionShape()->setMargin(convex_margin);

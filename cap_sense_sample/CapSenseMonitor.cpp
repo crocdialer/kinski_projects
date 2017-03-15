@@ -106,63 +106,63 @@ void CapSenseMonitor::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::keyPress(const KeyEvent &e)
+void CapSenseMonitor::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::keyRelease(const KeyEvent &e)
+void CapSenseMonitor::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::mousePress(const MouseEvent &e)
+void CapSenseMonitor::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::mouseRelease(const MouseEvent &e)
+void CapSenseMonitor::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::mouseMove(const MouseEvent &e)
+void CapSenseMonitor::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::mouseDrag(const MouseEvent &e)
+void CapSenseMonitor::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::mouseWheel(const MouseEvent &e)
+void CapSenseMonitor::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void CapSenseMonitor::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     for(const string &f : files){ LOG_INFO << f; }
 }
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::tearDown()
+void CapSenseMonitor::teardown()
 {
     LOG_PRINT << "ciao " << name();
 }

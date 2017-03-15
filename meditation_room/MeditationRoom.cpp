@@ -288,9 +288,9 @@ void MeditationRoom::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::keyPress(const KeyEvent &e)
+void MeditationRoom::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
     
     int next_state = -1;
     std::vector<State> states = {State::IDLE, State::WELCOME, State::MANDALA_ILLUMINATED,
@@ -323,56 +323,56 @@ void MeditationRoom::keyPress(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::keyRelease(const KeyEvent &e)
+void MeditationRoom::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::mousePress(const MouseEvent &e)
+void MeditationRoom::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::mouseRelease(const MouseEvent &e)
+void MeditationRoom::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::mouseMove(const MouseEvent &e)
+void MeditationRoom::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::mouseDrag(const MouseEvent &e)
+void MeditationRoom::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::mouseWheel(const MouseEvent &e)
+void MeditationRoom::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void MeditationRoom::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     for(const string &f : files){ LOG_INFO << f; }
 }
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::tearDown()
+void MeditationRoom::teardown()
 {
     LOG_PRINT << "ciao " << name();
 }

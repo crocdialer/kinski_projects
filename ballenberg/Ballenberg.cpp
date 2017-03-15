@@ -194,9 +194,9 @@ void Ballenberg::resize(int w ,int h)
 
 /////////////////////////////////////////////////////////////////
 
-void Ballenberg::keyPress(const KeyEvent &e)
+void Ballenberg::key_press(const KeyEvent &e)
 {
-    ViewerApp::keyPress(e);
+    ViewerApp::key_press(e);
     
     int next_state = -1;
     
@@ -246,44 +246,44 @@ void Ballenberg::keyPress(const KeyEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void Ballenberg::keyRelease(const KeyEvent &e)
+void Ballenberg::key_release(const KeyEvent &e)
 {
-    ViewerApp::keyRelease(e);
+    ViewerApp::key_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void Ballenberg::mousePress(const MouseEvent &e)
+void Ballenberg::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mousePress(e);
+    ViewerApp::mouse_press(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void Ballenberg::mouseRelease(const MouseEvent &e)
+void Ballenberg::mouse_release(const MouseEvent &e)
 {
-    ViewerApp::mouseRelease(e);
+    ViewerApp::mouse_release(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void Ballenberg::mouseMove(const MouseEvent &e)
+void Ballenberg::mouse_move(const MouseEvent &e)
 {
-    ViewerApp::mouseMove(e);
+    ViewerApp::mouse_move(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void Ballenberg::mouseDrag(const MouseEvent &e)
+void Ballenberg::mouse_drag(const MouseEvent &e)
 {
-    ViewerApp::mouseDrag(e);
+    ViewerApp::mouse_drag(e);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void Ballenberg::mouseWheel(const MouseEvent &e)
+void Ballenberg::mouse_wheel(const MouseEvent &e)
 {
-    ViewerApp::mouseWheel(e);
+    ViewerApp::mouse_wheel(e);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -309,14 +309,14 @@ void Ballenberg::touch_move(const MouseEvent &e, const std::set<const Touch*> &t
 
 /////////////////////////////////////////////////////////////////
 
-void Ballenberg::fileDrop(const MouseEvent &e, const std::vector<std::string> &files)
+void Ballenberg::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     for(const string &f : files){ LOG_INFO << f; }
 }
 
 /////////////////////////////////////////////////////////////////
 
-void Ballenberg::tearDown()
+void Ballenberg::teardown()
 {
     LOG_PRINT << "ciao " << name();
 }

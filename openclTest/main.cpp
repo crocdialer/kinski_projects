@@ -21,7 +21,7 @@ private:
     RangedProperty<float>::Ptr m_point_size;
     Property_<vec4>::Ptr m_point_color;
     gl::Texture m_textures[4];
-    gl::Material::Ptr m_pointMaterial;
+    gl::MaterialPtr m_pointMaterial;
     gl::GeometryPtr m_geom;
     gl::MeshPtr m_mesh;
     gl::Font m_font;
@@ -53,9 +53,9 @@ private:
         m_mesh->material()->set_point_size(2.f);
         
         scene()->clear();
-        scene()->addObject(m_mesh);
+        scene()->add_object(m_mesh);
         // add lights to scene
-        for (auto l : lights()){ scene()->addObject(l ); }
+        for (auto l : lights()){ scene()->add_object(l ); }
         
         try
         {
@@ -190,7 +190,10 @@ public:
         observe_properties();
         add_tweakbar_for_component(shared_from_this());
         
-        m_pointMaterial = gl::Material::create(gl::create_shader(gl::ShaderType::POINTS_SPHERE));
+        m_pointMaterial = gl::Material::create();
+        m_pointMaterial->set_shader(gl::create_shader(gl::ShaderType::POINTS_COLOR));
+//        m_pointMaterial->set_shader(gl::create_shader(gl::ShaderType::POINTS_SPHERE));
+        
         //m_pointMaterial->add_texture(gl::createTextureFromFile("smoketex.png"));
         float vals[2];
         glGetFloatv(GL_POINT_SIZE_RANGE, vals);
@@ -228,7 +231,7 @@ public:
 //        }
     }
     
-    void tearDown()
+    void teardown()
     {
         LOG_INFO<<"ciao openclTest";
     }
@@ -239,7 +242,7 @@ public:
         
         ViewerApp::update(timeDelta);
         updateParticles(timeDelta);
-//        setColors();
+        setColors();
     }
     
     void draw()
@@ -275,6 +278,11 @@ public:
                              vec4(vec3(1) - clear_color().xyz(), 1.f),
                              glm::vec2(gl::window_dimension().x - 115, gl::window_dimension().y - 30));
         }
+    }
+    
+    void file_drop(const MouseEvent &e, const std::vector<std::string> &files)
+    {
+        if(!files.empty()){ *m_texturePath = files.back(); }
     }
     
     void update_property(const Property::ConstPtr &theProperty)

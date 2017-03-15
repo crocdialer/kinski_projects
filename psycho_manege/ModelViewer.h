@@ -208,16 +208,16 @@ namespace kinski
         void update(float timeDelta);
         void draw();
         void resize(int w ,int h);
-        void keyPress(const KeyEvent &e);
-        void keyRelease(const KeyEvent &e);
-        void mousePress(const MouseEvent &e);
-        void mouseRelease(const MouseEvent &e);
-        void mouseMove(const MouseEvent &e);
-        void mouseDrag(const MouseEvent &e);
-        void mouseWheel(const MouseEvent &e);
+        void key_press(const KeyEvent &e);
+        void key_release(const KeyEvent &e);
+        void mouse_press(const MouseEvent &e);
+        void mouse_release(const MouseEvent &e);
+        void mouse_move(const MouseEvent &e);
+        void mouse_drag(const MouseEvent &e);
+        void mouse_wheel(const MouseEvent &e);
         void got_message(const std::vector<uint8_t> &the_message);
-        void fileDrop(const MouseEvent &e, const std::vector<std::string> &files);
-        void tearDown();
+        void file_drop(const MouseEvent &e, const std::vector<std::string> &files);
+        void teardown();
         void update_property(const Property::ConstPtr &theProperty);
         
         ////////////////////////////////////////////////////////////////////////////////////////
