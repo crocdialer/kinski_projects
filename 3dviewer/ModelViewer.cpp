@@ -121,8 +121,8 @@ void ModelViewer::update(float timeDelta)
                 m_post_process_mat->set_depth_test(false);
             }catch(Exception &e){ LOG_WARNING << e.what(); }
         }
-        
-        camera()->setClippingPlanes(0.1f, 1000.f);
+
+        camera()->set_clipping(0.1f, 1000.f);
         m_post_process_mat->uniform("u_window_dimension", gl::window_dimension());
         m_post_process_mat->uniform("u_znear", camera()->near());
         m_post_process_mat->uniform("u_zfar", camera()->far());
@@ -204,8 +204,8 @@ void ModelViewer::draw()
         // crunch bone data
         vector<vec3> skel_points;
         vector<string> bone_names;
-        build_skeleton(m_mesh->rootBone(), skel_points, bone_names);
-        gl::load_matrix(gl::MODEL_VIEW_MATRIX, camera()->getViewMatrix() * m_mesh->global_transform());
+        build_skeleton(m_mesh->root_bone(), skel_points, bone_names);
+        gl::load_matrix(gl::MODEL_VIEW_MATRIX, camera()->view_matrix() * m_mesh->global_transform());
 
         // draw bone data
         gl::draw_lines(skel_points, gl::COLOR_DARK_RED, 5.f);
