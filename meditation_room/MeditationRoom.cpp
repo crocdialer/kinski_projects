@@ -65,7 +65,7 @@ void MeditationRoom::setup()
 #if defined(KINSKI_GLES)
     rgb_shader.loadFromData(unlit_vert, fs::read_file("rgb_shift_es2.frag"));
 #else
-    rgb_shader.loadFromData(unlit_vert, fs::read_file("rgb_shift.frag"));
+    rgb_shader.load_from_data(unlit_vert, fs::read_file("rgb_shift.frag"));
 #endif
     
     

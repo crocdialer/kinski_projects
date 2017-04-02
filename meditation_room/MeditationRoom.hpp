@@ -47,7 +47,7 @@ namespace kinski
         CircularBuffer<float> m_bio_acceleration, m_bio_elongation;
         std::vector<uint8_t> m_serial_accumulator;
         
-        double m_sensor_read_timestamp = getApplicationTime();
+        double m_sensor_read_timestamp = get_application_time();
         
         Property_<float>::Ptr
         m_timeout_idle = Property_<float>::create("timeout idle", 30.f),

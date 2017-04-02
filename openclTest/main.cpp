@@ -130,6 +130,8 @@ private:
     
     void setColors()
     {
+        if(!m_textures[0]) return;
+
         try
         {
             vector<cl::Memory> glBuffers;

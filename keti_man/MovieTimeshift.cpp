@@ -171,7 +171,7 @@ void MovieTimeshift::update(float timeDelta)
     }
     
     // update procedural noise texture
-    textures()[TEXTURE_NOISE] = m_noise.simplex(getApplicationTime() * *m_noise_velocity + *m_noise_seed);
+    textures()[TEXTURE_NOISE] = m_noise.simplex(get_application_time() * *m_noise_velocity + *m_noise_seed);
     m_custom_mat->textures() = {m_array_tex, textures()[TEXTURE_NOISE]};
 }
 
