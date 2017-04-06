@@ -52,7 +52,10 @@ namespace kinski
         m_timer_scale = RangedProperty<float>::create("timer scale", 2.f, 0.f , 10.f),
         m_timer_scale_variance = RangedProperty<float>::create("timer scale variance", .05f, 0.f , 1.f),
         m_timer_scale_duration = RangedProperty<float>::create("timer scale duration", 1.f, 0.f , 10.f);
-        
+
+        Property_<uint32_t>::Ptr
+        m_timer_start_minute = RangedProperty<uint32_t>::create("start minute", 0, 0, 59);
+
         Property_<uint32_t>::Ptr
         m_broadcast_port = Property_<uint32_t>::create("discovery broadcast port", 55555);
 

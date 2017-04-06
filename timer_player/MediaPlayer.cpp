@@ -42,7 +42,7 @@ void MediaPlayer::start_timer()
 {
     std::time_t tt = std::time(nullptr);
     std::tm* calendar_time = std::localtime(&tt);
-    int seconds_left = (60 - calendar_time->tm_min) * 60 + (60 - calendar_time->tm_sec);
+    int seconds_left = ((60 - calendar_time->tm_min + *m_timer_start_minute) % 60) * 60 + (60 - calendar_time->tm_sec);
     m_timer_restart_movie.expires_from_now(seconds_left);
 }
 
@@ -67,6 +67,7 @@ void MediaPlayer::setup()
     register_property(m_timer_scale);
     register_property(m_timer_scale_variance);
     register_property(m_timer_scale_duration);
+    register_property(m_timer_start_minute);
     register_property(m_media_path);
     register_property(m_loop);
     register_property(m_auto_play);
@@ -391,6 +392,7 @@ void MediaPlayer::update_property(const Property::ConstPtr &theProperty)
     {
         create_timer_animation(*m_timer_scale_variance, *m_timer_scale_duration);
     }
+    else if(theProperty == m_timer_start_minute){ start_timer(); }
 }
 
 /////////////////////////////////////////////////////////////////
