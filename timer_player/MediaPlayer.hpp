@@ -50,7 +50,8 @@ namespace kinski
         m_volume = RangedProperty<float>::create("volume", 1.f, 0.f , 1.f),
         m_brightness = RangedProperty<float>::create("brightness", 1.f, 0.f , 2.f),
         m_timer_scale = RangedProperty<float>::create("timer scale", 2.f, 0.f , 10.f),
-        m_timer_scale_variance = RangedProperty<float>::create("timer scale variance", .2f, 0.f , 1.f);
+        m_timer_scale_variance = RangedProperty<float>::create("timer scale variance", .05f, 0.f , 1.f),
+        m_timer_scale_duration = RangedProperty<float>::create("timer scale duration", 1.f, 0.f , 10.f);
         
         Property_<uint32_t>::Ptr
         m_broadcast_port = Property_<uint32_t>::create("discovery broadcast port", 55555);
@@ -58,7 +59,7 @@ namespace kinski
         float m_current_scale;
         Timer m_timer_restart_movie;
         void start_timer();
-        void create_timer_animation(float frac = 0.2f);
+        void create_timer_animation(float variance, float duration);
 
         std::string secs_to_time_str(float the_secs) const;
 

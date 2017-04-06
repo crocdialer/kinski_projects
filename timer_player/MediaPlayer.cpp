@@ -46,10 +46,10 @@ void MediaPlayer::start_timer()
     m_timer_restart_movie.expires_from_now(seconds_left);
 }
 
-void MediaPlayer::create_timer_animation(float frac)
+void MediaPlayer::create_timer_animation(float variance, float duration)
 {
-    animations()[0] = animation::create(&m_current_scale, *m_timer_scale * (1 - frac),
-                                        *m_timer_scale * (1 + frac), 1.f);
+    animations()[0] = animation::create(&m_current_scale, *m_timer_scale * (1 - variance),
+                                        *m_timer_scale * (1 + variance), duration);
     animations()[0]->set_ease_function(animation::EaseInOutSine());
     animations()[0]->set_loop(animation::LOOP_BACK_FORTH);
     animations()[0]->start();
@@ -66,6 +66,7 @@ void MediaPlayer::setup()
 
     register_property(m_timer_scale);
     register_property(m_timer_scale_variance);
+    register_property(m_timer_scale_duration);
     register_property(m_media_path);
     register_property(m_loop);
     register_property(m_auto_play);
@@ -385,9 +386,10 @@ void MediaPlayer::update_property(const Property::ConstPtr &theProperty)
             });
         }
     }
-    else if(theProperty == m_timer_scale || theProperty == m_timer_scale_variance)
+    else if(theProperty == m_timer_scale || theProperty == m_timer_scale_variance ||
+            theProperty == m_timer_scale_duration)
     {
-        create_timer_animation(*m_timer_scale_variance);
+        create_timer_animation(*m_timer_scale_variance, *m_timer_scale_duration);
     }
 }
 
