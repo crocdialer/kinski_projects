@@ -62,7 +62,7 @@ void MediaPlayer::setup()
     Logger::get()->set_use_log_file(true);
 
     fonts()[1].load(fonts()[0].path(), 28);
-    fonts()[2].load(fonts()[0].path(), 49);
+    fonts()[2].load(fonts()[0].path(), 72);
 
     register_property(m_timer_scale);
     register_property(m_timer_scale_variance);
