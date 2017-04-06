@@ -42,7 +42,7 @@ void MediaPlayer::start_timer()
 {
     std::time_t tt = std::time(nullptr);
     std::tm* calendar_time = std::localtime(&tt);
-    int seconds_left = ((60 - calendar_time->tm_min + *m_timer_start_minute) % 60) * 60 + (60 - calendar_time->tm_sec);
+    int seconds_left = ((59 - calendar_time->tm_min + *m_timer_start_minute) % 60) * 60 + (60 - calendar_time->tm_sec);
     m_timer_restart_movie.expires_from_now(seconds_left);
 }
 
