@@ -6,6 +6,7 @@
 //
 //
 
+#include <kinskiGL/modules/curl/http.h>
 #include "CapSenseMonitor.hpp"
 #include "core/Serial.hpp"
 
@@ -109,6 +110,24 @@ void CapSenseMonitor::resize(int w ,int h)
 void CapSenseMonitor::key_press(const KeyEvent &e)
 {
     ViewerApp::key_press(e);
+
+    switch(e.getCode())
+    {
+        case kinski::Key::_W:
+        {
+            auto w = GLFW_Window::create(800, 500, "my super cool window", false, 0, windows().back()->handle());
+            add_window(w);
+            w->set_draw_function([this]()
+            {
+                gl::clear();
+                gl::draw_texture(textures()[0], gl::window_dimension());
+                gl::draw_circle(gl::window_dimension() / 2.f, 50.f, gl::COLOR_ORANGE, true);
+            });
+        }
+            break;
+        default:
+            break;
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -180,12 +199,16 @@ void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
             m_http.async_get(*m_img_url, [this](const net::http::connection_info_t &c,
                                                       const net::http::response_t &response)
             {
-                auto img = create_image_from_data(response.data);
-                
-                main_queue().submit([this, img]()
+                try
                 {
-                    textures()[0] = gl::create_texture_from_image(img);
-                });
+                    auto img = create_image_from_data(response.data);
+
+                    main_queue().submit([this, img]()
+                    {
+                        textures()[0] = gl::create_texture_from_image(img);
+                    });
+                }
+                catch(std::exception &e){ LOG_WARNING << "could not decode: " << c.url; }
             });
         }
         else{ textures()[0].reset(); }
@@ -300,12 +323,12 @@ void CapSenseMonitor::reset_sensors()
         }
     };
     
-    m_bluetooth->set_connect_cb([this, query_cb](UARTPtr p)
-    {
-//        sensors::query_device(p, background_queue().io_service(), query_cb);
-        connect_sensor(p);
-    });
-    m_bluetooth->open();
+//    m_bluetooth->set_connect_cb([this, query_cb](UARTPtr p)
+//    {
+////        sensors::query_device(p, background_queue().io_service(), query_cb);
+//        connect_sensor(p);
+//    });
+//    m_bluetooth->open();
     
     sensors::scan_for_devices(background_queue().io_service(), query_cb);
 }
