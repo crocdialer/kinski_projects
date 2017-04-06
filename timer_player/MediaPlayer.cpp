@@ -42,7 +42,7 @@ void MediaPlayer::start_timer()
 {
     std::time_t tt = std::time(nullptr);
     std::tm* calendar_time = std::localtime(&tt);
-    int seconds_left = (60 - calendar_time->tm_min) * 60 + (61 - calendar_time->tm_sec);
+    int seconds_left = (60 - calendar_time->tm_min) * 60 + (60 - calendar_time->tm_sec);
     m_timer_restart_movie.expires_from_now(seconds_left);
 }
 
@@ -62,7 +62,7 @@ void MediaPlayer::setup()
     Logger::get()->set_use_log_file(true);
 
     fonts()[1].load(fonts()[0].path(), 28);
-    fonts()[2].load(fonts()[0].path(), 72);
+    fonts()[2].load(fonts()[0].path(), 49);
 
     register_property(m_timer_scale);
     register_property(m_timer_scale_variance);
