@@ -123,8 +123,8 @@ void CapSenseMonitor::key_press(const KeyEvent &e)
                 gl::draw_texture(textures()[0], gl::window_dimension());
                 gl::draw_circle(gl::window_dimension() / 2.f, 50.f, gl::COLOR_ORANGE, true);
             });
-        }
 #endif
+        }
             break;
         default:
             break;
