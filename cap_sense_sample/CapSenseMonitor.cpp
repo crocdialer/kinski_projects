@@ -6,7 +6,6 @@
 //
 //
 
-#include <kinskiGL/modules/curl/http.h>
 #include "CapSenseMonitor.hpp"
 #include "core/Serial.hpp"
 
@@ -115,6 +114,7 @@ void CapSenseMonitor::key_press(const KeyEvent &e)
     {
         case kinski::Key::_W:
         {
+#if !defined(KINSKI_EGL)
             auto w = GLFW_Window::create(800, 500, "my super cool window", false, 0, windows().back()->handle());
             add_window(w);
             w->set_draw_function([this]()
@@ -124,6 +124,7 @@ void CapSenseMonitor::key_press(const KeyEvent &e)
                 gl::draw_circle(gl::window_dimension() / 2.f, 50.f, gl::COLOR_ORANGE, true);
             });
         }
+#endif
             break;
         default:
             break;
