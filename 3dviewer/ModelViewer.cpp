@@ -136,6 +136,8 @@ void ModelViewer::update(float timeDelta)
         m_post_process_mat->uniform("u_circle_of_confusion_sz", *m_circle_of_confusion_sz);
         
     }
+
+    auto js_states = get_joystick_states();
 }
 
 /////////////////////////////////////////////////////////////////

@@ -12,6 +12,14 @@ using namespace std;
 using namespace kinski;
 using namespace glm;
 
+namespace
+{
+#if defined(KINSKI_MAC)
+GLenum g_px_fmt = GL_BGRA;
+#else
+GLenum g_px_fmt = GL_RGB;
+#endif
+}
 /////////////////////////////////////////////////////////////////
 
 void MovieTimeshift::setup()
@@ -105,7 +113,7 @@ void MovieTimeshift::update(float timeDelta)
         if(m_camera->copy_frame(m_camera_data, &w, &h))
         {
             LOG_TRACE << "received frame: " << w << " x " << h;
-            textures()[TEXTURE_INPUT].update(&m_camera_data[0], GL_UNSIGNED_BYTE, GL_BGRA, w, h,
+            textures()[TEXTURE_INPUT].update(&m_camera_data[0], GL_UNSIGNED_BYTE, g_px_fmt, w, h,
                                              *m_flip_image);
             
             if(m_needs_array_refresh)
@@ -271,11 +279,11 @@ bool MovieTimeshift::insert_data_into_array_texture(const std::vector<uint8_t> &
     
     // bind pbo for reading
     m_pbo.bind(GL_PIXEL_UNPACK_BUFFER);
-    
+
     // upload new frame to array texture
     the_array_tex.bind();
     glTexSubImage3D(the_array_tex.target(), 0, 0, 0, the_index, the_width, the_height, 1,
-                    GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
+                    g_px_fmt, GL_UNSIGNED_BYTE, nullptr);
     the_array_tex.unbind();
     
     m_pbo.unbind(GL_PIXEL_UNPACK_BUFFER);
