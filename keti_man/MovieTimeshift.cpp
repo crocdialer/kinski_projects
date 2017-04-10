@@ -15,11 +15,12 @@ using namespace glm;
 namespace
 {
 #if defined(KINSKI_MAC)
-GLenum g_px_fmt = GL_BGRA;
+    GLenum g_px_fmt = GL_BGRA;
 #else
-GLenum g_px_fmt = GL_RGB;
+    GLenum g_px_fmt = GL_RGB;
 #endif
 }
+
 /////////////////////////////////////////////////////////////////
 
 void MovieTimeshift::setup()
