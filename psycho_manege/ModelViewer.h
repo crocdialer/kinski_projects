@@ -69,7 +69,7 @@ namespace kinski
         // our beamer setup
         std::vector<gl::PerspectiveCamera::Ptr> m_offscreen_cams{4};
         std::vector<gl::MeshPtr> m_offscreen_meshes{4};
-        std::vector<const gl::Color>
+        std::vector<gl::Color>
         m_cam_colors = {gl::COLOR_RED, gl::COLOR_GREEN, gl::COLOR_BLUE, gl::COLOR_YELLOW,
         gl::COLOR_ORANGE, gl::COLOR_PURPLE};
         gl::Fbo m_offscreen_fbo;

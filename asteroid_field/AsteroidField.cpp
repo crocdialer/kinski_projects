@@ -105,7 +105,7 @@ void AsteroidField::draw()
     if(*m_mode == MODE_NORMAL)
     {
         gl::set_projection(camera());
-        mat4 m = camera()->getViewMatrix();
+        mat4 m = camera()->view_matrix();
         m[3] = vec4(0, 0, 0, 1);
         gl::load_matrix(gl::MODEL_VIEW_MATRIX, m);
         gl::draw_mesh(m_skybox_mesh);

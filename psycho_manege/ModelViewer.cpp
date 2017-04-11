@@ -194,7 +194,7 @@ void ModelViewer::update(float timeDelta)
     //////////////////////////////// Displacement //////////////////////////////////////////
     
     // update displacement map
-    textures()[TEXTURE_NOISE] = m_noise.simplex(getApplicationTime() * *m_displace_velocity);
+    textures()[TEXTURE_NOISE] = m_noise.simplex(get_application_time() * *m_displace_velocity);
     
     // update displacement textures in models
     for(gl::Mesh *m : mv.get_objects())
@@ -250,8 +250,8 @@ void ModelViewer::draw()
         // crunch bone data
         vector<vec3> skel_points;
         vector<string> bone_names;
-        build_skeleton(selected_mesh()->rootBone(), skel_points, bone_names);
-        gl::load_matrix(gl::MODEL_VIEW_MATRIX, camera()->getViewMatrix() * selected_mesh()->global_transform());
+        build_skeleton(selected_mesh()->root_bone(), skel_points, bone_names);
+        gl::load_matrix(gl::MODEL_VIEW_MATRIX, camera()->view_matrix() * selected_mesh()->global_transform());
         
         // draw bone data
         gl::draw_lines(skel_points, gl::COLOR_DARK_RED);
@@ -276,7 +276,7 @@ void ModelViewer::draw()
         draw_textures(textures());
         
         // draw fft vals
-        for (int i = 0; i < m_last_volumes.size(); i++)
+        for (uint32_t i = 0; i < m_last_volumes.size(); i++)
         {
             float v = m_last_volumes[i];
             gl::draw_quad(gl::COLOR_ORANGE,
@@ -677,8 +677,8 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
         {
             mat->set_shader(m_shaders[use_bones ? SHADER_UNLIT_SKIN_DISPLACE : SHADER_UNLIT_DISPLACE]);
             mat->set_blending();
-            mat->set_two_sided();
-            mat->set_wireframe();
+//            mat->set_two_sided();
+//            mat->set_wireframe();
             mat->set_diffuse(gl::COLOR_WHITE);
             mat->add_texture(textures()[TEXTURE_NOISE]);
             mat->uniform("u_displace_factor", 0.f);
@@ -767,12 +767,14 @@ void ModelViewer::reset_lvl(size_t the_lvl)
         {
             m->materials()[j] = gl::Material::create();
             *m->materials()[j] = *materials[j];
+            m->materials()[j]->set_two_sided(*m_obj_wire_frame);
+            m->materials()[j]->set_wireframe(*m_obj_wire_frame);
             if(!*m_obj_texturing){ m->materials()[j]->textures().clear(); }
         }
         
         // use standard (white) vertex color
         if(!*m_obj_texturing){ m->geometry()->colors().clear(); }
-        
+
         // center our mesh
         m->position() -= gl::calculate_centroid(m->geometry()->vertices()) * m->scale();
         
@@ -800,7 +802,7 @@ void ModelViewer::toggle_selection(int the_inc)
         mesh_list.remove(m_select_indicator.get());
         
         std::vector<gl::Mesh*> m_vec(mesh_list.begin(), mesh_list.end());
-        int idx = 0;
+        uint32_t idx = 0;
         
         for(; idx < m_vec.size(); idx++){ if(m_vec[idx] == selected_mesh().get()){ break; } }
         if(!m_vec.empty())
