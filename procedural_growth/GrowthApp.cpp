@@ -59,9 +59,9 @@ void GrowthApp::setup()
         bound_mat->set_depth_write(false);
         
         // load shaders
-        m_lsystem_shaders[0].loadFromData(geom_prepass_vert,
-                                          phong_frag,
-                                          fs::read_file("lines_to_cuboids.geom").c_str());
+        m_lsystem_shaders[0].load_from_data(geom_prepass_vert,
+                                            phong_frag,
+                                            fs::read_file("lines_to_cuboids.geom").c_str());
     }
     catch(Exception &e){LOG_ERROR << e.what();}
     
