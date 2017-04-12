@@ -14,23 +14,65 @@ using namespace glm;
 namespace
 {
     std::string g_text_obj_tag = "text_obj";
+    std::string g_button_tag = "button";
 }
+
+gl::MeshPtr create_button(const std::string &icon_path)
+{
+    auto ret = gl::Mesh::create(gl::Geometry::create_plane(1, 1), gl::Material::create());
+    vec3 center = ret->geometry()->bounding_box().center();
+    for(auto &v : ret->geometry()->vertices()){ v -= center; }
+    ret->material()->set_blending();
+    ret->material()->set_depth_test(false);
+    ret->material()->set_depth_write(false);
+    ret->material()->queue_texture_load(icon_path);
+    ret->add_tag(g_button_tag);
+    ret->set_scale(180.f);
+    return ret;
+}
+
 /////////////////////////////////////////////////////////////////
 
 void InstantDisco::setup()
 {
     ViewerApp::setup();
     fonts()[FONT_LARGE].load(fonts()[FONT_NORMAL].path(), 63.f);
+    register_property(m_audio_enabled);
+    register_property(m_strobo_enabled);
+    register_property(m_discoball_enabled);
+    register_property(m_hazer_enabled);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
-    load_settings();
 
-    m_text_obj = fonts()[FONT_LARGE].create_text_obj("Welcome\nto the\ninstant disco!", 640, gl::Font::Align::CENTER);
-    m_text_obj->set_name("greeting_txt");
-    m_text_obj->add_tag(g_text_obj_tag);
-//    m_text_obj->set_position(m_text_obj->position() + gl::vec3(0, m_text_obj->bounding_box().height(), 0));
-    m_text_obj->set_position(gl::vec3(450, 300, 0));
-    scene()->add_object(m_text_obj);
+//    m_text_obj = fonts()[FONT_LARGE].create_text_obj("Welcome\nto the\ninstant disco!", 640, gl::Font::Align::CENTER);
+//    m_text_obj->set_name("greeting_txt");
+//    m_text_obj->add_tag(g_text_obj_tag);
+//    m_text_obj->set_position(gl::vec3(450, 300, 0));
+//    scene()->add_object(m_text_obj);
+    
+    scene()->add_object(m_buttons);
+    
+    auto audio_icon = create_button("audio.png");
+    audio_icon->set_position(gl::vec3(100, 100, 0));
+    m_buttons->add_child(audio_icon);
+    m_action_map[audio_icon] = [this](){ *m_audio_enabled = !*m_audio_enabled; };
+    
+    auto disco_icon = create_button("disco_ball.png");
+    disco_icon->set_position(gl::vec3(300, 100, 0));
+    m_buttons->add_child(disco_icon);
+    m_action_map[disco_icon] = [this](){ *m_discoball_enabled = !*m_discoball_enabled; };
+    
+    auto strobo_icon = create_button("stroboscope.png");
+    strobo_icon->set_position(gl::vec3(500, 100, 0));
+    m_buttons->add_child(strobo_icon);
+    m_action_map[strobo_icon] = [this](){ *m_strobo_enabled = !*m_strobo_enabled; };
+    
+    auto fog_icon = create_button("fog.png");
+    fog_icon->set_position(gl::vec3(700, 100, 0));
+    m_buttons->add_child(fog_icon);
+    m_action_map[fog_icon] = [this](){ *m_hazer_enabled = !*m_hazer_enabled; };
+    
+    load_settings();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -46,7 +88,8 @@ void InstantDisco::draw()
 {
     // 2D coords
     gl::set_matrices(gui_camera());
-    gl::draw_boundingbox(m_text_obj);
+//    gl::draw_boundingbox(m_text_obj);
+    
     scene()->render(gui_camera());
 }
 
@@ -55,6 +98,10 @@ void InstantDisco::draw()
 void InstantDisco::resize(int w ,int h)
 {
     ViewerApp::resize(w, h);
+    
+    // position buttons
+    auto button_aabb = m_buttons->bounding_box();
+    m_buttons->set_position(gl::vec3(0, h - button_aabb.height() - 100, 0));
 }
 
 /////////////////////////////////////////////////////////////////
@@ -77,12 +124,13 @@ void InstantDisco::mouse_press(const MouseEvent &e)
 {
     ViewerApp::mouse_press(e);
 
-    auto obj = scene()->pick(gl::calculate_ray(gui_camera(), glm::vec2(e.getX(), e.getY())), false);
-
-    if(obj)
-    {
-        LOG_DEBUG << "picked " << obj->name();
-    }
+    auto obj = scene()->pick(gl::calculate_ray(gui_camera(), glm::vec2(e.getX(), e.getY())), false,
+                             {g_button_tag});
+    
+    LOG_DEBUG_IF(obj) << "picked " << obj->name();
+    
+    auto iter = m_action_map.find(obj);
+    if(iter != m_action_map.end()){ iter->second(); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -150,7 +198,24 @@ void InstantDisco::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void InstantDisco::update_property(const Property::ConstPtr &theProperty)
+void InstantDisco::update_property(const Property::ConstPtr &the_property)
 {
-    ViewerApp::update_property(theProperty);
+    ViewerApp::update_property(the_property);
+    
+    if(the_property == m_audio_enabled)
+    {
+        LOG_DEBUG << *m_audio_enabled;
+    }
+    else if(the_property == m_strobo_enabled)
+    {
+        LOG_DEBUG << *m_strobo_enabled;
+    }
+    else if(the_property == m_hazer_enabled)
+    {
+        LOG_DEBUG << *m_hazer_enabled;
+    }
+    else if(the_property == m_discoball_enabled)
+    {
+        LOG_DEBUG << *m_discoball_enabled;
+    }
 }

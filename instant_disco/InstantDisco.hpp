@@ -28,11 +28,18 @@ namespace kinski
         enum FontEnum{FONT_NORMAL = 0, FONT_LARGE = 1};
         enum TextureEnum{TEXTURE_MUSIC = 0, TEXTURE_STROBO = 1, TEXTURE_FOG = 2};
 
-        gl::Object3DPtr m_text_obj;
-
+        gl::Object3DPtr m_buttons = gl::Object3D::create();
+        
+        std::map<gl::Object3DPtr, std::function<void()>> m_action_map;
+        
         media::MediaControllerPtr m_media = media::MediaController::create();
-
         dmx::DMXController m_dmx{background_queue().io_service()};
+        
+        Property_<bool>::Ptr
+        m_audio_enabled = Property_<bool>::create("audio enabled", false),
+        m_strobo_enabled = Property_<bool>::create("strobo enabled", false),
+        m_discoball_enabled = Property_<bool>::create("discoball enabled", false),
+        m_hazer_enabled = Property_<bool>::create("hazer enabled", false);
 
     public:
         InstantDisco(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
