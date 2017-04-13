@@ -7,6 +7,10 @@
 
 #include "InstantDisco.hpp"
 
+#if defined(KINSKI_RASPI)
+#include <wiringPi.h>
+#endif
+
 using namespace std;
 using namespace kinski;
 using namespace glm;
@@ -16,6 +20,8 @@ namespace
     const std::string g_text_obj_tag = "text_obj";
     const std::string g_button_tag = "button";
     const uint32_t g_led_pin = 7;
+    const uint32_t g_button_pin = 0;
+    InstantDisco *g_self = nullptr;
 }
 
 gl::MeshPtr create_button(const std::string &icon_path)
@@ -53,7 +59,10 @@ void InstantDisco::setup()
 //    m_text_obj->add_tag(g_text_obj_tag);
 //    m_text_obj->set_position(gl::vec3(450, 300, 0));
 //    scene()->add_object(m_text_obj);
-    
+
+    // set ref
+    g_self = this;
+
     scene()->add_object(m_buttons);
     
     auto audio_icon = create_button("audio.png");
@@ -82,6 +91,13 @@ void InstantDisco::setup()
     m_timer_led = Timer(background_queue().io_service(), [this](){ *m_led_enabled = !*m_led_enabled; });
     m_timer_led.set_periodic();
     m_timer_led.expires_from_now(1.0);
+
+#if defined(KINSKI_RASPI)
+    wiringPiSetup();
+    pinMode(g_led_pin, OUTPUT);
+    pullUpDnControl(g_button_pin, PUD_UP);
+    wiringPiISR(g_button_pin, INT_EDGE_BOTH,  &InstantDisco::button_ISR);
+#endif
 
     load_settings();
 }
@@ -242,6 +258,15 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     }
     else if(the_property == m_button_pressed)
     {
-
+        LOG_DEBUG << "button: " << m_button_pressed->value();
     }
+}
+
+/////////////////////////////////////////////////////////////////
+
+void InstantDisco::button_ISR()
+{
+#if defined(KINSKI_RASPI)
+    g_self->m_button_pressed = !digitalRead(g_button_pin);
+#endif
 }
