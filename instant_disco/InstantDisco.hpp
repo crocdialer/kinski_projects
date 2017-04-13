@@ -13,7 +13,6 @@
 
 #pragma once
 
-#include <kinskiGL/modules/media/media.h>
 #include "app/ViewerApp.hpp"
 
 // modules
