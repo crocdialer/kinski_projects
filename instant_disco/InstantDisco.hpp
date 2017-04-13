@@ -25,7 +25,7 @@ namespace kinski
     {
     private:
         enum FontEnum{FONT_NORMAL = 0, FONT_LARGE = 1};
-        enum TextureEnum{TEXTURE_MUSIC = 0, TEXTURE_STROBO = 1, TEXTURE_FOG = 2};
+//        enum TextureEnum{TEXTURE_MUSIC = 0, TEXTURE_STROBO = 1, TEXTURE_FOG = 2};
 
         gl::Object3DPtr m_buttons = gl::Object3D::create();
         
@@ -33,12 +33,21 @@ namespace kinski
         
         media::MediaControllerPtr m_media = media::MediaController::create();
         dmx::DMXController m_dmx{background_queue().io_service()};
-        
+
+        Timer m_timer_strobo, m_timer_fog, m_timer_led;
+
+        Property_<std::string>::Ptr
+        m_media_path = Property_<std::string>::create("media path", "");
+
         Property_<bool>::Ptr
         m_audio_enabled = Property_<bool>::create("audio enabled", false),
         m_strobo_enabled = Property_<bool>::create("strobo enabled", false),
         m_discoball_enabled = Property_<bool>::create("discoball enabled", false),
-        m_hazer_enabled = Property_<bool>::create("hazer enabled", false);
+        m_fog_enabled = Property_<bool>::create("fog enabled", false),
+        m_led_enabled = Property_<bool>::create("LED enabled", false),
+        m_button_pressed = Property_<bool>::create("button pressed", false);
+
+        static void button_ISR();
 
     public:
         InstantDisco(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};

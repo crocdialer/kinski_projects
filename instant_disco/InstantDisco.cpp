@@ -13,8 +13,9 @@ using namespace glm;
 
 namespace
 {
-    std::string g_text_obj_tag = "text_obj";
-    std::string g_button_tag = "button";
+    const std::string g_text_obj_tag = "text_obj";
+    const std::string g_button_tag = "button";
+    const uint32_t g_led_pin = 7;
 }
 
 gl::MeshPtr create_button(const std::string &icon_path)
@@ -37,10 +38,13 @@ void InstantDisco::setup()
 {
     ViewerApp::setup();
     fonts()[FONT_LARGE].load(fonts()[FONT_NORMAL].path(), 63.f);
+    register_property(m_media_path);
     register_property(m_audio_enabled);
     register_property(m_strobo_enabled);
     register_property(m_discoball_enabled);
-    register_property(m_hazer_enabled);
+    register_property(m_fog_enabled);
+    register_property(m_led_enabled);
+    register_property(m_button_pressed);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
 
@@ -70,8 +74,15 @@ void InstantDisco::setup()
     auto fog_icon = create_button("fog.png");
     fog_icon->set_position(gl::vec3(700, 100, 0));
     m_buttons->add_child(fog_icon);
-    m_action_map[fog_icon] = [this](){ *m_hazer_enabled = !*m_hazer_enabled; };
-    
+    m_action_map[fog_icon] = [this](){ *m_fog_enabled = !*m_fog_enabled; };
+
+    // setup timers
+    m_timer_strobo = Timer(main_queue().io_service(), [this](){ *m_strobo_enabled = true; });
+    m_timer_fog = Timer(main_queue().io_service(), [this](){ *m_fog_enabled = true; });
+    m_timer_led = Timer(background_queue().io_service(), [this](){ *m_led_enabled = !*m_led_enabled; });
+    m_timer_led.set_periodic();
+    m_timer_led.expires_from_now(1.0);
+
     load_settings();
 }
 
@@ -80,6 +91,7 @@ void InstantDisco::setup()
 void InstantDisco::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+    m_dmx.update(timeDelta);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -210,12 +222,26 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     {
         LOG_DEBUG << *m_strobo_enabled;
     }
-    else if(the_property == m_hazer_enabled)
+    else if(the_property == m_fog_enabled)
     {
-        LOG_DEBUG << *m_hazer_enabled;
+        LOG_DEBUG << *m_fog_enabled;
     }
     else if(the_property == m_discoball_enabled)
     {
         LOG_DEBUG << *m_discoball_enabled;
+    }
+    else if(the_property == m_led_enabled)
+    {
+//        LOG_DEBUG << "LED: " << m_led_enabled->value();
+        kinski::syscall("gpio " + to_string(g_led_pin) + " " + to_string(m_led_enabled->value()));
+    }
+    else if(the_property == m_media_path)
+    {
+//        LOG_DEBUG << "LED: " << m_led_enabled->value();
+        m_media->load(*m_media_path, false, true);
+    }
+    else if(the_property == m_button_pressed)
+    {
+
     }
 }
