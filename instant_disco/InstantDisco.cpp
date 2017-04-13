@@ -233,7 +233,7 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     else if(the_property == m_led_enabled)
     {
 //        LOG_DEBUG << "LED: " << m_led_enabled->value();
-        kinski::syscall("gpio " + to_string(g_led_pin) + " " + to_string(m_led_enabled->value()));
+        kinski::syscall("gpio write " + to_string(g_led_pin) + " " + to_string(m_led_enabled->value()));
     }
     else if(the_property == m_media_path)
     {
