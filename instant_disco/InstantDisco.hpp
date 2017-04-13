@@ -1,10 +1,6 @@
 // __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
 //
-// Copyright (C) 2012-2016, Fabian Schmidt <crocdialer@googlemail.com>
-//
-// It is distributed under the Boost Software License, Version 1.0.
-// (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt
+// Copyright (C) 2017, Fabian Schmidt <crocdialer@googlemail.com>
 // __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
 
 //  InstantDisco.hpp
@@ -34,10 +30,13 @@ namespace kinski
         media::MediaControllerPtr m_media = media::MediaController::create();
         dmx::DMXController m_dmx{background_queue().io_service()};
 
-        Timer m_timer_strobo, m_timer_fog, m_timer_led;
+        Timer m_timer_strobo, m_timer_disco_ball, m_timer_fog, m_timer_led;
 
         Property_<std::string>::Ptr
-        m_media_path = Property_<std::string>::create("media path", "");
+        m_media_path = Property_<std::string>::create("media path", ""),
+        m_strobo_dmx_values = Property_<std::string>::create("stroboscope dmx values", ""),
+        m_discoball_dmx_values = Property_<std::string>::create("discoball dmx values", ""),
+        m_fog_dmx_values = Property_<std::string>::create("fog dmx values", "");
 
         Property_<bool>::Ptr
         m_audio_enabled = Property_<bool>::create("audio enabled", false),

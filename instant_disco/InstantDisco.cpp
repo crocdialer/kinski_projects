@@ -45,6 +45,9 @@ void InstantDisco::setup()
     ViewerApp::setup();
     fonts()[FONT_LARGE].load(fonts()[FONT_NORMAL].path(), 63.f);
     register_property(m_media_path);
+    register_property(m_strobo_dmx_values);
+    register_property(m_discoball_dmx_values);
+    register_property(m_fog_dmx_values);
     register_property(m_audio_enabled);
     register_property(m_strobo_enabled);
     register_property(m_discoball_enabled);
@@ -87,10 +90,15 @@ void InstantDisco::setup()
 
     // setup timers
     m_timer_strobo = Timer(main_queue().io_service(), [this](){ *m_strobo_enabled = true; });
+    m_timer_disco_ball = Timer(main_queue().io_service(), [this](){ *m_discoball_enabled = true; });
     m_timer_fog = Timer(main_queue().io_service(), [this](){ *m_fog_enabled = true; });
     m_timer_led = Timer(background_queue().io_service(), [this](){ *m_led_enabled = !*m_led_enabled; });
     m_timer_led.set_periodic();
     m_timer_led.expires_from_now(1.0);
+
+    // position buttons
+    auto button_aabb = m_buttons->bounding_box();
+    m_buttons->set_position(gl::vec3(0, gl::window_dimension().y - button_aabb.height() - 100, 0));
 
 #if defined(KINSKI_RASPI)
     wiringPiSetup();
@@ -223,6 +231,11 @@ void InstantDisco::file_drop(const MouseEvent &e, const std::vector<std::string>
 void InstantDisco::teardown()
 {
     LOG_PRINT << "ciao " << name();
+
+    *m_strobo_enabled = false;
+    *m_fog_enabled = false;
+    *m_discoball_enabled = false;
+    *m_led_enabled = false;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -234,35 +247,58 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     if(the_property == m_audio_enabled)
     {
         LOG_DEBUG << *m_audio_enabled;
+        m_media->play();
     }
     else if(the_property == m_strobo_enabled)
     {
         LOG_DEBUG << *m_strobo_enabled;
+
+        //TODO: set dmx values
     }
     else if(the_property == m_fog_enabled)
     {
         LOG_DEBUG << *m_fog_enabled;
+
+        //TODO: set dmx values
     }
     else if(the_property == m_discoball_enabled)
     {
         LOG_DEBUG << *m_discoball_enabled;
+
+        //TODO: set dmx values
     }
     else if(the_property == m_led_enabled)
     {
-//        LOG_DEBUG << "LED: " << m_led_enabled->value();
-        //kinski::syscall("gpio write " + to_string(g_led_pin) + " " + to_string(m_led_enabled->value()));
 #if defined(KINSKI_RASPI)
 	digitalWrite(g_led_pin, *m_led_enabled);
 #endif
     }
     else if(the_property == m_media_path)
     {
-//        LOG_DEBUG << "LED: " << m_led_enabled->value();
         m_media->load(*m_media_path, false, true);
     }
     else if(the_property == m_button_pressed)
     {
-        LOG_DEBUG << "button: " << m_button_pressed->value();
+//        LOG_DEBUG << "button: " << m_button_pressed->value();
+        *m_strobo_enabled = false;
+        *m_fog_enabled = false;
+        *m_discoball_enabled = false;
+
+        if(*m_button_pressed)
+        {
+            *m_led_enabled = false;
+            m_timer_led.cancel();
+            *m_audio_enabled = true;
+
+            //TODO: random timing here
+            m_timer_strobo.expires_from_now(1.0);
+            m_timer_disco_ball.expires_from_now(2.0);
+            m_timer_fog.expires_from_now(4.0);
+        }
+        else
+        {
+            m_timer_led.expires_from_now(1.0);
+        }
     }
 }
 
