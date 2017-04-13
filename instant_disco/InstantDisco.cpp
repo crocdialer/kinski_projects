@@ -95,7 +95,8 @@ void InstantDisco::setup()
 #if defined(KINSKI_RASPI)
     wiringPiSetup();
     pinMode(g_led_pin, OUTPUT);
-    pullUpDnControl(g_button_pin, PUD_UP);
+    //pullUpDnControl(g_button_pin, PUD_UP);
+    pinMode(g_button_pin, INPUT);
     wiringPiISR(g_button_pin, INT_EDGE_BOTH,  &InstantDisco::button_ISR);
 #endif
 
