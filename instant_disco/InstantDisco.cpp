@@ -249,7 +249,10 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     else if(the_property == m_led_enabled)
     {
 //        LOG_DEBUG << "LED: " << m_led_enabled->value();
-        kinski::syscall("gpio write " + to_string(g_led_pin) + " " + to_string(m_led_enabled->value()));
+        //kinski::syscall("gpio write " + to_string(g_led_pin) + " " + to_string(m_led_enabled->value()));
+#if defined(KINSKI_RASPI)
+	digitalWrite(g_led_pin, *m_led_enabled);
+#endif
     }
     else if(the_property == m_media_path)
     {
@@ -267,6 +270,7 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
 void InstantDisco::button_ISR()
 {
 #if defined(KINSKI_RASPI)
-    g_self->m_button_pressed = !digitalRead(g_button_pin);
+    bool state = !digitalRead(g_button_pin);
+    if(*g_self->m_button_pressed != state){ *g_self->m_button_pressed = state; }
 #endif
 }
