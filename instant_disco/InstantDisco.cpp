@@ -320,9 +320,6 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     else if(the_property == m_button_pressed)
     {
         LOG_DEBUG << "button: " << m_button_pressed->value();
-        *m_strobo_enabled = false;
-        *m_fog_enabled = false;
-        *m_discoball_enabled = false;
 
         if(*m_button_pressed)
         {
@@ -343,6 +340,11 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
             m_timer_disco_ball.cancel();
             m_timer_fog.cancel();
             m_timer_led.expires_from_now(1.0);
+
+            *m_audio_enabled = false;
+            *m_strobo_enabled = false;
+            *m_fog_enabled = false;
+            *m_discoball_enabled = false;
         }
     }
 }
