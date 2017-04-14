@@ -19,7 +19,6 @@ using namespace glm;
 
 namespace
 {
-    const std::string g_text_obj_tag = "text_obj";
     const std::string g_select_obj_tag = "selection";
     const std::string g_button_tag = "button";
     const uint32_t g_led_pin = 7;
@@ -80,12 +79,6 @@ void InstantDisco::setup()
     register_property(m_button_pressed);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
-
-//    m_text_obj = fonts()[FONT_LARGE].create_text_obj("Welcome\nto the\ninstant disco!", 640, gl::Font::Align::CENTER);
-//    m_text_obj->set_name("greeting_txt");
-//    m_text_obj->add_tag(g_text_obj_tag);
-//    m_text_obj->set_position(gl::vec3(450, 300, 0));
-//    scene()->add_object(m_text_obj);
 
     scene()->add_object(m_buttons);
 
