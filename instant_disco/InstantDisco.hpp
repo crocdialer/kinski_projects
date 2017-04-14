@@ -53,7 +53,7 @@ namespace kinski
         Property_<float>::Ptr
         m_timout_strobo = Property_<float>::create("strobo timeout", 2.f),
         m_timout_discoball = Property_<float>::create("discoball timeout", 4.f),
-        m_timout_fog = Property_<float>::create("strobo timeout", 8.f),
+        m_timout_fog = Property_<float>::create("fog timeout", 8.f),
         m_timout_audio_rewind = Property_<float>::create("audio rewind timeout", 30.f);
 
         static void button_ISR();
