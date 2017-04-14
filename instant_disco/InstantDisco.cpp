@@ -158,7 +158,7 @@ void InstantDisco::draw()
 //    gl::draw_boundingbox(m_text_obj);
     gl::draw_text_2D("# button pressed: " + to_string(m_num_button_presses) + "\n" +
                      "total time: " + secs_to_time_str(m_stop_watch.time_elapsed()),
-                     fonts()[FONT_LARGE], gl::COLOR_WHITE, vec2(0, 10));
+                     fonts()[FONT_LARGE], *m_button_pressed ? gl::COLOR_RED : gl::COLOR_WHITE, vec2(0, 10));
     
     scene()->render(gui_camera());
 }
