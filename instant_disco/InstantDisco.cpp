@@ -80,9 +80,6 @@ void InstantDisco::setup()
 //    m_text_obj->set_position(gl::vec3(450, 300, 0));
 //    scene()->add_object(m_text_obj);
 
-    // set ref
-    //g_self = this;
-
     scene()->add_object(m_buttons);
 
     m_audio_icon = create_button("audio.png");
