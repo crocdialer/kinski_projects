@@ -119,8 +119,9 @@ void InstantDisco::update(float timeDelta)
 #if defined(KINSKI_RASPI)
     if(g_state_changed)
     {
-      *m_button_pressed = !digitalRead(g_button_pin);
-      g_state_changed = false;
+        bool state = !digitalRead(g_button_pin);
+        if(*m_button_pressed != state){ *m_button_pressed = state; }
+        g_state_changed = false;
     }
 #endif
     m_dmx.update(timeDelta);
@@ -317,12 +318,5 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
 
 void InstantDisco::button_ISR()
 {
-#if defined(KINSKI_RASPI)
     g_state_changed = true;
-    //bool state = !digitalRead(g_button_pin);
-    //if(*g_self->m_button_pressed != state)
-    //{
-    //    g_self->main_queue().submit([g_self, state](){ *g_self->m_button_pressed = state; })
-    //}
-#endif
 }
