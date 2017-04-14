@@ -314,7 +314,7 @@ void InstantDisco::button_ISR()
     bool state = !digitalRead(g_button_pin);
     if(*g_self->m_button_pressed != state)
     {
-        main_queue().submit([g_self](){ *g_self->m_button_pressed = state; })
+        g_self->main_queue().submit([g_self](){ *g_self->m_button_pressed = state; })
     }
 #endif
 }
