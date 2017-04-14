@@ -51,6 +51,13 @@ gl::MeshPtr create_button(const std::string &icon_path)
     return ret;
 }
 
+std::string secs_to_time_str(float the_secs)
+{
+    char buf[32];
+    sprintf(buf, "%d:%02d:%04.1f", (int)the_secs / 3600, ((int)the_secs / 60) % 60, fmodf(the_secs, 60));
+    return buf;
+}
+
 /////////////////////////////////////////////////////////////////
 
 void InstantDisco::setup()
@@ -113,7 +120,7 @@ void InstantDisco::setup()
 
     // position buttons
     auto button_aabb = m_buttons->bounding_box();
-    m_buttons->set_position(gl::vec3(0, gl::window_dimension().y - button_aabb.height() - 100, 0));
+    m_buttons->set_position(gl::vec3(0, gl::window_dimension().y - button_aabb.height() - 150, 0));
 
 #if defined(KINSKI_RASPI)
     wiringPiSetup();
@@ -149,6 +156,9 @@ void InstantDisco::draw()
     // 2D coords
     gl::set_matrices(gui_camera());
 //    gl::draw_boundingbox(m_text_obj);
+    gl::draw_text_2D("# button pressed: " + to_string(m_num_button_presses) + "\n" +
+                     "total time: " + secs_to_time_str(m_stop_watch.time_elapsed()),
+                     fonts()[FONT_LARGE], gl::COLOR_WHITE, vec2(0, 10));
     
     scene()->render(gui_camera());
 }
@@ -161,7 +171,7 @@ void InstantDisco::resize(int w ,int h)
     
     // position buttons
     auto button_aabb = m_buttons->bounding_box();
-    m_buttons->set_position(gl::vec3(0, h - button_aabb.height() - 100, 0));
+    m_buttons->set_position(gl::vec3(0, h - button_aabb.height() - 150, 0));
 }
 
 /////////////////////////////////////////////////////////////////
@@ -333,6 +343,10 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
             m_timer_strobo.expires_from_now(*m_timout_strobo);
             m_timer_disco_ball.expires_from_now(*m_timout_discoball);
             m_timer_fog.expires_from_now(*m_timout_fog);
+
+            // stats
+            m_num_button_presses++;
+            m_stop_watch.start();
         }
         else
         {
@@ -346,6 +360,8 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
             *m_strobo_enabled = false;
             *m_fog_enabled = false;
             *m_discoball_enabled = false;
+
+            m_stop_watch.stop();
         }
     }
 }

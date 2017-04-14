@@ -33,6 +33,9 @@ namespace kinski
 
         Timer m_timer_strobo, m_timer_disco_ball, m_timer_fog, m_timer_led, m_timer_audio_restart;
 
+        uint32_t m_num_button_presses = 0;
+        Stopwatch m_stop_watch;
+
         Property_<std::string>::Ptr
         m_media_path = Property_<std::string>::create("media path", ""),
         m_strobo_dmx_values = Property_<std::string>::create("stroboscope dmx values", ""),
