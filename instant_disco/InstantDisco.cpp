@@ -61,6 +61,10 @@ void InstantDisco::setup()
     register_property(m_strobo_dmx_values);
     register_property(m_discoball_dmx_values);
     register_property(m_fog_dmx_values);
+    register_property(m_timout_strobo);
+    register_property(m_timout_discoball);
+    register_property(m_timout_fog);
+    register_property(m_timout_audio_rewind);
     register_property(m_audio_enabled);
     register_property(m_strobo_enabled);
     register_property(m_discoball_enabled);
@@ -329,13 +333,13 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
             *m_audio_enabled = true;
 
             //TODO: random timing here
-            m_timer_strobo.expires_from_now(1.0);
-            m_timer_disco_ball.expires_from_now(2.0);
-            m_timer_fog.expires_from_now(4.0);
+            m_timer_strobo.expires_from_now(*m_timout_strobo);
+            m_timer_disco_ball.expires_from_now(*m_timout_discoball);
+            m_timer_fog.expires_from_now(*m_timout_fog);
         }
         else
         {
-            m_timer_audio_restart.expires_from_now(30.0);
+            m_timer_audio_restart.expires_from_now(*m_timout_audio_rewind);
             m_timer_strobo.cancel();
             m_timer_disco_ball.cancel();
             m_timer_fog.cancel();
