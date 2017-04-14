@@ -24,13 +24,14 @@ namespace kinski
 //        enum TextureEnum{TEXTURE_MUSIC = 0, TEXTURE_STROBO = 1, TEXTURE_FOG = 2};
 
         gl::Object3DPtr m_buttons = gl::Object3D::create();
+        gl::Object3DPtr m_audio_icon, m_strobo_icon, m_discoball_icon, m_fog_icon;
 
         std::map<gl::Object3DPtr, std::function<void()>> m_action_map;
 
         media::MediaControllerPtr m_media = media::MediaController::create();
         dmx::DMXController m_dmx{background_queue().io_service()};
 
-        Timer m_timer_strobo, m_timer_disco_ball, m_timer_fog, m_timer_led;
+        Timer m_timer_strobo, m_timer_disco_ball, m_timer_fog, m_timer_led, m_timer_audio_restart;
 
         Property_<std::string>::Ptr
         m_media_path = Property_<std::string>::create("media path", ""),

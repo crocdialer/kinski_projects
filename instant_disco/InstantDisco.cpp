@@ -5,6 +5,8 @@
 //
 //
 
+#include <atomic>
+#include <gl/Visitor.hpp>
 #include "InstantDisco.hpp"
 
 #if defined(KINSKI_RASPI)
@@ -18,23 +20,34 @@ using namespace glm;
 namespace
 {
     const std::string g_text_obj_tag = "text_obj";
+    const std::string g_select_obj_tag = "selection";
     const std::string g_button_tag = "button";
     const uint32_t g_led_pin = 7;
     const uint32_t g_button_pin = 0;
-    bool g_state_changed = true;
+    std::atomic<bool> g_state_changed(true);
 }
 
 gl::MeshPtr create_button(const std::string &icon_path)
 {
-    auto ret = gl::Mesh::create(gl::Geometry::create_plane(1, 1), gl::Material::create());
-    vec3 center = ret->geometry()->bounding_box().center();
-    for(auto &v : ret->geometry()->vertices()){ v -= center; }
+    auto geom = gl::Geometry::create_plane(1, 1);
+    vec3 center = geom->bounding_box().center();
+    for(auto &v : geom->vertices()){ v -= center; }
+
+    auto select_mesh = gl::Mesh::create(geom, gl::Material::create());
+    select_mesh->material()->set_blending();
+    select_mesh->material()->set_depth_test(false);
+    select_mesh->material()->set_depth_write(false);
+    select_mesh->material()->queue_texture_load("selection.png");
+    select_mesh->add_tag(g_select_obj_tag);
+
+    auto ret = gl::Mesh::create(geom, gl::Material::create());
     ret->material()->set_blending();
     ret->material()->set_depth_test(false);
     ret->material()->set_depth_write(false);
     ret->material()->queue_texture_load(icon_path);
     ret->add_tag(g_button_tag);
     ret->set_scale(180.f);
+    ret->add_child(select_mesh);
     return ret;
 }
 
@@ -67,31 +80,32 @@ void InstantDisco::setup()
     //g_self = this;
 
     scene()->add_object(m_buttons);
+
+    m_audio_icon = create_button("audio.png");
+    m_audio_icon->set_position(gl::vec3(100, 100, 0));
+    m_buttons->add_child(m_audio_icon);
+    m_action_map[m_audio_icon] = [this](){ *m_audio_enabled = !*m_audio_enabled; };
     
-    auto audio_icon = create_button("audio.png");
-    audio_icon->set_position(gl::vec3(100, 100, 0));
-    m_buttons->add_child(audio_icon);
-    m_action_map[audio_icon] = [this](){ *m_audio_enabled = !*m_audio_enabled; };
+    m_discoball_icon = create_button("disco_ball.png");
+    m_discoball_icon->set_position(gl::vec3(300, 100, 0));
+    m_buttons->add_child(m_discoball_icon);
+    m_action_map[m_discoball_icon] = [this](){ *m_discoball_enabled = !*m_discoball_enabled; };
     
-    auto disco_icon = create_button("disco_ball.png");
-    disco_icon->set_position(gl::vec3(300, 100, 0));
-    m_buttons->add_child(disco_icon);
-    m_action_map[disco_icon] = [this](){ *m_discoball_enabled = !*m_discoball_enabled; };
+    m_strobo_icon = create_button("stroboscope.png");
+    m_strobo_icon->set_position(gl::vec3(500, 100, 0));
+    m_buttons->add_child(m_strobo_icon);
+    m_action_map[m_strobo_icon] = [this](){ *m_strobo_enabled = !*m_strobo_enabled; };
     
-    auto strobo_icon = create_button("stroboscope.png");
-    strobo_icon->set_position(gl::vec3(500, 100, 0));
-    m_buttons->add_child(strobo_icon);
-    m_action_map[strobo_icon] = [this](){ *m_strobo_enabled = !*m_strobo_enabled; };
-    
-    auto fog_icon = create_button("fog.png");
-    fog_icon->set_position(gl::vec3(700, 100, 0));
-    m_buttons->add_child(fog_icon);
-    m_action_map[fog_icon] = [this](){ *m_fog_enabled = !*m_fog_enabled; };
+    m_fog_icon = create_button("fog.png");
+    m_fog_icon->set_position(gl::vec3(700, 100, 0));
+    m_buttons->add_child(m_fog_icon);
+    m_action_map[m_fog_icon] = [this](){ *m_fog_enabled = !*m_fog_enabled; };
 
     // setup timers
     m_timer_strobo = Timer(main_queue().io_service(), [this](){ *m_strobo_enabled = true; });
     m_timer_disco_ball = Timer(main_queue().io_service(), [this](){ *m_discoball_enabled = true; });
     m_timer_fog = Timer(main_queue().io_service(), [this](){ *m_fog_enabled = true; });
+    m_timer_audio_restart = Timer(main_queue().io_service(), [this](){ m_media->seek_to_time(0); });
     m_timer_led = Timer(background_queue().io_service(), [this](){ *m_led_enabled = !*m_led_enabled; });
     m_timer_led.set_periodic();
     m_timer_led.expires_from_now(1.0);
@@ -255,6 +269,11 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     if(the_property == m_audio_enabled)
     {
         LOG_DEBUG << *m_audio_enabled;
+
+        gl::SelectVisitor<gl::Object3D> sv({g_select_obj_tag}, false);
+        m_audio_icon->accept(sv);
+        for(auto obj : sv.get_objects()){ obj->set_enabled(*m_audio_enabled); }
+
         if(*m_audio_enabled){ m_media->play(); }
         else{ m_media->pause(); }
     }
@@ -262,17 +281,29 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     {
         LOG_DEBUG << *m_strobo_enabled;
 
+        gl::SelectVisitor<gl::Object3D> sv({g_select_obj_tag}, false);
+        m_strobo_icon->accept(sv);
+        for(auto obj : sv.get_objects()){ obj->set_enabled(*m_strobo_enabled); }
+
         //TODO: set dmx values
     }
     else if(the_property == m_fog_enabled)
     {
         LOG_DEBUG << *m_fog_enabled;
 
+        gl::SelectVisitor<gl::Object3D> sv({g_select_obj_tag}, false);
+        m_fog_icon->accept(sv);
+        for(auto obj : sv.get_objects()){ obj->set_enabled(*m_fog_enabled); }
+
         //TODO: set dmx values
     }
     else if(the_property == m_discoball_enabled)
     {
         LOG_DEBUG << *m_discoball_enabled;
+
+        gl::SelectVisitor<gl::Object3D> sv({g_select_obj_tag}, false);
+        m_discoball_icon->accept(sv);
+        for(auto obj : sv.get_objects()){ obj->set_enabled(*m_discoball_enabled); }
 
         //TODO: set dmx values
     }
@@ -295,8 +326,9 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
 
         if(*m_button_pressed)
         {
-            *m_led_enabled = false;
+            m_timer_audio_restart.cancel();
             m_timer_led.cancel();
+            *m_led_enabled = false;
             *m_audio_enabled = true;
 
             //TODO: random timing here
@@ -306,6 +338,7 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
         }
         else
         {
+            m_timer_audio_restart.expires_from_now(30.0);
             m_timer_strobo.cancel();
             m_timer_disco_ball.cancel();
             m_timer_fog.cancel();
