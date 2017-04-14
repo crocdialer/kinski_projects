@@ -24,9 +24,9 @@ namespace kinski
 //        enum TextureEnum{TEXTURE_MUSIC = 0, TEXTURE_STROBO = 1, TEXTURE_FOG = 2};
 
         gl::Object3DPtr m_buttons = gl::Object3D::create();
-        
+
         std::map<gl::Object3DPtr, std::function<void()>> m_action_map;
-        
+
         media::MediaControllerPtr m_media = media::MediaController::create();
         dmx::DMXController m_dmx{background_queue().io_service()};
 
@@ -45,7 +45,7 @@ namespace kinski
         m_fog_enabled = Property_<bool>::create("fog enabled", false),
         m_led_enabled = Property_<bool>::create("LED enabled", false),
         m_button_pressed = Property_<bool>::create("button pressed", false);
-
+        
         static void button_ISR();
 
     public:

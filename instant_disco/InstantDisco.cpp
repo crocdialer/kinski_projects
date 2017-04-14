@@ -21,7 +21,7 @@ namespace
     const std::string g_button_tag = "button";
     const uint32_t g_led_pin = 7;
     const uint32_t g_button_pin = 0;
-    InstantDisco *g_self = nullptr;
+    bool g_state_changed = true;
 }
 
 gl::MeshPtr create_button(const std::string &icon_path)
@@ -64,7 +64,7 @@ void InstantDisco::setup()
 //    scene()->add_object(m_text_obj);
 
     // set ref
-    g_self = this;
+    //g_self = this;
 
     scene()->add_object(m_buttons);
     
@@ -103,8 +103,8 @@ void InstantDisco::setup()
 #if defined(KINSKI_RASPI)
     wiringPiSetup();
     pinMode(g_led_pin, OUTPUT);
-    //pullUpDnControl(g_button_pin, PUD_UP);
     pinMode(g_button_pin, INPUT);
+    pullUpDnControl(g_button_pin, PUD_UP);
     wiringPiISR(g_button_pin, INT_EDGE_BOTH,  &InstantDisco::button_ISR);
 #endif
 
@@ -116,6 +116,13 @@ void InstantDisco::setup()
 void InstantDisco::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+#if defined(KINSKI_RASPI)
+    if(g_state_changed)
+    {
+      *m_button_pressed = !digitalRead(g_button_pin);
+      g_state_changed = false;
+    }
+#endif
     m_dmx.update(timeDelta);
 }
 
@@ -280,7 +287,7 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     }
     else if(the_property == m_button_pressed)
     {
-//        LOG_DEBUG << "button: " << m_button_pressed->value();
+        LOG_DEBUG << "button: " << m_button_pressed->value();
         *m_strobo_enabled = false;
         *m_fog_enabled = false;
         *m_discoball_enabled = false;
@@ -311,10 +318,11 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
 void InstantDisco::button_ISR()
 {
 #if defined(KINSKI_RASPI)
-    bool state = !digitalRead(g_button_pin);
-    if(*g_self->m_button_pressed != state)
-    {
-        g_self->main_queue().submit([g_self, state](){ *g_self->m_button_pressed = state; })
-    }
+    g_state_changed = true;
+    //bool state = !digitalRead(g_button_pin);
+    //if(*g_self->m_button_pressed != state)
+    //{
+    //    g_self->main_queue().submit([g_self, state](){ *g_self->m_button_pressed = state; })
+    //}
 #endif
 }
