@@ -67,10 +67,11 @@ void InstantDisco::setup()
     register_property(m_strobo_dmx_values);
     register_property(m_discoball_dmx_values);
     register_property(m_fog_dmx_values);
-    register_property(m_timout_strobo);
-    register_property(m_timout_discoball);
-    register_property(m_timout_fog);
-    register_property(m_timout_audio_rewind);
+    register_property(m_timeout_strobo);
+    register_property(m_timeout_discoball);
+    register_property(m_timeout_fog);
+    register_property(m_timeout_stop_disco);
+    register_property(m_timeout_audio_rewind);
     register_property(m_audio_enabled);
     register_property(m_strobo_enabled);
     register_property(m_discoball_enabled);
@@ -106,6 +107,7 @@ void InstantDisco::setup()
     m_timer_strobo = Timer(main_queue().io_service(), [this](){ *m_strobo_enabled = true; });
     m_timer_disco_ball = Timer(main_queue().io_service(), [this](){ *m_discoball_enabled = true; });
     m_timer_fog = Timer(main_queue().io_service(), [this](){ *m_fog_enabled = true; });
+    m_timer_stop_disco = Timer(main_queue().io_service(), [this](){ stop_disco(); });
     m_timer_audio_restart = Timer(main_queue().io_service(), [this](){ m_media->seek_to_time(0); });
     m_timer_led = Timer(background_queue().io_service(), [this](){ *m_led_enabled = !*m_led_enabled; });
     m_timer_led.set_periodic();
@@ -327,36 +329,49 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
 
         if(*m_button_pressed)
         {
-            m_timer_audio_restart.cancel();
-            m_timer_led.cancel();
-            *m_led_enabled = false;
-            *m_audio_enabled = true;
-
-            //TODO: random timing here
-            m_timer_strobo.expires_from_now(*m_timout_strobo);
-            m_timer_disco_ball.expires_from_now(*m_timout_discoball);
-            m_timer_fog.expires_from_now(*m_timout_fog);
-
             // stats
             m_num_button_presses++;
             m_stop_watch.start();
+            start_disco();
         }
         else
         {
-            m_timer_audio_restart.expires_from_now(*m_timout_audio_rewind);
-            m_timer_strobo.cancel();
-            m_timer_disco_ball.cancel();
-            m_timer_fog.cancel();
-            m_timer_led.expires_from_now(1.0);
-
-            *m_audio_enabled = false;
-            *m_strobo_enabled = false;
-            *m_fog_enabled = false;
-            *m_discoball_enabled = false;
-
             m_stop_watch.stop();
+            m_timer_stop_disco.expires_from_now(*m_timeout_stop_disco);
         }
     }
+}
+
+/////////////////////////////////////////////////////////////////
+
+void InstantDisco::start_disco()
+{
+    m_timer_stop_disco.cancel();
+    m_timer_audio_restart.cancel();
+    m_timer_led.cancel();
+    *m_led_enabled = false;
+    *m_audio_enabled = true;
+
+    //TODO: random timing here
+    m_timer_strobo.expires_from_now(*m_timeout_strobo);
+    m_timer_disco_ball.expires_from_now(*m_timeout_discoball);
+    m_timer_fog.expires_from_now(*m_timeout_fog);
+}
+
+/////////////////////////////////////////////////////////////////
+
+void InstantDisco::stop_disco()
+{
+    m_timer_audio_restart.expires_from_now(*m_timeout_audio_rewind);
+    m_timer_strobo.cancel();
+    m_timer_disco_ball.cancel();
+    m_timer_fog.cancel();
+    m_timer_led.expires_from_now(1.0);
+
+    *m_audio_enabled = false;
+    *m_strobo_enabled = false;
+    *m_fog_enabled = false;
+    *m_discoball_enabled = false;
 }
 
 /////////////////////////////////////////////////////////////////

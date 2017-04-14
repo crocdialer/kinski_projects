@@ -31,7 +31,7 @@ namespace kinski
         media::MediaControllerPtr m_media = media::MediaController::create();
         dmx::DMXController m_dmx{background_queue().io_service()};
 
-        Timer m_timer_strobo, m_timer_disco_ball, m_timer_fog, m_timer_led, m_timer_audio_restart;
+        Timer m_timer_strobo, m_timer_disco_ball, m_timer_fog, m_timer_led, m_timer_audio_restart, m_timer_stop_disco;
 
         uint32_t m_num_button_presses = 0;
         Stopwatch m_stop_watch;
@@ -51,10 +51,14 @@ namespace kinski
         m_button_pressed = Property_<bool>::create("button pressed", false);
 
         Property_<float>::Ptr
-        m_timout_strobo = Property_<float>::create("strobo timeout", 2.f),
-        m_timout_discoball = Property_<float>::create("discoball timeout", 4.f),
-        m_timout_fog = Property_<float>::create("fog timeout", 8.f),
-        m_timout_audio_rewind = Property_<float>::create("audio rewind timeout", 30.f);
+        m_timeout_strobo = Property_<float>::create("strobo timeout", 2.f),
+        m_timeout_discoball = Property_<float>::create("discoball timeout", 4.f),
+        m_timeout_fog = Property_<float>::create("fog timeout", 8.f),
+        m_timeout_stop_disco = Property_<float>::create("stop disco timeout", 0.f),
+        m_timeout_audio_rewind = Property_<float>::create("audio rewind timeout", 30.f);
+
+        void start_disco();
+        void stop_disco();
 
         static void button_ISR();
 
