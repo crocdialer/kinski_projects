@@ -247,7 +247,8 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     if(the_property == m_audio_enabled)
     {
         LOG_DEBUG << *m_audio_enabled;
-        m_media->play();
+        if(*m_audio_enabled){ m_media->play(); }
+        else{ m_media->pause(); }
     }
     else if(the_property == m_strobo_enabled)
     {
@@ -270,7 +271,7 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
     else if(the_property == m_led_enabled)
     {
 #if defined(KINSKI_RASPI)
-	digitalWrite(g_led_pin, *m_led_enabled);
+	    digitalWrite(g_led_pin, *m_led_enabled);
 #endif
     }
     else if(the_property == m_media_path)
@@ -297,6 +298,9 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
         }
         else
         {
+            m_timer_strobo.cancel();
+            m_timer_disco_ball.cancel();
+            m_timer_fog.cancel();
             m_timer_led.expires_from_now(1.0);
         }
     }
