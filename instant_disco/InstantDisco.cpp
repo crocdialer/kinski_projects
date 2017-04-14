@@ -312,6 +312,9 @@ void InstantDisco::button_ISR()
 {
 #if defined(KINSKI_RASPI)
     bool state = !digitalRead(g_button_pin);
-    if(*g_self->m_button_pressed != state){ *g_self->m_button_pressed = state; }
+    if(*g_self->m_button_pressed != state)
+    {
+        main_queue().submit([g_self](){ *g_self->m_button_pressed = state; })
+    }
 #endif
 }
