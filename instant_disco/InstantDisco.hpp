@@ -57,6 +57,7 @@ namespace kinski
         m_timeout_stop_disco = Property_<float>::create("stop disco timeout", 0.f),
         m_timeout_audio_rewind = Property_<float>::create("audio rewind timeout", 30.f);
 
+        std::map<uint32_t, uint32_t> parse_channels(const std::string &the_str);
         void start_disco();
         void stop_disco();
 

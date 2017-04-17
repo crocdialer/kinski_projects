@@ -291,7 +291,9 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
         m_strobo_icon->accept(sv);
         for(auto obj : sv.get_objects()){ obj->set_enabled(*m_strobo_enabled); }
 
-        //TODO: set dmx values
+        //set dmx values
+        auto channel_pairs = parse_channels(m_strobo_dmx_values->value());
+        for(const auto &p : channel_pairs){ m_dmx[p.first] = *m_strobo_enabled ? p.second : 0; }
     }
     else if(the_property == m_fog_enabled)
     {
@@ -301,7 +303,9 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
         m_fog_icon->accept(sv);
         for(auto obj : sv.get_objects()){ obj->set_enabled(*m_fog_enabled); }
 
-        //TODO: set dmx values
+        //set dmx values
+        auto channel_pairs = parse_channels(m_fog_dmx_values->value());
+        for(const auto &p : channel_pairs){ m_dmx[p.first] = *m_fog_enabled ? p.second : 0; }
     }
     else if(the_property == m_discoball_enabled)
     {
@@ -311,7 +315,9 @@ void InstantDisco::update_property(const Property::ConstPtr &the_property)
         m_discoball_icon->accept(sv);
         for(auto obj : sv.get_objects()){ obj->set_enabled(*m_discoball_enabled); }
 
-        //TODO: set dmx values
+        //set dmx values
+        auto channel_pairs = parse_channels(m_discoball_dmx_values->value());
+        for(const auto &p : channel_pairs){ m_dmx[p.first] = *m_discoball_enabled ? p.second : 0; }
     }
     else if(the_property == m_led_enabled)
     {
@@ -379,4 +385,33 @@ void InstantDisco::stop_disco()
 void InstantDisco::button_ISR()
 {
     g_state_changed = true;
+}
+
+/////////////////////////////////////////////////////////////////
+
+std::map<uint32_t, uint32_t> InstantDisco::parse_channels(const std::string &the_str)
+{
+    std::map<uint32_t, uint32_t> ret;
+    auto splits = kinski::split(the_str, ',');
+
+    for(auto &s : splits)
+    {
+        auto key_value_splits = split(s, ':');
+
+        if(key_value_splits.size() == 2)
+        {
+            ret[string_to<uint32_t>(key_value_splits[0])] = string_to<uint32_t>(key_value_splits[1]);
+        }
+        else if(key_value_splits.size() == 1)
+        {
+            ret[string_to<uint32_t>(key_value_splits[0])] = 255;
+        }
+        else
+        {
+            LOG_WARNING << "wrong format for dmx-value: " << s;
+            continue;
+        }
+        LOG_TRACE << "ch: " << key_value_splits[0] << " -> " << ret[string_to<uint32_t>(key_value_splits[0])];
+    }
+    return ret;
 }
