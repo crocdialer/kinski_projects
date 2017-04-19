@@ -63,6 +63,8 @@ namespace kinski
 
         static void button_ISR();
 
+        void load_assets();
+
     public:
         InstantDisco(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;

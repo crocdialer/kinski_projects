@@ -126,6 +126,9 @@ void InstantDisco::setup()
 #endif
 
     load_settings();
+
+    // scan for audio files. load first one
+    load_assets();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -414,4 +417,22 @@ std::map<uint32_t, uint32_t> InstantDisco::parse_channels(const std::string &the
         LOG_TRACE << "ch: " << key_value_splits[0] << " -> " << ret[string_to<uint32_t>(key_value_splits[0])];
     }
     return ret;
+}
+
+/////////////////////////////////////////////////////////////////
+
+void InstantDisco::load_assets()
+{
+    for(const auto &p : fs::get_search_paths())
+    {
+        auto audio_files = fs::get_directory_entries(p, fs::FileType::AUDIO);
+
+        if(!audio_files.empty())
+        {
+            *m_media_path = audio_files.front();
+            LOG_DEBUG << "found audio file: " << p;
+            return;
+        }
+    }
+    LOG_WARNING << "no audio file found!";
 }
