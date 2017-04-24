@@ -1,5 +1,5 @@
 //
-//  EmptySample.h
+//  ParticleSample.h
 //  gl
 //
 //  Created by Fabian on 29/01/14.

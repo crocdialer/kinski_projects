@@ -307,7 +307,7 @@ bool MovieTimeshift::insert_texture_into_array_texture(const gl::Texture &the_te
     
     // reserve size
     const uint32_t bytes_per_pixel = 4;
-    int num_bytes = the_texture.width() * the_texture.height() * bytes_per_pixel;
+    size_t num_bytes = the_texture.width() * the_texture.height() * bytes_per_pixel;
     if(m_pbo.num_bytes() != num_bytes)
     {
         m_pbo.set_data(nullptr, num_bytes);
