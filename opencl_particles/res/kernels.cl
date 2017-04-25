@@ -23,7 +23,8 @@ __kernel void set_colors_from_image(image2d_t image, __global float3* pos, __glo
     int h = get_image_height(image);
 
     int2 coords = {pos[i].x + w/2, pos[i].z + h/2};
-    color[i] = read_imagef(image, CLK_FILTER_NEAREST | CLK_ADDRESS_CLAMP_TO_EDGE, coords);
+    //color[i] = read_imagef(image, CLK_FILTER_NEAREST | CLK_ADDRESS_CLAMP_TO_EDGE, coords);
+    color[i] = read_imagef(image, coords);
 }
 
 // apply forces and change velocities
@@ -59,6 +60,7 @@ __kernel void apply_forces( __global float3* pos,
 
 __kernel void update_particles(__global float3* pos,
                                __global float4* color,
+                               __global float* point_sizes,
                                __global float4* vel,
                                __global float4* pos_gen,
                                __global float4* vel_gen,

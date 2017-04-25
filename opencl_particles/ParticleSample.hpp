@@ -30,12 +30,12 @@ namespace kinski
         Property_<gl::Color>::Ptr m_point_color = Property_<gl::Color>::create("point color", gl::COLOR_WHITE);
 
         Property_<gl::vec3>::Ptr
-        m_start_velocity_min = Property_<gl::vec3>::create("start velocity min"),
-        m_start_velocity_max = Property_<gl::vec3>::create("start velocity max");
+        m_start_velocity_min = Property_<gl::vec3>::create("start velocity min", gl::vec3(-5, 20, -5)),
+        m_start_velocity_max = Property_<gl::vec3>::create("start velocity max", gl::vec3(5, 25, 5));
 
         RangedProperty<float>::Ptr
         m_lifetime_min = RangedProperty<float>::create("lifetime min", 3.f, 0.f, 100.f),
-        m_lifetime_max = RangedProperty<float>::create("lifetime max", 3.f, 0.f, 100.f);
+        m_lifetime_max = RangedProperty<float>::create("lifetime max", 5.f, 0.f, 100.f);
 
         gl::ParticleSystem m_particle_system;
         gl::MeshPtr m_particle_mesh;
