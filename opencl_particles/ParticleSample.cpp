@@ -55,12 +55,14 @@ void ParticleSample::init_particles(uint32_t the_num)
     mat->set_point_size(1.f);
     mat->set_blending();
 
-    m_particle_system.opencl().set_sources("kernels.cl");
-    m_particle_system.add_kernel("update_particles");
-    m_particle_system.add_kernel("apply_forces");
+    m_particle_system.set_kernel_source("kernels.cl");
     m_particle_system.set_lifetime(*m_lifetime_min, *m_lifetime_max);
     m_particle_system.set_start_velocity(*m_start_velocity_min, *m_start_velocity_max);
+
     m_particle_system.set_bouncyness(0.2);
+    m_particle_system.forces() = {gl::vec4(0, 15, 0, 100)};
+    m_particle_system.planes() = { gl::Plane(gl::vec3(), gl::vec3(1, 1, 0)) };
+
     m_particle_system.set_mesh(m_particle_mesh);
     scene()->add_object(m_particle_mesh);
     m_needs_init = false;

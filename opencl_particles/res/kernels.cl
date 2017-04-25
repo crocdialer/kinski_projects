@@ -20,18 +20,18 @@ inline float3 reflect(float3 v, float3 n)
 	return v - 2.0f * dot(v, n) * n;
 }
 
-inline void apply_plane_contraint(float4 the_plane, float3* the_pos, float4* the_velocity,
-                                  __constant struct Params *params)
+inline void apply_plane_contraint(const float4* the_plane, float3* the_pos, float4* the_velocity,
+                                  float bouncyness)
 {
     // distance to plane
-    float dist = dot(*the_pos, the_plane.xyz) + the_plane.w;
+    float dist = dot(*the_pos, the_plane->xyz) + the_plane->w;
 
     if(dist < 0)
     {
         // set new position
-        *the_pos = *the_pos - the_plane.xyz * dist;
+        *the_pos = *the_pos - the_plane->xyz * dist;
 
-        the_velocity->xyz = params->bouncyness * reflect(the_velocity->xyz, the_plane.xyz);
+        the_velocity->xyz = bouncyness * reflect(the_velocity->xyz, the_plane->xyz);
     }
 }
 
@@ -85,6 +85,28 @@ __kernel void apply_forces( __global float3* pos,
     vel[i] += (float4)(cumulative_force, 0) * dt;
 }
 
+__kernel void apply_contraints( __global float3* pos,
+                                __global float4* velocity,
+                                __constant float4* planes,
+                                int num_planes,
+                                __constant struct Params *params)
+{
+    //get our index in the array
+    unsigned int i = get_global_id(0);
+
+    float3 p = pos[i];
+    float4 v = velocity[i];
+
+    for(int j = 0; j < num_planes; ++j)
+    {
+        float4 plane = planes[j];
+        apply_plane_contraint(&plane, &p, &v, params->bouncyness);
+    }
+
+    pos[i] = p;
+    velocity[i] = v;
+}
+
 __kernel void update_particles(__global float3* pos,
                                __global float4* color,
                                __global float* point_sizes,
@@ -119,8 +141,6 @@ __kernel void update_particles(__global float3* pos,
 
     //update the position with the new velocity
     p.xyz += v.xyz * dt;
-
-    apply_plane_contraint((float4)(0, 1, 0, 0), &p, &v, params);
 
     //store the updated life in the velocity array
     v.w = life;
