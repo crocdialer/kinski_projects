@@ -37,7 +37,8 @@ namespace kinski
 
         RangedProperty<float>::Ptr
         m_lifetime_min = RangedProperty<float>::create("lifetime min", 3.f, 0.f, 100.f),
-        m_lifetime_max = RangedProperty<float>::create("lifetime max", 5.f, 0.f, 100.f);
+        m_lifetime_max = RangedProperty<float>::create("lifetime max", 5.f, 0.f, 100.f),
+        m_bouncyness = RangedProperty<float>::create("bouncyness", .2f, 0.f, 1.f);
 
         Property_<bool>::Ptr
         m_debug_life = Property_<bool>::create("debug life", false),

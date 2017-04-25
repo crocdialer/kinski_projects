@@ -27,6 +27,13 @@ inline float3 reflect(float3 v, float3 n)
 	return v - 2.0f * dot(v, n) * n;
 }
 
+float3 linear_rand(float3 lhs, float3 rhs, uint* seed)
+{
+    return (float3)(mix(lhs.x, rhs.x, random(seed)),
+                    mix(lhs.y, rhs.y, random(seed)),
+                    mix(lhs.z, rhs.z, random(seed)));
+}
+
 inline void apply_plane_contraint(const float4* the_plane, float3* the_pos, float4* the_velocity,
                                   float bouncyness)
 {
@@ -142,15 +149,12 @@ __kernel void update_particles(__global float3* pos,
     if(life <= 0)
     {
         // Get the global id in 1D
-        uint global_id = get_global_id(1) * get_global_size(0) + get_global_id(0);
-        float rnd = random(&global_id);
+        uint seed = get_global_id(1) * get_global_size(0) + get_global_id(0);
 
         p = pos_gen[i].xyz;
         //v = vel_gen[i];
-        v.x = mix(params->velocity_min.x, params->velocity_max.x, random(&global_id));
-        v.y = mix(params->velocity_min.y, params->velocity_max.y, random(&global_id));
-        v.z = mix(params->velocity_min.z, params->velocity_max.z, random(&global_id));
-        life = mix(params->life_min, params->life_max, random(&global_id));//vel_gen[i].w;
+        v.xyz = linear_rand(params->velocity_min.xyz, params->velocity_max.xyz, &seed);
+        life = mix(params->life_min, params->life_max, random(&seed));//vel_gen[i].w;
     }
 
     //update the position with the new velocity

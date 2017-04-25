@@ -29,6 +29,7 @@ void ParticleSample::setup()
     register_property(m_start_velocity_max);
     register_property(m_lifetime_min);
     register_property(m_lifetime_max);
+    register_property(m_bouncyness);
     register_property(m_use_contraints);
     register_property(m_debug_life);
     observe_properties();
@@ -223,6 +224,10 @@ void ParticleSample::update_property(const Property::ConstPtr &theProperty)
             theProperty == m_lifetime_max)
     {
         m_particle_system.set_lifetime(*m_lifetime_min, *m_lifetime_max);
+    }
+    else if(theProperty == m_bouncyness)
+    {
+        m_particle_system.set_bouncyness(*m_bouncyness);
     }
     else if(theProperty == m_debug_life)
     {
