@@ -27,6 +27,8 @@ void ParticleSample::setup()
     register_property(m_start_velocity_max);
     register_property(m_lifetime_min);
     register_property(m_lifetime_max);
+    register_property(m_use_contraints);
+    register_property(m_debug_life);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     load_settings();
@@ -61,7 +63,7 @@ void ParticleSample::init_particles(uint32_t the_num)
 
     m_particle_system.set_bouncyness(0.2);
     m_particle_system.forces() = {gl::vec4(0, 15, 0, 100)};
-    m_particle_system.planes() = { gl::Plane(gl::vec3(), gl::vec3(1, 1, 0)) };
+    m_particle_system.planes() = { gl::Plane(gl::vec3(), gl::vec3(0, 1, 0)) };
 
     m_particle_system.set_mesh(m_particle_mesh);
     scene()->add_object(m_particle_mesh);
@@ -201,5 +203,19 @@ void ParticleSample::update_property(const Property::ConstPtr &theProperty)
             theProperty == m_start_velocity_max)
     {
         m_needs_init = true;
+    }
+    else if(theProperty == m_debug_life)
+    {
+        m_particle_system.set_debug_life(*m_debug_life);
+
+        if(!*m_debug_life && m_particle_mesh)
+        {
+            for(auto &c : m_particle_mesh->geometry()->colors()){ c = gl::COLOR_WHITE; }
+            m_particle_mesh->geometry()->create_gl_buffers();
+        }
+    }
+    else if(theProperty == m_use_contraints)
+    {
+        m_particle_system.set_use_constraints(*m_use_contraints);
     }
 }

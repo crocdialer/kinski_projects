@@ -37,6 +37,10 @@ namespace kinski
         m_lifetime_min = RangedProperty<float>::create("lifetime min", 3.f, 0.f, 100.f),
         m_lifetime_max = RangedProperty<float>::create("lifetime max", 5.f, 0.f, 100.f);
 
+        Property_<bool>::Ptr
+        m_debug_life = Property_<bool>::create("debug life", false),
+        m_use_contraints = Property_<bool>::create("use contraints", true);
+
         gl::ParticleSystem m_particle_system;
         gl::MeshPtr m_particle_mesh;
 

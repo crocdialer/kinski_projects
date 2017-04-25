@@ -4,8 +4,13 @@ typedef struct Params
     float4 velocity_min, velocity_max;
     float bouncyness;
     float life_min, life_max;
-
+    bool debug_life;
 }Params;
+
+float random(long seed)
+{
+    long val = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+}
 
 inline float4 jet(float val)
 {
@@ -40,7 +45,7 @@ inline float3 create_radial_force(float3 pos, float3 pos_particle, float strengt
     float3 dir = pos_particle - pos;
     float dist2 = dot(dir, dir);
     dir = normalize(dir);
-    return strength * dir / dist2;
+    return strength * dir / (1.f + dist2);
 }
 
 __kernel void set_colors_from_image(image2d_t image, __global float3* pos, __global float4* color)
@@ -149,8 +154,11 @@ __kernel void update_particles(__global float3* pos,
     pos[i] = p;
     vel[i] = v;
 
-    // color code remaining lifetime
-    float ratio = life / params->life_max;
-    color[i] = jet(ratio);
-    color[i].w = ratio;
+    if(params->debug_life)
+    {
+        // color code remaining lifetime
+        float ratio = life / params->life_max;
+        color[i] = jet(ratio);
+        color[i].w = ratio;
+    }
 }
