@@ -24,12 +24,14 @@ namespace kinski
     {
     private:
 
+        Property_<bool>::Ptr m_draw_fps = Property_<bool>::create("draw fps", true);
         Property_<string>::Ptr m_texture_path = Property_<string>::create("texture path", "");
         RangedProperty<int>::Ptr m_num_particles = RangedProperty<int>::create("num particles", 100000, 1, 10000000);
         RangedProperty<float>::Ptr m_point_size = RangedProperty<float>::create("point size", 3.f, 1.f, 64.f);
         Property_<gl::Color>::Ptr m_point_color = Property_<gl::Color>::create("point color", gl::COLOR_WHITE);
 
         Property_<gl::vec3>::Ptr
+        m_gravity = Property_<gl::vec3>::create("gravity", gl::vec3(0, -9.81f, 0)),
         m_start_velocity_min = Property_<gl::vec3>::create("start velocity min", gl::vec3(-5, 20, -5)),
         m_start_velocity_max = Property_<gl::vec3>::create("start velocity max", gl::vec3(5, 25, 5));
 

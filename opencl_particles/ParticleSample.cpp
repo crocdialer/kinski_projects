@@ -19,8 +19,10 @@ void ParticleSample::setup()
 {
     ViewerApp::setup();
     m_particle_system.opencl().init();
+    register_property(m_draw_fps);
     register_property(m_texture_path);
     register_property(m_num_particles);
+    register_property(m_gravity);
     register_property(m_point_size);
     register_property(m_point_color);
     register_property(m_start_velocity_min);
@@ -42,7 +44,6 @@ void ParticleSample::init_particles(uint32_t the_num)
     auto geom = gl::Geometry::create();
     auto mat = gl::Material::create(gl::ShaderType::POINTS_COLOR);
     geom->set_primitive_type(GL_POINTS);
-    m_particle_mesh = gl::Mesh::create(geom, mat);
 
     geom->vertices().resize(the_num, vec3(0));
     geom->colors().resize(the_num, gl::COLOR_WHITE);
@@ -57,7 +58,9 @@ void ParticleSample::init_particles(uint32_t the_num)
     mat->set_point_size(1.f);
     mat->set_blending();
 
+    m_particle_mesh = gl::Mesh::create(geom, mat);
     m_particle_system.set_kernel_source("kernels.cl");
+    m_particle_system.set_gravity(*m_gravity);
     m_particle_system.set_lifetime(*m_lifetime_min, *m_lifetime_max);
     m_particle_system.set_start_velocity(*m_start_velocity_min, *m_start_velocity_max);
 
@@ -88,6 +91,14 @@ void ParticleSample::draw()
     if(*m_draw_grid){ gl::draw_grid(50, 50); }
 
     scene()->render(camera());
+
+    if(*m_draw_fps)
+    {
+        gl::draw_text_2D(to_string(fps(), 1), fonts()[0],
+                         glm::mix(gl::COLOR_OLIVE, gl::COLOR_WHITE,
+                                  glm::smoothstep(0.f, 1.f, fps() / max_fps())),
+                         gl::vec2(10));
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -191,6 +202,10 @@ void ParticleSample::update_property(const Property::ConstPtr &theProperty)
     {
         m_needs_init = true;
     }
+    else if(theProperty == m_gravity)
+    {
+        m_particle_system.set_gravity(*m_gravity);
+    }
     else if(theProperty == m_point_size)
     {
         if(m_particle_mesh){ m_particle_mesh->material()->set_point_size(*m_point_size); }
@@ -202,7 +217,12 @@ void ParticleSample::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_start_velocity_min ||
             theProperty == m_start_velocity_max)
     {
-        m_needs_init = true;
+        m_particle_system.set_start_velocity(*m_start_velocity_min, *m_start_velocity_max);
+    }
+    else if(theProperty == m_lifetime_min ||
+            theProperty == m_lifetime_max)
+    {
+        m_particle_system.set_lifetime(*m_lifetime_min, *m_lifetime_max);
     }
     else if(theProperty == m_debug_life)
     {
