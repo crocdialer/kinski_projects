@@ -1,12 +1,39 @@
 typedef struct Params
 {
     float4 gravity;
-    float4 contraints_min, contraints_max;
     float4 velocity_min, velocity_max;
     float bouncyness;
     float life_min, life_max;
 
 }Params;
+
+inline float4 jet(float val)
+{
+    return (float4)(min(4.0f * val - 1.5f, -4.0f * val + 4.5f),
+                    min(4.0f * val - 0.5f, -4.0f * val + 3.5f),
+                    min(4.0f * val + 0.5f, -4.0f * val + 2.5f),
+                    1.0f);
+}
+
+inline float3 reflect(float3 v, float3 n)
+{
+	return v - 2.0f * dot(v, n) * n;
+}
+
+inline void apply_plane_contraint(float4 the_plane, float3* the_pos, float4* the_velocity,
+                                  __constant struct Params *params)
+{
+    // distance to plane
+    float dist = dot(*the_pos, the_plane.xyz) + the_plane.w;
+
+    if(dist < 0)
+    {
+        // set new position
+        *the_pos = *the_pos - the_plane.xyz * dist;
+
+        the_velocity->xyz = params->bouncyness * reflect(the_velocity->xyz, the_plane.xyz);
+    }
+}
 
 inline float3 create_radial_force(float3 pos, float3 pos_particle, float strength)
 {
@@ -93,16 +120,7 @@ __kernel void update_particles(__global float3* pos,
     //update the position with the new velocity
     p.xyz += v.xyz * dt;
 
-    //apply contraints
-    int3 min_hit = p < params->contraints_min.xyz;
-    int3 max_hit = p > params->contraints_max.xyz;
-    int3 combo_hit = min_hit | max_hit;
-
-    p = min_hit ? params->contraints_min.xyz : p;
-    p = max_hit ? params->contraints_max.xyz : p;
-
-    // bounce back at boundaries
-    v.xyz = combo_hit ? -params->bouncyness * v.xyz : v.xyz;
+    apply_plane_contraint((float4)(0, 1, 0, 0), &p, &v, params);
 
     //store the updated life in the velocity array
     v.w = life;
@@ -110,4 +128,9 @@ __kernel void update_particles(__global float3* pos,
     //update the arrays with our newly computed values
     pos[i] = p;
     vel[i] = v;
+
+    // color code remaining lifetime
+    float ratio = life / params->life_max;
+    color[i] = jet(ratio);
+    color[i].w = ratio;
 }
