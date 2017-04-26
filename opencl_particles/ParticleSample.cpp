@@ -18,7 +18,6 @@ using namespace glm;
 void ParticleSample::setup()
 {
     ViewerApp::setup();
-    m_particle_system->opencl().init();
     register_property(m_draw_fps);
     register_property(m_texture_path);
     register_property(m_num_particles);
@@ -41,38 +40,25 @@ void ParticleSample::setup()
 
 void ParticleSample::init_particles(uint32_t the_num)
 {
-    scene()->remove_object(m_particle_system);
-    auto geom = gl::Geometry::create();
-    auto mat = gl::Material::create(gl::ShaderType::POINTS_COLOR);
-    geom->set_primitive_type(GL_POINTS);
-
-    geom->vertices().resize(the_num, vec3(0));
-    geom->colors().resize(the_num, gl::COLOR_WHITE);
-    geom->point_sizes().resize(the_num, *m_point_size);
+    m_particle_system->init_with_count(the_num);
+    m_particle_system->set_kernel_source("kernels.cl");
+    m_particle_mesh = m_particle_system->mesh();
 
     float vals[2];
     glGetFloatv(GL_POINT_SIZE_RANGE, vals);
     m_point_size->set_range(vals[0], vals[1]);
-    mat->set_point_size(*m_point_size);
-    mat->set_point_attenuation(0.f, 0.01f, 0.f);
-    mat->uniform("u_pointRadius", 50.f);
-    mat->set_point_size(1.f);
-    mat->set_blending();
-
-    m_particle_mesh = gl::Mesh::create(geom, mat);
-    m_particle_system->set_kernel_source("kernels.cl");
+    m_particle_mesh->material()->set_point_size(*m_point_size);
     m_particle_system->set_gravity(*m_gravity);
     m_particle_system->set_lifetime(*m_lifetime_min, *m_lifetime_max);
     m_particle_system->set_start_velocity(*m_start_velocity_min, *m_start_velocity_max);
     m_particle_system->set_bouncyness(*m_bouncyness);
-    m_particle_system->forces() = {gl::vec4(0, 15, 0, 100)};
+    m_particle_system->forces() = {gl::vec4(0, 15, 0, 500)};
     m_particle_system->planes() = { gl::Plane(gl::vec3(), gl::vec3(0, 1, 0)) };
     m_particle_system->set_mesh(m_particle_mesh);
 
     scene()->add_object(m_particle_system);
 
-    m_particle_system->set_position(vec3(20, 0, 0));
-    m_particle_system->transform() = gl::rotate(m_particle_system->transform(), glm::pi<float>() / 6.f, gl::X_AXIS);
+//    m_particle_system->transform() = gl::rotate(gl::mat4(), glm::pi<float>() / 6.f, gl::X_AXIS);
     gl::vec3 axis = glm::inverse(gl::mat3(m_particle_system->transform())) * gl::Y_AXIS;
     m_particle_system->set_update_function([this, axis](float dt)
     {
