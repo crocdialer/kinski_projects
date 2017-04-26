@@ -1,5 +1,6 @@
 typedef struct Params
 {
+    float4 emitter_position;
     float4 gravity;
     float4 velocity_min, velocity_max;
     float bouncyness;
@@ -149,9 +150,9 @@ __kernel void update_particles(__global float3* pos,
     if(life <= 0)
     {
         // Get the global id in 1D
-        uint seed = get_global_id(1) * get_global_size(0) + get_global_id(0);
+        uint seed = (uint)(fabs(p.x) * get_global_id(1) * get_global_size(0) + get_global_id(0));
 
-        p = pos_gen[i].xyz;
+        p = pos_gen[i].xyz + params->emitter_position.xyz;
         //v = vel_gen[i];
         v.xyz = linear_rand(params->velocity_min.xyz, params->velocity_max.xyz, &seed);
         life = mix(params->life_min, params->life_max, random(&seed));//vel_gen[i].w;

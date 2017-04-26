@@ -44,7 +44,7 @@ namespace kinski
         m_debug_life = Property_<bool>::create("debug life", false),
         m_use_contraints = Property_<bool>::create("use contraints", true);
 
-        gl::ParticleSystem m_particle_system;
+        gl::ParticleSystemPtr m_particle_system = gl::ParticleSystem::create();
         gl::MeshPtr m_particle_mesh;
 
         void init_particles(uint32_t the_num);
