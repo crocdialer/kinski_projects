@@ -8,11 +8,21 @@ typedef struct Params
     bool debug_life;
 }Params;
 
+// transforms even the sequence 0,1,2,3,... into reasonably good random numbers
+// challenge: improve on this in speed and "randomness"!
+inline unsigned int randhash(unsigned int seed)
+{
+   unsigned int i=(seed^12345391u)*2654435769u;
+   i^=(i<<6)^(i>>26);
+   i*=2654435769u;
+   i+=(i<<5)^(i>>12);
+   return i;
+}
+
 float random(uint* seed)
 {
-    uint val = (*seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-    *seed = val;
-    return val / (float)(0xffffffff);
+    *seed = randhash(*seed);//(*seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+    return *seed / (float)(0xffffffff);
 }
 
 inline float4 jet(float val)
@@ -150,7 +160,7 @@ __kernel void update_particles(__global float3* pos,
     if(life <= 0)
     {
         // Get the global id in 1D
-        uint seed = (uint)(fabs(p.x) * get_global_id(1) * get_global_size(0) + get_global_id(0));
+        uint seed = get_global_id(1) * get_global_size(0) + get_global_id(0);
 
         p = pos_gen[i].xyz + params->emitter_position.xyz;
         //v = vel_gen[i];
