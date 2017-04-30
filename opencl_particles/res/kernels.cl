@@ -3,10 +3,23 @@ typedef struct Params
     float4 emitter_position;
     float4 gravity;
     float4 velocity_min, velocity_max;
+    float rotation_matrix[9];
     float bouncyness;
     float life_min, life_max;
     bool debug_life;
 }Params;
+
+__constant float inverse_int_max = 1.0 / 4294967295.0;
+
+// col-major mat3x3 <-> vec3 multiplication
+inline float3 matrix_mult_3x3(__constant float* the_mat, float3 the_vec)
+{
+    float3 ret;
+    ret.x = the_mat[0] * the_vec.x + the_mat[3] * the_vec.y + the_mat[6] * the_vec.z;
+    ret.y = the_mat[1] * the_vec.x + the_mat[4] * the_vec.y + the_mat[7] * the_vec.z;
+    ret.z = the_mat[2] * the_vec.x + the_mat[5] * the_vec.y + the_mat[8] * the_vec.z;
+    return ret;
+}
 
 // transforms even the sequence 0,1,2,3,... into reasonably good random numbers
 // challenge: improve on this in speed and "randomness"!
@@ -19,10 +32,10 @@ inline unsigned int randhash(unsigned int seed)
    return i;
 }
 
-float random(uint* seed)
+float random(uint seed)
 {
-    *seed = randhash(*seed);//(*seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
-    return *seed / (float)(0xffffffff);
+    //randhash(seed);//(*seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);
+    return randhash(seed) * inverse_int_max;
 }
 
 inline float4 jet(float val)
@@ -38,11 +51,11 @@ inline float3 reflect(float3 v, float3 n)
 	return v - 2.0f * dot(v, n) * n;
 }
 
-float3 linear_rand(float3 lhs, float3 rhs, uint* seed)
+float3 linear_rand(float3 lhs, float3 rhs, uint seed)
 {
-    return (float3)(mix(lhs.x, rhs.x, random(seed)),
-                    mix(lhs.y, rhs.y, random(seed)),
-                    mix(lhs.z, rhs.z, random(seed)));
+    return (float3)(mix(lhs.x, rhs.x, random(seed++)),
+                    mix(lhs.y, rhs.y, random(seed++)),
+                    mix(lhs.z, rhs.z, random(seed++)));
 }
 
 inline void apply_plane_contraint(const float4* the_plane, float3* the_pos, float4* the_velocity,
@@ -164,8 +177,9 @@ __kernel void update_particles(__global float3* pos,
 
         p = pos_gen[i].xyz + params->emitter_position.xyz;
         //v = vel_gen[i];
-        v.xyz = linear_rand(params->velocity_min.xyz, params->velocity_max.xyz, &seed);
-        life = mix(params->life_min, params->life_max, random(&seed));//vel_gen[i].w;
+        v.xyz = linear_rand(params->velocity_min.xyz, params->velocity_max.xyz, seed++);
+        v.xyz = matrix_mult_3x3(params->rotation_matrix, v.xyz);
+        life = mix(params->life_min, params->life_max, random(seed++));//vel_gen[i].w;
     }
 
     //update the position with the new velocity

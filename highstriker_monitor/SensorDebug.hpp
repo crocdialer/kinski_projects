@@ -32,7 +32,7 @@ namespace kinski
         m_serial_nixie = Serial::create(background_queue().io_service());
         
         float m_last_sensor_reading = 0.f, m_sensor_timeout = 5.f;
-        DMXController m_dmx{background_queue().io_service()};
+        dmx::DMXController m_dmx{background_queue().io_service()};
         
         //////////////////////// sensor input ///////////////////////////////////
 
