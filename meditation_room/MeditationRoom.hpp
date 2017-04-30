@@ -74,13 +74,13 @@ namespace kinski
         Property_<string>::Ptr
         m_asset_dir = Property_<string>::create("asset base directory", "mkb_assets");
         
-        UARTPtr m_bio_sense, m_led_device;
+        ConnectionPtr m_bio_sense, m_led_device;
         bool m_led_needs_refresh = true;
         
         DistanceSensorPtr m_motion_sensor = DistanceSensor::create();
         bool m_motion_detected = false;
         
-        DMXController m_dmx{background_queue().io_service()};
+        dmx::DMXController m_dmx{background_queue().io_service()};
         bool m_dmx_needs_refresh = true;
         
         Property_<gl::Color>::Ptr
@@ -116,7 +116,7 @@ namespace kinski
         
         bool change_state(State the_the_state, bool force_change = false);
         
-        void read_bio_sensor(UARTPtr the_uart, const std::vector<uint8_t> &data);
+        void read_bio_sensor(ConnectionPtr the_uart, const std::vector<uint8_t> &data);
         
         void update_bio_visuals(float accel, float elong);
         

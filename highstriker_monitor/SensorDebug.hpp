@@ -27,7 +27,7 @@ namespace kinski
         
         //////////////////////// serial IO //////////////////////////////////////
         
-        UARTPtr
+        ConnectionPtr
         m_serial_sensor = Serial::create(background_queue().io_service()),
         m_serial_nixie = Serial::create(background_queue().io_service());
         

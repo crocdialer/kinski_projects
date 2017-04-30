@@ -284,7 +284,7 @@ void CapSenseMonitor::send_udp_broadcast()
 
 /////////////////////////////////////////////////////////////////
 
-void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
+void CapSenseMonitor::connect_sensor(ConnectionPtr the_device)
 {
     auto cs = CapacitiveSensor::create();
     auto sensor_index = m_sensors.size();
@@ -295,11 +295,11 @@ void CapSenseMonitor::connect_sensor(UARTPtr the_uart)
     cs->set_release_callback(std::bind(&CapSenseMonitor::sensor_release, this,
                                       sensor_index, std::placeholders::_1));
 
-    if(cs->connect(the_uart))
+    if(cs->connect(the_device))
     {
-        LOG_DEBUG << "connected sensor: " << the_uart->description();
+        LOG_DEBUG << "connected sensor: " << the_device->description();
 
-        the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+        the_device->set_disconnect_cb([this](ConnectionPtr the_device)
         {
             m_scan_for_device_timer.expires_from_now(g_scan_for_device_interval);
         });
@@ -314,17 +314,17 @@ void CapSenseMonitor::reset_sensors()
 {
     m_sensors.clear();
     
-    auto query_cb = [this](const std::string &the_id, UARTPtr the_uart)
+    auto query_cb = [this](const std::string &the_id, ConnectionPtr the_device)
     {
-        LOG_TRACE_1 << "discovered device: <" << the_id << "> (" << the_uart->description() << ")";
+        LOG_TRACE_1 << "discovered device: <" << the_id << "> (" << the_device->description() << ")";
         
         if(the_id == CapacitiveSensor::id())
         {
-            main_queue().submit([this, the_uart]{ connect_sensor(the_uart); });
+            main_queue().submit([this, the_device]{ connect_sensor(the_device); });
         }
     };
     
-    m_bluetooth->set_connect_cb([this, query_cb](UARTPtr p)
+    m_bluetooth->set_connect_cb([this, query_cb](ConnectionPtr p)
     {
 //        sensors::query_device(p, background_queue().io_service(), query_cb);
         connect_sensor(p);

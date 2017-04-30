@@ -15,9 +15,9 @@ __constant float inverse_int_max = 1.0 / 4294967295.0;
 inline float3 matrix_mult_3x3(__constant float* the_mat, float3 the_vec)
 {
     float3 ret;
-    ret.x = the_mat[0] * the_vec.x + the_mat[3] * the_vec.y + the_mat[6] * the_vec.z;
-    ret.y = the_mat[1] * the_vec.x + the_mat[4] * the_vec.y + the_mat[7] * the_vec.z;
-    ret.z = the_mat[2] * the_vec.x + the_mat[5] * the_vec.y + the_mat[8] * the_vec.z;
+    ret.x = dot((float3){the_mat[0], the_mat[3], the_mat[6]}, the_vec);
+    ret.y = dot((float3){the_mat[1], the_mat[4], the_mat[7]}, the_vec);
+    ret.z = dot((float3){the_mat[2], the_mat[5], the_mat[8]}, the_vec);
     return ret;
 }
 

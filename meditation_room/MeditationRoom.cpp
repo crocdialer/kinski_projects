@@ -645,7 +645,7 @@ void MeditationRoom::sensor_release(int the_pad_index)
 
 /////////////////////////////////////////////////////////////////
 
-void MeditationRoom::read_bio_sensor(UARTPtr the_uart, const std::vector<uint8_t> &data)
+void MeditationRoom::read_bio_sensor(ConnectionPtr the_uart, const std::vector<uint8_t> &data)
 {
     std::string reading_str;
     
@@ -827,7 +827,7 @@ void MeditationRoom::create_animations()
 void MeditationRoom::connect_devices()
 {
     sensors::scan_for_devices(background_queue().io_service(),
-                              [this](const std::string &the_id, UARTPtr the_uart)
+                              [this](const std::string &the_id, ConnectionPtr the_uart)
     {
         std::vector<std::string> device_ids =
         {
@@ -853,7 +853,7 @@ void MeditationRoom::connect_devices()
                                                               this, std::placeholders::_1));
                     m_cap_sense->set_release_callback(std::bind(&MeditationRoom::sensor_release,
                                                                 this, std::placeholders::_1));
-                    the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+                    the_uart->set_disconnect_cb([this](ConnectionPtr the_uart)
                     {
                         m_cap_sense->connect(nullptr);
                         m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
@@ -872,7 +872,7 @@ void MeditationRoom::connect_devices()
                             m_timer_idle.expires_from_now(*m_timeout_idle);
                         }
                     });
-                    the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+                    the_uart->set_disconnect_cb([this](ConnectionPtr the_uart)
                     {
                         m_motion_sensor->connect(nullptr);
                         m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
@@ -882,7 +882,7 @@ void MeditationRoom::connect_devices()
                 {
                     m_led_device = the_uart;
                     m_led_device->write("0\n");
-                    the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+                    the_uart->set_disconnect_cb([this](ConnectionPtr the_uart)
                     {
                         m_led_device.reset();
                         m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
@@ -895,7 +895,7 @@ void MeditationRoom::connect_devices()
                                                           this,
                                                           std::placeholders::_1,
                                                           std::placeholders::_2));
-                    the_uart->set_disconnect_cb([this](UARTPtr the_uart)
+                    the_uart->set_disconnect_cb([this](ConnectionPtr the_uart)
                     {
                         m_bio_sense.reset();
                         m_timer_scan_for_device.expires_from_now(g_scan_for_device_interval);
