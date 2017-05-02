@@ -173,7 +173,7 @@ __kernel void update_particles(__global float3* pos,
     if(life <= 0)
     {
         // Get the global id in 1D
-        uint seed = get_global_id(1) * get_global_size(0) + get_global_id(0);
+        uint seed = get_global_id(1) * get_global_size(0) + get_global_id(0) + dot(p, p);
 
         p = pos_gen[i].xyz + params->emitter_position.xyz;
         //v = vel_gen[i];
