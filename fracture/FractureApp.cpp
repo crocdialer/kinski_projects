@@ -411,7 +411,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
 void FractureApp::shoot_box(const gl::Ray &the_ray, float the_velocity,
                             const glm::vec3 &the_half_extents)
 {
-    static gl::Shader phong_shader;
+    static gl::ShaderPtr phong_shader;
     if(!phong_shader){ phong_shader = gl::create_shader(gl::ShaderType::PHONG); }
     gl::MeshPtr mesh = gl::Mesh::create(m_box_geom, gl::Material::create(phong_shader));
     mesh->set_scale(.2f * the_half_extents);

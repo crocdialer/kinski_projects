@@ -115,7 +115,7 @@ void ModelViewer::update(float timeDelta)
         {
             try
             {
-                gl::Shader shader = gl::create_shader(gl::ShaderType::DEPTH_OF_FIELD);
+                gl::ShaderPtr shader = gl::create_shader(gl::ShaderType::DEPTH_OF_FIELD);
                 m_post_process_mat = gl::Material::create(shader);
                 m_post_process_mat->set_depth_write(false);
                 m_post_process_mat->set_depth_test(false);
@@ -588,7 +588,7 @@ void ModelViewer::update_shader()
         
         bool use_bones = m_mesh->geometry()->has_bones() && *m_use_bones;
         bool use_normal_map = *m_use_normal_map && *m_use_lighting && m_normal_map;
-        gl::Shader shader;
+        gl::ShaderPtr shader;
         
         try
         {
