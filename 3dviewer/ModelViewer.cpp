@@ -54,20 +54,21 @@ void ModelViewer::setup()
     add_tweakbar_for_component(shared_from_this());
     add_tweakbar_for_component(m_light_component);
 
-    // add lights to scene
-    gl::Object3DPtr light_root = gl::Object3D::create();
-    light_root->set_update_function([this, light_root](float time_delta)
-    {
-        light_root->transform() = gl::rotate(light_root->transform(), 0.1f * time_delta, gl::Y_AXIS);
-    });
-    
-    // rearrange standard lights as carussel
-    for(auto l : lights())
-    {
-        scene()->remove_object(l);
-        light_root->add_child(l);
-    }
-    scene()->add_object(light_root);
+//    // add lights to scene
+//    gl::Object3DPtr light_root = gl::Object3D::create();
+//    light_root->set_update_function([this, light_root](float time_delta)
+//    {
+//        light_root->transform() = gl::rotate(light_root->transform(), 0.1f * time_delta, gl::Y_AXIS);
+//    });
+//
+//    // rearrange standard lights as carussel
+//    for(auto l : lights())
+//    {
+//        scene()->remove_object(l);
+//        light_root->add_child(l);
+        
+//    }
+//    scene()->add_object(light_root);
 
     // add groundplane
     auto ground_mesh = gl::Mesh::create(gl::Geometry::create_plane(400, 400),
@@ -78,6 +79,11 @@ void ModelViewer::setup()
     scene()->add_object(ground_mesh);
 
     load_settings();
+    
+    for(auto l : lights())
+    {
+        LOG_DEBUG << to_string(l->max_distance());
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -147,10 +153,19 @@ void ModelViewer::draw()
     gl::set_matrices(camera());
     if(draw_grid()){ gl::draw_grid(50, 50); }
 
+    // test the deferred renderer
+//    int num_items = m_deferred_renderer.render_scene(scene(), camera());
+//
+//    for(uint32_t  i = 0; i < m_deferred_renderer.g_buffer().format().num_color_buffers(); ++i)
+//    {
+//        textures()[i] = m_deferred_renderer.g_buffer().texture(i);
+//        textures()[i].set_swizzle(GL_RED, GL_GREEN, GL_BLUE, GL_ONE);
+//    }
+
     if(*m_use_post_process)
     {
         auto tex = gl::render_to_texture(scene(), m_post_process_fbo, camera());
-        
+
         // draw texture with post-processing
         m_post_process_mat->textures() =
         {
@@ -594,12 +609,12 @@ void ModelViewer::update_shader()
         {
             if(use_bones)
             {
-                shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SKIN_SHADOWS :
+                shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SKIN :
                                            gl::ShaderType::UNLIT_SKIN, false);
             }
             else
             {
-                shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG_SHADOWS :
+                shader = gl::create_shader(*m_use_lighting ? gl::ShaderType::PHONG :
                                            gl::ShaderType::UNLIT, false);
             }
             

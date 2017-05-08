@@ -14,6 +14,7 @@
 #pragma once
 
 #include "app/ViewerApp.hpp"
+#include "gl/DeferredRenderer.hpp"
 
 namespace kinski
 {
@@ -22,7 +23,9 @@ namespace kinski
     private:
         
         enum TextureEnum{ TEXTURE_OFFSCREEN = 0, TEXTURE_OUTPUT = 1 };
-        
+
+        gl::DeferredRenderer m_deferred_renderer;
+
         gl::MeshPtr m_mesh;
         gl::Texture m_cube_map, m_normal_map;
         
