@@ -24,7 +24,7 @@ namespace kinski
         
         enum TextureEnum{ TEXTURE_OFFSCREEN = 0, TEXTURE_OUTPUT = 1 };
 
-        gl::DeferredRenderer m_deferred_renderer;
+        gl::DeferredRendererPtr m_deferred_renderer = gl::DeferredRenderer::create();
 
         gl::MeshPtr m_mesh;
         gl::Texture m_cube_map, m_normal_map;
@@ -52,6 +52,7 @@ namespace kinski
         
         Property_<bool>::Ptr
         m_draw_fps = Property_<bool>::create("draw fps", true),
+        m_use_deferred_render = Property_<bool>::create("use deferred rendering", true),
         m_use_lighting = Property_<bool>::create("use lighting", true),
         m_use_normal_map = Property_<bool>::create("use normal mapping", true),
         m_use_ground_plane = Property_<bool>::create("use ground plane", true);

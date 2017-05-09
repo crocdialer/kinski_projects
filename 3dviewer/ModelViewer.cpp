@@ -28,6 +28,7 @@ void ModelViewer::setup()
     register_property(m_draw_fps);
     register_property(m_model_path);
     register_property(m_use_lighting);
+    register_property(m_use_deferred_render);
     register_property(m_use_post_process);
     register_property(m_offscreen_resolution);
     register_property(m_use_normal_map);
@@ -75,15 +76,9 @@ void ModelViewer::setup()
                                         gl::Material::create(gl::create_shader(gl::ShaderType::PHONG_SHADOWS)));
     ground_mesh->transform() = glm::rotate(mat4(), -glm::half_pi<float>(), gl::X_AXIS);
     ground_mesh->add_tag(tag_ground_plane);
-    
     scene()->add_object(ground_mesh);
 
     load_settings();
-    
-    for(auto l : lights())
-    {
-        LOG_DEBUG << to_string(l->max_distance());
-    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -155,12 +150,6 @@ void ModelViewer::draw()
 
     // test the deferred renderer
 //    int num_items = m_deferred_renderer.render_scene(scene(), camera());
-//
-//    for(uint32_t  i = 0; i < m_deferred_renderer.g_buffer().format().num_color_buffers(); ++i)
-//    {
-//        textures()[i] = m_deferred_renderer.g_buffer().texture(i);
-//        textures()[i].set_swizzle(GL_RED, GL_GREEN, GL_BLUE, GL_ONE);
-//    }
 
     if(*m_use_post_process)
     {
@@ -199,7 +188,11 @@ void ModelViewer::draw()
     else
     {
         if(*m_use_post_process){ gl::draw_quad(m_post_process_mat, gl::window_dimension()); }
-        else{ scene()->render(camera()); }
+        else
+        {
+            scene()->render(camera());
+//            gl::draw_texture(m_deferred_renderer.final_texture(), gl::window_dimension());
+        }
     }
     
     if(m_light_component->draw_light_dummies())
@@ -244,6 +237,17 @@ void ModelViewer::draw()
     // draw texture map(s)
     if(displayTweakBar())
     {
+        if(*m_use_deferred_render && m_deferred_renderer->g_buffer())
+        {
+            uint32_t  i = 0;
+
+            for(; i < m_deferred_renderer->g_buffer().format().num_color_buffers(); ++i)
+            {
+                textures()[i] = m_deferred_renderer->g_buffer().texture(i);
+            }
+            textures()[i] = m_deferred_renderer->final_texture();
+        }
+
         if(m_mesh)
         {
             std::vector<gl::Texture> comb_texs = textures();
@@ -387,6 +391,10 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
                 m_dirty_shader = true;
             }
         });
+    }
+    else if(theProperty == m_use_deferred_render)
+    {
+        scene()->set_renderer(*m_use_deferred_render ? m_deferred_renderer : gl::SceneRenderer::create());
     }
     else if(theProperty == m_normalmap_path)
     {
