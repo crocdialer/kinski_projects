@@ -154,8 +154,6 @@ void ModelViewer::draw()
     if(*m_use_post_process)
     {
         auto tex = gl::render_to_texture(scene(), m_post_process_fbo, camera());
-
-        // draw texture with post-processing
         m_post_process_mat->textures() =
         {
             m_post_process_fbo.texture(),
@@ -191,7 +189,6 @@ void ModelViewer::draw()
         else
         {
             scene()->render(camera());
-//            gl::draw_texture(m_deferred_renderer.final_texture(), gl::window_dimension());
         }
     }
     
@@ -243,9 +240,9 @@ void ModelViewer::draw()
 
             for(; i < m_deferred_renderer->g_buffer().format().num_color_buffers(); ++i)
             {
-                textures()[i] = m_deferred_renderer->g_buffer().texture(i);
+                textures()[i + 2] = m_deferred_renderer->g_buffer().texture(i);
             }
-            textures()[i] = m_deferred_renderer->final_texture();
+            textures()[i + 2] = m_deferred_renderer->final_texture();
         }
 
         if(m_mesh)
