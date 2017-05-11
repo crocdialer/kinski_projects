@@ -148,9 +148,6 @@ void ModelViewer::draw()
     gl::set_matrices(camera());
     if(draw_grid()){ gl::draw_grid(50, 50); }
 
-    // test the deferred renderer
-//    int num_items = m_deferred_renderer.render_scene(scene(), camera());
-
     if(*m_use_post_process)
     {
         auto tex = gl::render_to_texture(scene(), m_post_process_fbo, camera());
