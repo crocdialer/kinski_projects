@@ -47,7 +47,7 @@ namespace kinski
             JOY_CROSS_UP = 0, JOY_START = 4, JOY_BACK = 5, JOY_RIGHT = 9, JOY_LEFT = 8,
             JOY_X = 13, JOY_Y = 14, JOY_A = 11, JOY_B = 12};
         
-        std::vector<gl::Shader> m_shaders{10};
+        std::vector<gl::ShaderPtr> m_shaders{10};
 
         Property_<std::string>::Ptr
         m_model_path = Property_<std::string>::create("model path", "");
