@@ -29,6 +29,8 @@ void ModelViewer::setup()
     register_property(m_model_path);
     register_property(m_use_lighting);
     register_property(m_use_deferred_render);
+    register_property(m_shadow_cast);
+    register_property(m_shadow_receive);
     register_property(m_use_post_process);
     register_property(m_offscreen_resolution);
     register_property(m_use_normal_map);
@@ -74,6 +76,7 @@ void ModelViewer::setup()
     // add groundplane
     auto ground_mesh = gl::Mesh::create(gl::Geometry::create_plane(400, 400),
                                         gl::Material::create(gl::create_shader(gl::ShaderType::PHONG_SHADOWS)));
+    ground_mesh->material()->set_shadow_properties(gl::Material::SHADOW_RECEIVE);
     ground_mesh->transform() = glm::rotate(mat4(), -glm::half_pi<float>(), gl::X_AXIS);
     ground_mesh->add_tag(tag_ground_plane);
     scene()->add_object(ground_mesh);
@@ -390,6 +393,19 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     {
         scene()->set_renderer(*m_use_deferred_render ? m_deferred_renderer : gl::SceneRenderer::create());
     }
+    else if(theProperty == m_shadow_cast ||
+            theProperty == m_shadow_receive)
+    {
+        if(m_mesh)
+        {
+            for(auto &mat : m_mesh->materials())
+            {
+                int val = (*m_shadow_cast ? gl::Material::SHADOW_CAST : 0) |
+                        (*m_shadow_receive ? gl::Material::SHADOW_RECEIVE : 0);
+                mat->set_shadow_properties(val);
+            }
+        }
+    }
     else if(theProperty == m_normalmap_path)
     {
         if(!m_normalmap_path->value().empty())
@@ -550,7 +566,10 @@ void ModelViewer::async_load_asset(const std::string &the_path,
             {
                 std::vector<ImagePtr> tex_imgs;
                 mat->set_wireframe(wireframe());
-                
+                int val = (*m_shadow_cast ? gl::Material::SHADOW_CAST : 0) |
+                          (*m_shadow_receive ? gl::Material::SHADOW_RECEIVE : 0);
+                mat->set_shadow_properties(val);
+
                 for(auto &p : mat->texture_paths())
                 {
                     try

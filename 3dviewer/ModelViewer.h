@@ -53,6 +53,8 @@ namespace kinski
         Property_<bool>::Ptr
         m_draw_fps = Property_<bool>::create("draw fps", true),
         m_use_deferred_render = Property_<bool>::create("use deferred rendering", true),
+        m_shadow_cast = Property_<bool>::create("cast shadow", true),
+        m_shadow_receive = Property_<bool>::create("receive shadow", true),
         m_use_lighting = Property_<bool>::create("use lighting", true),
         m_use_normal_map = Property_<bool>::create("use normal mapping", true),
         m_use_ground_plane = Property_<bool>::create("use ground plane", true);
