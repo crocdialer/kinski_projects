@@ -650,7 +650,8 @@ void ModelViewer::update_shader()
         for(auto &mat : m_mesh->materials())
         {
             if(shader){ mat->set_shader(shader); }
-            mat->set_blending();
+            //mat->set_blending();
+            
             if(use_normal_map && mat->textures().size() < 2)
             {
                 mat->textures().push_back(m_normal_map);
