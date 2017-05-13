@@ -650,11 +650,12 @@ void ModelViewer::update_shader()
         for(auto &mat : m_mesh->materials())
         {
             if(shader){ mat->set_shader(shader); }
-            //mat->set_blending();
-            
-            if(use_normal_map && mat->textures().size() < 2)
+
+            if(use_normal_map)
             {
-                mat->textures().push_back(m_normal_map);
+                if(mat->textures().size() < 2){ mat->textures().push_back(m_normal_map); }
+                else{ mat->textures()[1] = m_normal_map; }
+
                 mat->set_specular(gl::COLOR_WHITE);
                 mat->set_shinyness(15.f);
             }
