@@ -26,7 +26,7 @@ namespace kinski
 
         gl::DeferredRendererPtr m_deferred_renderer = gl::DeferredRenderer::create();
 
-        gl::MeshPtr m_mesh;
+        gl::MeshPtr m_mesh, m_ground_mesh;
         gl::Texture m_cube_map, m_normal_map;
         
         gl::Fbo m_post_process_fbo, m_offscreen_fbo;
@@ -63,6 +63,9 @@ namespace kinski
         m_model_path = Property_<std::string>::create("Model path", ""),
         m_normalmap_path = Property_<std::string>::create("normalmap path", ""),
         m_skybox_path = Property_<std::string>::create("skybox path", "");
+
+        Property_<std::vector<std::string>>::Ptr
+        m_ground_textures = Property_<std::vector<std::string>>::create("ground textures");
         
         Property_<bool>::Ptr
         m_use_bones = Property_<bool>::create("use bones", true);

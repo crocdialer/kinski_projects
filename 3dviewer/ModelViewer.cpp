@@ -41,6 +41,7 @@ void ModelViewer::setup()
     register_property(m_animation_speed);
     register_property(m_normalmap_path);
     register_property(m_skybox_path);
+    register_property(m_ground_textures);
     
     register_property(m_focal_depth);
     register_property(m_focal_length);
@@ -74,12 +75,12 @@ void ModelViewer::setup()
 //    scene()->add_object(light_root);
 
     // add groundplane
-    auto ground_mesh = gl::Mesh::create(gl::Geometry::create_plane(400, 400),
+    m_ground_mesh = gl::Mesh::create(gl::Geometry::create_plane(400, 400),
                                         gl::Material::create(gl::create_shader(gl::ShaderType::PHONG_SHADOWS)));
-    ground_mesh->material()->set_shadow_properties(gl::Material::SHADOW_RECEIVE);
-    ground_mesh->transform() = glm::rotate(mat4(), -glm::half_pi<float>(), gl::X_AXIS);
-    ground_mesh->add_tag(tag_ground_plane);
-    scene()->add_object(ground_mesh);
+    m_ground_mesh->material()->set_shadow_properties(gl::Material::SHADOW_RECEIVE);
+    m_ground_mesh->transform() = glm::rotate(mat4(), -glm::half_pi<float>(), gl::X_AXIS);
+    m_ground_mesh->add_tag(tag_ground_plane);
+    scene()->add_object(m_ground_mesh);
 
     load_settings();
 }
@@ -340,6 +341,8 @@ void ModelViewer::touch_move(const MouseEvent &e, const std::set<const Touch*> &
 void ModelViewer::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     std::vector<gl::Texture> dropped_textures;
+    auto obj = dynamic_pointer_cast<gl::Mesh>(scene()->pick(gl::calculate_ray(camera(), e.getPos())));
+
 
     for(const string &f : files)
     {
@@ -348,18 +351,24 @@ void ModelViewer::file_drop(const MouseEvent &e, const std::vector<std::string> 
         switch (fs::get_file_type(f))
         {
             case fs::FileType::MODEL:
-            case fs::FileType::IMAGE:
                 *m_model_path = f;
-//                if(scene().pick(gl::calculate_ray(camera(), vec2(e.getX(), e.getY()))))
-//                {
-//                    LOG_INFO << "texture drop on model";
-//                }
+                break;
+
+            case fs::FileType::IMAGE:
+            {
+                dropped_textures.push_back(gl::create_texture_from_file(f));
+            }
                 break;
             default:
                 break;
         }
     }
-    if(m_mesh && !dropped_textures.empty()){ m_mesh->material()->textures() = dropped_textures; }
+    if(obj && !dropped_textures.empty()){ obj->material()->textures() = dropped_textures; }
+    if(obj == m_ground_mesh)
+    {
+        LOG_DEBUG << "texture drop on model";
+        m_ground_textures->set(files);
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -457,6 +466,14 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
         for(auto &o : objs)
         {
             o->set_enabled(*m_use_ground_plane);
+        }
+    }
+    else if(theProperty == m_ground_textures)
+    {
+        m_ground_mesh->material()->textures().clear();
+        for(const auto &f : m_ground_textures->value())
+        {
+            m_ground_mesh->material()->queue_texture_load(f);
         }
     }
 }
@@ -574,6 +591,8 @@ void ModelViewer::async_load_asset(const std::string &the_path,
                 {
                     try
                     {
+                        LOG_DEBUG << "loading model texture: " << p.first;
+
                         auto img = create_image_from_file(p.first);
                         
                         if(img)
