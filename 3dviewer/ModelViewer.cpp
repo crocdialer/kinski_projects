@@ -193,10 +193,9 @@ void ModelViewer::draw()
         }
     }
     
-    if(m_light_component->draw_light_dummies())
+    //if(m_light_component->draw_light_dummies())
     {
-        gl::set_matrices(camera());
-        for (auto l : lights()){ gl::draw_light(l); }
+        m_light_component->draw_light_dummies();
     }
     
     if(*m_draw_fps)
