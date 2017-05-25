@@ -26,7 +26,7 @@ namespace kinski
         void set_display(gl::MeshPtr the_vario_mesh, int the_value);
         
         typedef std::map<int, std::list<int>> VarioMap;
-        
+        void setup_vario_map();
         VarioMap m_vario_map;
         
     public:
