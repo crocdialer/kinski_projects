@@ -21,6 +21,8 @@ namespace kinski
     {
     private:
         gl::MeshPtr m_proto_mesh;
+        std::vector<gl::MeshPtr> m_digits;
+        int m_current_index = 0;
         
         gl::MeshPtr create_proto();
         void set_display(gl::MeshPtr the_vario_mesh, int the_value);

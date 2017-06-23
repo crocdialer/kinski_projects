@@ -25,6 +25,16 @@ void VarioDisplay::setup()
     m_proto_mesh->set_scale(10.f);
     setup_vario_map();
     
+    auto aabb = m_proto_mesh->bounding_box();
+    
+    for(int i = 0; i < 5; ++i)
+    {
+        auto m = m_proto_mesh->copy();
+        m->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
+        scene()->add_object(m);
+        m_digits.push_back(m);
+    }
+    
     load_settings();
 }
 
@@ -41,9 +51,7 @@ void VarioDisplay::draw()
 {
     gl::set_matrices(camera());
     if(*m_draw_grid){ gl::draw_grid(50, 50); }
-    
-    gl::mult_matrix(gl::MODEL_VIEW_MATRIX, m_proto_mesh->global_transform());
-    gl::draw_mesh(m_proto_mesh);
+    scene()->render(camera());
 }
 
 /////////////////////////////////////////////////////////////////
@@ -59,15 +67,26 @@ void VarioDisplay::resize(int w ,int h)
 
 void VarioDisplay::key_press(const KeyEvent &e)
 {
-    ViewerApp::key_press(e);
+    if(e.isControlDown()){ ViewerApp::key_press(e); }
 }
 
 /////////////////////////////////////////////////////////////////
 
 void VarioDisplay::key_release(const KeyEvent &e)
 {
-    ViewerApp::key_release(e);
-    set_display(m_proto_mesh, e.getChar());
+    if(e.isControlDown()){ ViewerApp::key_release(e); return;}
+    
+    switch(e.getCode())
+    {
+        case Key::_BACKSPACE:
+            m_current_index = std::max(m_current_index - 1, 0);
+            set_display(m_digits[m_current_index], ' ');
+            break;
+        default:
+            set_display(m_digits[m_current_index], e.getChar());
+            m_current_index = (m_current_index + 1) % 5;
+            break;
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -168,6 +187,7 @@ gl::MeshPtr VarioDisplay::create_proto()
     };
     
     geom->set_primitive_type(GL_LINES);
+    geom->compute_bounding_box();
     gl::MeshPtr ret = gl::Mesh::create(geom, gl::Material::create());
     
     gl::Mesh::Entry e;
@@ -185,7 +205,7 @@ gl::MeshPtr VarioDisplay::create_proto()
     
     // active material
     auto active_mat = gl::Material::create(gl::ShaderType::LINES_2D);
-    active_mat->uniform("u_line_thickness", 8.f);
+    active_mat->uniform("u_line_thickness", 11.f);
 //    active_mat->uniform("u_window_size", gl::window_dimension());
     active_mat->set_diffuse(gl::COLOR_ORANGE);
     ret->materials().push_back(active_mat);
@@ -253,4 +273,13 @@ void VarioDisplay::setup_vario_map()
     m_vario_map['7'] = {0, 4, 9};
     m_vario_map['8'] = {0, 1, 5, 6, 7, 8, 12, 13};
     m_vario_map['9'] = {0, 1, 5, 6, 7, 12, 13};
+    
+    m_vario_map['-'] = {6, 7};
+    m_vario_map['+'] = {3, 6, 7, 10};
+    m_vario_map['%'] = {1, 2, 4, 6, 7, 9, 11, 12};
+    
+    float sum = 0;
+    for(const auto &p : m_vario_map){ sum += p.second.size(); }
+    sum /= m_vario_map.size();
+    LOG_INFO << "average num_elements: " << to_string(sum, 2);
 }

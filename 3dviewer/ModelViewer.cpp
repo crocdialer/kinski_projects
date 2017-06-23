@@ -186,7 +186,13 @@ void ModelViewer::draw()
     }
     else
     {
-        if(*m_use_post_process){ gl::draw_quad(m_post_process_mat, gl::window_dimension()); }
+        if(*m_use_post_process)
+        {
+            gl::draw_quad(m_post_process_mat, gl::window_dimension());
+//            Area_<int> src(0, 0, m_post_process_fbo.size().x - 1, m_post_process_fbo.size().y - 1);
+//            Area_<int> dst(0, 0, gl::window_dimension().x - 1, gl::window_dimension().y - 1);
+//            m_post_process_fbo.blit_to_current(src, dst, GL_NEAREST, GL_DEPTH_BUFFER_BIT);
+        }
         else
         {
             scene()->render(camera());
