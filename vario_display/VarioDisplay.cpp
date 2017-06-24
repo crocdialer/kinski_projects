@@ -21,7 +21,7 @@ void VarioDisplay::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     
-    m_proto_mesh = create_proto();
+    m_proto_mesh = create_proto_triangles(.1f);
     m_proto_mesh->set_scale(10.f);
     setup_vario_map();
     
@@ -206,8 +206,56 @@ gl::MeshPtr VarioDisplay::create_proto()
     // active material
     auto active_mat = gl::Material::create(gl::ShaderType::LINES_2D);
     active_mat->uniform("u_line_thickness", 11.f);
+    active_mat->set_line_width(11.f);
 //    active_mat->uniform("u_window_size", gl::window_dimension());
     active_mat->set_diffuse(gl::COLOR_ORANGE);
+    ret->materials().push_back(active_mat);
+    
+    return ret;
+}
+
+/////////////////////////////////////////////////////////////////
+
+gl::MeshPtr VarioDisplay::create_proto_triangles(float line_width)
+{
+    auto proto = create_proto();
+    auto ret = gl::Mesh::create();
+    ret->geometry()->set_primitive_type(GL_TRIANGLE_STRIP);
+    ret->material()->set_culling(gl::Material::CULL_NONE);
+    ret->material()->set_depth_write(false);
+    ret->entries().clear();
+    
+    const auto& src_verts = proto->geometry()->vertices();
+    const auto& src_indices = proto->geometry()->indices();
+    
+    auto& dst_verts = ret->geometry()->vertices();
+    auto& dst_indices = ret->geometry()->indices();
+    
+    uint32_t i = 0;
+    
+    for(auto &e : proto->entries())
+    {
+        auto v0 = src_verts[src_indices[e.base_index]], v1 = src_verts[src_indices[e.base_index + 1]];
+        gl::vec3 orth = line_width * gl::normalize(glm::cross(v1 - v0, gl::Z_AXIS));
+        gl::vec3 tmp_verts[4] = {v0 + orth, v0 - orth, v1 + orth, v1 - orth};
+        uint32_t tmp_indices[4] = {i, i + 1, i + 2, i + 3};
+        dst_verts.insert(dst_verts.end(), tmp_verts, tmp_verts + 4);
+        dst_indices.insert(dst_indices.end(), tmp_indices, tmp_indices + 4);
+        
+        gl::Mesh::Entry tmp_entry;
+        tmp_entry.num_indices = 4;
+        tmp_entry.base_index = i;
+        ret->entries().push_back(tmp_entry);
+        i += 4;
+    }
+    ret->geometry()->colors().resize(dst_verts.size(), gl::COLOR_WHITE);
+    ret->geometry()->compute_bounding_box();
+    
+    // active material
+    auto active_mat = gl::Material::create();
+    active_mat->set_diffuse(gl::COLOR_ORANGE);
+    active_mat->set_culling(gl::Material::CULL_NONE);
+    active_mat->set_depth_test(false);
     ret->materials().push_back(active_mat);
     
     return ret;

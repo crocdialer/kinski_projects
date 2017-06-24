@@ -25,6 +25,7 @@ namespace kinski
         int m_current_index = 0;
         
         gl::MeshPtr create_proto();
+        gl::MeshPtr create_proto_triangles(float line_width);
         void set_display(gl::MeshPtr the_vario_mesh, int the_value);
         
         typedef std::map<int, std::list<int>> VarioMap;
