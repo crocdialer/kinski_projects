@@ -21,18 +21,25 @@ void VarioDisplay::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     
-    m_proto_mesh = create_proto_triangles(.1f);
-    m_proto_mesh->set_scale(10.f);
+    m_proto_lines = create_proto();
+    m_proto_triangles = create_proto_triangles(.07f);
+    m_proto_lines->set_scale(10.f);
+    m_proto_triangles->set_scale(10.f);
     setup_vario_map();
     
-    auto aabb = m_proto_mesh->bounding_box();
+    auto aabb = m_proto_lines->bounding_box();
     
     for(int i = 0; i < 5; ++i)
     {
-        auto m = m_proto_mesh->copy();
-        m->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
-        scene()->add_object(m);
-        m_digits.push_back(m);
+        auto m_line = m_proto_lines->copy();
+        m_line->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
+        scene()->add_object(m_line);
+        m_digits_lines.push_back(m_line);
+        
+        auto m_triangle = m_proto_triangles->copy();
+        m_triangle->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
+        scene()->add_object(m_triangle);
+        m_digits_triangles.push_back(m_triangle);
     }
     
     load_settings();
@@ -60,7 +67,7 @@ void VarioDisplay::resize(int w ,int h)
 {
     ViewerApp::resize(w, h);
     
-    if(m_proto_mesh){ m_proto_mesh->materials()[1]->uniform("u_window_size", gl::window_dimension()); }
+    if(m_proto_lines){ m_proto_lines->materials()[1]->uniform("u_window_size", gl::window_dimension()); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -79,12 +86,14 @@ void VarioDisplay::key_release(const KeyEvent &e)
     switch(e.getCode())
     {
         case Key::_BACKSPACE:
+            set_display(m_digits_lines[m_current_index], ' ');
+            set_display_triangles(m_digits_triangles[m_current_index], ' ');
             m_current_index = std::max(m_current_index - 1, 0);
-            set_display(m_digits[m_current_index], ' ');
             break;
         default:
-            set_display(m_digits[m_current_index], e.getChar());
-            m_current_index = (m_current_index + 1) % 5;
+            set_display(m_digits_lines[m_current_index], e.getChar());
+            if(set_display_triangles(m_digits_triangles[m_current_index], e.getChar()))
+            { m_current_index = std::min(m_current_index + 1, 4); }
             break;
     }
 }
@@ -222,7 +231,6 @@ gl::MeshPtr VarioDisplay::create_proto_triangles(float line_width)
     auto ret = gl::Mesh::create();
     ret->geometry()->set_primitive_type(GL_TRIANGLE_STRIP);
     ret->material()->set_culling(gl::Material::CULL_NONE);
-    ret->material()->set_depth_write(false);
     ret->entries().clear();
     
     const auto& src_verts = proto->geometry()->vertices();
@@ -245,6 +253,7 @@ gl::MeshPtr VarioDisplay::create_proto_triangles(float line_width)
         gl::Mesh::Entry tmp_entry;
         tmp_entry.num_indices = 4;
         tmp_entry.base_index = i;
+        tmp_entry.enabled = false;
         ret->entries().push_back(tmp_entry);
         i += 4;
     }
@@ -255,7 +264,6 @@ gl::MeshPtr VarioDisplay::create_proto_triangles(float line_width)
     auto active_mat = gl::Material::create();
     active_mat->set_diffuse(gl::COLOR_ORANGE);
     active_mat->set_culling(gl::Material::CULL_NONE);
-    active_mat->set_depth_test(false);
     ret->materials().push_back(active_mat);
     
     return ret;
@@ -263,20 +271,45 @@ gl::MeshPtr VarioDisplay::create_proto_triangles(float line_width)
 
 /////////////////////////////////////////////////////////////////
 
-void VarioDisplay::set_display(gl::MeshPtr the_vario_mesh, int the_value)
+bool VarioDisplay::set_display(gl::MeshPtr the_vario_mesh, int the_value)
 {
     the_value = tolower(the_value);
-    
-    for(auto &e : the_vario_mesh->entries()){ e.material_index = 0; }
     
     // look up digit in map
     auto iter = m_vario_map.find(the_value);
     
     if(iter != m_vario_map.end())
     {
+        for(auto &e : the_vario_mesh->entries()){ e.material_index = 0; }
         for(int index : iter->second){ the_vario_mesh->entries()[index].material_index = 1; }
+        return true;
     }
-    else{ LOG_WARNING << "digit: " << static_cast<char>(the_value) << " not found"; }
+    LOG_WARNING << "digit: " << static_cast<char>(the_value) << " not found";
+    return false;
+}
+
+/////////////////////////////////////////////////////////////////
+
+bool VarioDisplay::set_display_triangles(gl::MeshPtr the_vario_mesh, int the_value)
+{
+    the_value = tolower(the_value);
+    
+    // look up digit in map
+    auto iter = m_vario_map.find(the_value);
+    
+    if(iter != m_vario_map.end())
+    {
+        for(auto &e : the_vario_mesh->entries()){ e.enabled = false; }
+        
+        for(int index : iter->second)
+        {
+            the_vario_mesh->entries()[index].material_index = 1;
+            the_vario_mesh->entries()[index].enabled = true;
+        }
+        return true;
+    }
+    LOG_WARNING << "digit: " << static_cast<char>(the_value) << " not found";
+    return false;
 }
 
 /////////////////////////////////////////////////////////////////

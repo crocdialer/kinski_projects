@@ -26,7 +26,7 @@ namespace kinski
         //! holds some shader programs, containing geomtry shaders for drawing the lines
         // created by a lsystem as more complex geometry
         //
-        std::vector<gl::Shader> m_lsystem_shaders{4};
+        std::vector<gl::ShaderPtr> m_lsystem_shaders{4};
         
         //! needs to recalculate
         bool m_dirty_lsystem = false;

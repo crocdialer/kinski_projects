@@ -59,9 +59,9 @@ void GrowthApp::setup()
         bound_mat->set_depth_write(false);
         
         // load shaders
-        m_lsystem_shaders[0].load_from_data(geom_prepass_vert,
-                                            phong_frag,
-                                            fs::read_file("lines_to_cuboids.geom").c_str());
+        m_lsystem_shaders[0] = gl::Shader::create(geom_prepass_vert,
+                                                  phong_frag,
+                                                  fs::read_file("lines_to_cuboids.geom").c_str());
     }
     catch(Exception &e){LOG_ERROR << e.what();}
     
@@ -77,7 +77,7 @@ void GrowthApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
     
-    if(m_dirty_lsystem) refresh_lsystem();
+    if(m_dirty_lsystem && !is_loading()) refresh_lsystem();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -87,10 +87,7 @@ void GrowthApp::draw()
     gl::set_matrices(camera());
     if(draw_grid()){ gl::draw_grid(50, 50); }
     
-    if(m_light_component->draw_light_dummies())
-    {
-        for (auto l : lights()){ gl::draw_light(l); }
-    }
+    m_light_component->draw_light_dummies();
     
     // draw our scene
     scene()->render(camera());
@@ -112,6 +109,12 @@ void GrowthApp::draw()
         gl::draw_text_2D(kinski::to_string(fps()), fonts()[0],
                        vec4(vec3(1) - clear_color().xyz(), 1.f),
                        glm::vec2(gl::window_dimension().x - 110, gl::window_dimension().y - 70));
+    }
+    
+    if(is_loading())
+    {
+        gl::draw_text_2D("loading ...", fonts()[0], gl::COLOR_WHITE,
+                         gl::vec2(gl::window_dimension().x - 130, 20));
     }
     
     gl::draw_transform(m_lsystem.turtle_transform(), 10);
@@ -320,64 +323,77 @@ void GrowthApp::update_property(const Property::ConstPtr &theProperty)
 
 void GrowthApp::refresh_lsystem()
 {
+    inc_task();
     m_dirty_lsystem = false;
     
-    m_lsystem.set_axiom(*m_axiom);
-    m_lsystem.rules().clear();
-    
-    for(auto r : m_rules)
-        m_lsystem.add_rule(*r);
-        
-    m_lsystem.set_branch_angles(*m_branch_angles);
-    m_lsystem.set_branch_randomness(*m_branch_randomness);
-    m_lsystem.set_increment(*m_increment);
-    m_lsystem.set_increment_randomness(*m_increment_randomness);
-    m_lsystem.set_diameter(*m_diameter);
-    m_lsystem.set_diameter_shrink_factor(*m_diameter_shrink);
-    
-    // iterate
-    m_lsystem.iterate(*m_num_iterations);
-    
-    m_lsystem.set_max_random_tries(20);
-    
-    // add a position check functor
-    if(*m_use_bounding_mesh)
+    auto finish_cb = [this](gl::MeshPtr new_mesh)
     {
-        m_lsystem.set_position_check([=](const glm::vec3& p) -> bool
+        // create a mesh from our lsystem geometry
+        scene()->remove_object(m_mesh);
+        m_mesh = new_mesh;
+        m_entries = m_mesh->entries();
+        
+        scene()->add_object(m_mesh);
+        
+        // add our shader
+        for (auto &m : m_mesh->materials())
         {
-            return gl::is_point_inside_mesh(p, m_bounding_mesh);
-        });
-    }
-    // add an empty functor (clear position check)
-    else{ m_lsystem.set_position_check(LSystem::PositionCheckFunctor()); }
+            m->set_shader(m_lsystem_shaders[0]);
+            
+            //        m->add_texture(m_textures[0]);
+            //        m->add_texture(m_textures[1]);
+            m->set_blending();
+            //        m->setDepthTest(false);
+            //        m->setDepthWrite(false);
+            
+            m->uniform("u_cap_bias", *m_cap_bias);
+            
+            //TODO: remove this when submaterials are tested well enough
+            m->set_diffuse(glm::linearRand(vec4(0,0,.3,.8), vec4(.3,1,1,.9)));
+            m->set_point_attenuation(0.1, .0002, 0);
+        }
+        
+        uint32_t min = 0, max = m_entries.front().num_indices - 1;
+        m_max_index->set_range(min, max);
+        
+        LOG_DEBUG << "radius: " << glm::length(m_mesh->bounding_box().halfExtents());
+        
+        dec_task();
+    };
     
-    // create a mesh from our lsystem geometry
-    scene()->remove_object(m_mesh);
-    m_mesh = m_lsystem.create_mesh();
-    m_entries = m_mesh->entries();
-    
-    scene()->add_object(m_mesh);
-    
-    // add our shader
-    for (auto &m : m_mesh->materials())
+    background_queue().submit([this, finish_cb]()
     {
-        m->set_shader(m_lsystem_shaders[0]);
+        m_lsystem.set_axiom(*m_axiom);
+        m_lsystem.rules().clear();
         
-//        m->add_texture(m_textures[0]);
-//        m->add_texture(m_textures[1]);
-        m->set_blending();
-//        m->setDepthTest(false);
-//        m->setDepthWrite(false);
+        for(auto r : m_rules)
+            m_lsystem.add_rule(*r);
         
-        m->uniform("u_cap_bias", *m_cap_bias);
+        m_lsystem.set_branch_angles(*m_branch_angles);
+        m_lsystem.set_branch_randomness(*m_branch_randomness);
+        m_lsystem.set_increment(*m_increment);
+        m_lsystem.set_increment_randomness(*m_increment_randomness);
+        m_lsystem.set_diameter(*m_diameter);
+        m_lsystem.set_diameter_shrink_factor(*m_diameter_shrink);
         
-        //TODO: remove this when submaterials are tested well enough
-        m->set_diffuse(glm::linearRand(vec4(0,0,.3,.8), vec4(.3,1,1,.9)));
-        m->set_point_attenuation(0.1, .0002, 0);
-    }
-    
-    uint32_t min = 0, max = m_entries.front().num_indices - 1;
-    m_max_index->set_range(min, max);
-    
-    LOG_DEBUG << "radius: " << glm::length(m_mesh->bounding_box().halfExtents());
+        // iterate
+        m_lsystem.iterate(*m_num_iterations);
+        
+        m_lsystem.set_max_random_tries(20);
+        
+        // add a position check functor
+        if(*m_use_bounding_mesh)
+        {
+            m_lsystem.set_position_check([=](const glm::vec3& p) -> bool
+                                         {
+                                             return gl::is_point_inside_mesh(p, m_bounding_mesh);
+                                         });
+        }
+        // add an empty functor (clear position check)
+        else{ m_lsystem.set_position_check(LSystem::PositionCheckFunctor()); }
+        
+        auto new_mesh = m_lsystem.create_mesh();
+        
+        main_queue().submit([finish_cb, new_mesh](){ finish_cb(new_mesh); });
+    });
 }
