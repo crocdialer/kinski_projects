@@ -38,7 +38,7 @@ void VarioDisplay::setup()
         
         auto m_triangle = m_proto_triangles->copy();
         m_triangle->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
-        scene()->add_object(m_triangle);
+//        scene()->add_object(m_triangle);
         m_digits_triangles.push_back(m_triangle);
     }
     
