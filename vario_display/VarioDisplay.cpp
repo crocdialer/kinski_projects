@@ -22,9 +22,9 @@ void VarioDisplay::setup()
     add_tweakbar_for_component(shared_from_this());
     
     m_proto_lines = create_proto();
-    m_proto_triangles = create_proto_triangles(.07f);
     m_proto_lines->set_scale(10.f);
-    m_proto_triangles->set_scale(10.f);
+//    m_proto_triangles = create_proto_triangles(.07f);
+//    m_proto_triangles->set_scale(10.f);
     setup_vario_map();
     
     auto aabb = m_proto_lines->bounding_box();
@@ -36,10 +36,10 @@ void VarioDisplay::setup()
         scene()->add_object(m_line);
         m_digits_lines.push_back(m_line);
         
-        auto m_triangle = m_proto_triangles->copy();
-        m_triangle->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
+//        auto m_triangle = m_proto_triangles->copy();
+//        m_triangle->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
 //        scene()->add_object(m_triangle);
-        m_digits_triangles.push_back(m_triangle);
+//        m_digits_triangles.push_back(m_triangle);
     }
     
     load_settings();
@@ -86,14 +86,13 @@ void VarioDisplay::key_release(const KeyEvent &e)
     switch(e.getCode())
     {
         case Key::_BACKSPACE:
-            set_display(m_digits_lines[m_current_index], ' ');
-            set_display_triangles(m_digits_triangles[m_current_index], ' ');
+            
             m_current_index = std::max(m_current_index - 1, 0);
+            set_display(m_digits_lines[m_current_index], ' ');
             break;
         default:
-            set_display(m_digits_lines[m_current_index], e.getChar());
-            if(set_display_triangles(m_digits_triangles[m_current_index], e.getChar()))
-            { m_current_index = std::min(m_current_index + 1, 4); }
+            if((m_current_index < 5) && set_display(m_digits_lines[m_current_index], e.getChar()))
+            { m_current_index = std::min(m_current_index + 1, 5); }
             break;
     }
 }
