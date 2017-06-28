@@ -20,10 +20,11 @@ namespace kinski
     class VarioDisplay : public ViewerApp
     {
     private:
-        gl::MeshPtr m_proto_lines, m_proto_triangles;
+        gl::MeshPtr m_proto_lines, m_proto_triangles, m_cursor_mesh;
         std::vector<gl::MeshPtr> m_digits_lines, m_digits_triangles;
         int m_current_index = 0;
         
+        gl::MeshPtr create_cursor();
         gl::MeshPtr create_proto();
         gl::MeshPtr create_proto_triangles(float line_width);
         bool set_display(gl::MeshPtr the_vario_mesh, int the_value);

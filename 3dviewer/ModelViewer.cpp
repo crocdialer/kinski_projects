@@ -155,11 +155,8 @@ void ModelViewer::draw()
     if(*m_use_post_process)
     {
         auto tex = gl::render_to_texture(scene(), m_post_process_fbo, camera());
-        m_post_process_mat->textures() =
-        {
-            m_post_process_fbo.texture(),
-            m_post_process_fbo.depth_texture()
-        };
+        m_post_process_mat->set_textures({  m_post_process_fbo.texture(),
+                                            m_post_process_fbo.depth_texture() });
         textures()[TEXTURE_OFFSCREEN] = tex;
     }
     if(*m_use_warping)
@@ -368,7 +365,7 @@ void ModelViewer::file_drop(const MouseEvent &e, const std::vector<std::string> 
                 break;
         }
     }
-    if(obj && !dropped_textures.empty()){ obj->material()->textures() = dropped_textures; }
+    if(obj && !dropped_textures.empty()){ obj->material()->set_textures(dropped_textures); }
     if(obj == m_ground_mesh)
     {
         LOG_DEBUG << "texture drop on model";
@@ -475,7 +472,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_ground_textures)
     {
-        m_ground_mesh->material()->textures().clear();
+        m_ground_mesh->material()->clear_textures();
         for(const auto &f : m_ground_textures->value())
         {
             m_ground_mesh->material()->queue_texture_load(f);
@@ -677,13 +674,17 @@ void ModelViewer::update_shader()
 
             if(use_normal_map)
             {
-                if(mat->textures().size() < 2){ mat->textures().push_back(m_normal_map); }
-                else{ mat->textures()[1] = m_normal_map; }
+                if(mat->textures().size() < 2){ mat->add_texture(m_normal_map); }
+                else
+                {
+                    auto tmp = mat->textures(); tmp[1] = m_normal_map;
+                    mat->set_textures(tmp);
+                }
 
                 mat->set_specular(gl::COLOR_WHITE);
                 mat->set_shinyness(15.f);
             }
-            else if(!mat->textures().empty()){ mat->textures().resize(1); }
+            else if(!mat->textures().empty()){ mat->set_textures({mat->textures().front()}); }
         }
     }
 }

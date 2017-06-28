@@ -21,15 +21,17 @@ void VarioDisplay::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     
+    float scale = 10.f;
     m_proto_lines = create_proto();
-    m_proto_lines->set_scale(10.f);
+    m_proto_lines->set_scale(scale);
+    
 //    m_proto_triangles = create_proto_triangles(.07f);
 //    m_proto_triangles->set_scale(10.f);
     setup_vario_map();
     
     auto aabb = m_proto_lines->bounding_box();
     
-    for(int i = 0; i < 5; ++i)
+    for(int i = -2; i < 3; ++i)
     {
         auto m_line = m_proto_lines->copy();
         m_line->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
@@ -41,6 +43,10 @@ void VarioDisplay::setup()
 //        scene()->add_object(m_triangle);
 //        m_digits_triangles.push_back(m_triangle);
     }
+    m_cursor_mesh = create_cursor();
+    m_cursor_mesh->set_scale(scale);
+    m_cursor_mesh->set_position(gl::vec3(0, aabb.min.y * 1.1f, 0));
+    scene()->add_object(m_cursor_mesh);
     
     load_settings();
 }
@@ -50,6 +56,8 @@ void VarioDisplay::setup()
 void VarioDisplay::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+    
+    m_cursor_mesh->position().x = m_digits_lines[std::min(m_current_index, 4)]->position().x;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -86,10 +94,22 @@ void VarioDisplay::key_release(const KeyEvent &e)
     switch(e.getCode())
     {
         case Key::_BACKSPACE:
-            
             m_current_index = std::max(m_current_index - 1, 0);
             set_display(m_digits_lines[m_current_index], ' ');
             break;
+        
+        case Key::_DELETE:
+            set_display(m_digits_lines[m_current_index], ' ');
+            break;
+            
+        case Key::_LEFT:
+            m_current_index = std::max(m_current_index - 1, 0);
+            break;
+            
+        case Key::_RIGHT:
+            m_current_index = std::min(m_current_index + 1, 4);
+            break;
+            
         default:
             if((m_current_index < 5) && set_display(m_digits_lines[m_current_index], e.getChar()))
             { m_current_index = std::min(m_current_index + 1, 5); }
@@ -265,6 +285,19 @@ gl::MeshPtr VarioDisplay::create_proto_triangles(float line_width)
     active_mat->set_culling(gl::Material::CULL_NONE);
     ret->materials().push_back(active_mat);
     
+    return ret;
+}
+
+/////////////////////////////////////////////////////////////////
+
+gl::MeshPtr VarioDisplay::create_cursor()
+{
+    float w = 0.5f, h = 0.2f;
+    auto geom = gl::Geometry::create();
+    geom->set_primitive_type(GL_LINE_STRIP);
+    geom->vertices() = {gl::vec3(-w/2, -h, 0), gl::vec3(0), gl::vec3(w/2, -h, 0)};
+    geom->indices() = {0, 1, 2};
+    auto ret = gl::Mesh::create(geom, m_proto_lines->materials()[1]);
     return ret;
 }
 
