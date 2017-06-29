@@ -6,6 +6,7 @@
 //
 //
 
+#include <gl/DeferredRenderer.hpp>
 #include "core/Timer.hpp"
 #include "FractureApp.h"
 #include "assimp/AssimpConnector.h"
@@ -62,7 +63,9 @@ void FractureApp::setup()
     // init joystick crosshairs
     m_crosshair_pos.resize(get_joystick_states().size());
     for(auto &p : m_crosshair_pos){ p = gl::window_dimension() / 2.f; }
-    
+
+    scene()->set_renderer(gl::DeferredRenderer::create());
+
     load_settings();
     
 //    fracture_test(*m_num_fracture_shards);
@@ -149,10 +152,7 @@ void FractureApp::draw()
             gl::set_matrices(camera());
             if(draw_grid()){ gl::draw_grid(50, 50); }
             
-            if(m_light_component->draw_light_dummies())
-            {
-                for (auto l : lights()){ gl::draw_light(l); }
-            }
+            m_light_component->draw_light_dummies();
             
             if(*m_physics_debug_draw){ m_physics.debug_render(camera()); }
             else{ scene()->render(camera()); }
@@ -557,8 +557,8 @@ void FractureApp::fracture_test(uint32_t num_shards)
 //    inner_mat->setDiffuse(gl::COLOR_RED);
     inner_mat->set_specular(gl::COLOR_BLACK);
     
-    outer_mat->textures() = { textures()[TEXTURE_OUTER] };
-    inner_mat->textures() = { textures()[TEXTURE_INNER] };
+    outer_mat->set_textures({ textures()[TEXTURE_OUTER] });
+    inner_mat->set_textures({ textures()[TEXTURE_INNER] });
     
     for(auto &s : m_voronoi_shards)
     {

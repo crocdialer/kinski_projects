@@ -206,11 +206,9 @@ void AsteroidField::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_sky_box_path)
     {
-        auto &tex_vec = m_skybox_mesh->material()->textures();
-        tex_vec.clear();
         try
         {
-            tex_vec.push_back(gl::create_texture_from_file(*m_sky_box_path, true, true));
+            m_skybox_mesh->material()->set_textures({gl::create_texture_from_file(*m_sky_box_path, true, true)});
         }
         catch (Exception &e){ LOG_WARNING << e.what(); }
     }

@@ -324,12 +324,12 @@ void CapSenseMonitor::reset_sensors()
         }
     };
     
-    m_bluetooth->set_connect_cb([this, query_cb](ConnectionPtr p)
-    {
-//        sensors::query_device(p, background_queue().io_service(), query_cb);
-        connect_sensor(p);
-    });
-    m_bluetooth->open();
+//    m_bluetooth->set_connect_cb([this, query_cb](ConnectionPtr p)
+//    {
+////        sensors::query_device(p, background_queue().io_service(), query_cb);
+//        connect_sensor(p);
+//    });
+//    m_bluetooth->open();
     
     sensors::scan_for_devices(background_queue().io_service(), query_cb);
 }
