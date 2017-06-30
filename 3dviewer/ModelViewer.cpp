@@ -57,23 +57,18 @@ void ModelViewer::setup()
     // create our UI
     add_tweakbar_for_component(shared_from_this());
     add_tweakbar_for_component(m_light_component);
-
-//    // add lights to scene
-//    gl::Object3DPtr light_root = gl::Object3D::create();
-//    light_root->set_update_function([this, light_root](float time_delta)
-//    {
-//        light_root->transform() = gl::rotate(light_root->transform(), 0.1f * time_delta, gl::Y_AXIS);
-//    });
-//
-//    // rearrange standard lights as carussel
-//    for(auto l : lights())
-//    {
-//        scene()->remove_object(l);
-//        light_root->add_child(l);
-        
-//    }
-//    scene()->add_object(light_root);
-
+    
+    auto light_geom = gl::Geometry::create_sphere(2.f, 24);
+    
+    for(auto l : lights())
+    {
+        auto light_mesh = gl::Mesh::create(light_geom);
+        light_mesh->material()->set_diffuse(gl::COLOR_BLACK);
+        light_mesh->material()->set_emission(gl::COLOR_WHITE);
+        light_mesh->material()->set_shadow_properties(gl::Material::SHADOW_NONE);
+        l->add_child(light_mesh);
+    }
+    
     // add groundplane
     m_ground_mesh = gl::Mesh::create(gl::Geometry::create_plane(400, 400),
                                         gl::Material::create(gl::create_shader(gl::ShaderType::PHONG_SHADOWS)));
@@ -141,7 +136,14 @@ void ModelViewer::update(float timeDelta)
         m_post_process_mat->uniform("u_circle_of_confusion_sz", *m_circle_of_confusion_sz);
         
     }
-
+    
+    for(auto l : lights())
+    {
+        gl::SelectVisitor<gl::Mesh> visitor;
+        l->accept(visitor);
+        for(auto m : visitor.get_objects()){ m->material()->set_emission(1.2f * l->diffuse()); }
+    }
+    
     auto js_states = get_joystick_states();
 }
 
@@ -183,17 +185,8 @@ void ModelViewer::draw()
     }
     else
     {
-        if(*m_use_post_process)
-        {
-            gl::draw_quad(m_post_process_mat, gl::window_dimension());
-//            Area_<int> src(0, 0, m_post_process_fbo.size().x - 1, m_post_process_fbo.size().y - 1);
-//            Area_<int> dst(0, 0, gl::window_dimension().x - 1, gl::window_dimension().y - 1);
-//            m_post_process_fbo.blit_to_current(src, dst, GL_NEAREST, GL_DEPTH_BUFFER_BIT);
-        }
-        else
-        {
-            scene()->render(camera());
-        }
+        if(*m_use_post_process){ gl::draw_quad(m_post_process_mat, gl::window_dimension()); }
+        else{ scene()->render(camera()); }
     }
     
     //if(m_light_component->draw_light_dummies())
@@ -266,6 +259,8 @@ void ModelViewer::draw()
 void ModelViewer::resize(int w ,int h)
 {
     ViewerApp::resize(w, h);
+    m_deferred_renderer = gl::DeferredRenderer::create();
+    if(*m_use_deferred_render){ scene()->set_renderer(m_deferred_renderer); }
 }
 
 /////////////////////////////////////////////////////////////////
