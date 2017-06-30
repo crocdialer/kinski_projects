@@ -202,6 +202,8 @@ void ModelViewer::draw()
                          gl::vec2(10));
     }
 
+    if(m_selected_mesh){ gl::draw_boundingbox(m_selected_mesh); }
+
     if(m_mesh && *m_display_bones) // slow!
     {
         // crunch bone data

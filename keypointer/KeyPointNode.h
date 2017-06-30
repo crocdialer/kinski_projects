@@ -34,8 +34,9 @@ namespace kinski
         cv::Ptr<cv::DescriptorMatcher> m_matcher;
         
         std::vector<cv::KeyPoint> m_trainKeypoints;
-        cv::UMat m_outImg, m_referenceImage, m_trainDescriptors, m_homography;
-        
+        cv::Mat m_outImg, m_trainDescriptors, m_homography;
+        cv::Mat m_referenceImage;
+
         cv::KalmanFilter m_kalmanFilter;
         
         RangedProperty<uint32_t>::Ptr m_maxImageWidth;

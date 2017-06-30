@@ -32,7 +32,7 @@ namespace kinski
         CVProcessNode::Ptr m_processNode;
         
     public:
-        
+        KeyPointApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;
         void update(float timeDelta) override;
         void draw() override;
@@ -49,3 +49,10 @@ namespace kinski
         void update_property(const Property::ConstPtr &theProperty) override;
     };
 }// namespace kinski
+
+int main(int argc, char *argv[])
+{
+    auto theApp = std::make_shared<kinski::KeyPointApp>(argc, argv);
+    LOG_INFO << "local ip: " << kinski::net::local_ip();
+    return theApp->run();
+}

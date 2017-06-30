@@ -6,6 +6,7 @@
 //
 //
 
+#include <opencv2/core/mat.hpp>
 #include "KeyPointApp.hpp"
 #include "media/media.h"
 
@@ -24,9 +25,8 @@ public:
         
         if(m_camera->copy_frame(m_img_buffer, &w, &h))
         {
-            img = cv::Mat(h, w, CV_8UC4, &m_img_buffer[0]);
+            img = cv::Mat(h, w, CV_8UC3, &m_img_buffer[0]);
         }
-        
         return true;
     }
     
@@ -39,6 +39,8 @@ private:
 
 void KeyPointApp::setup()
 {
+    ViewerApp::setup();
+
     register_property(m_activator);
     register_property(m_img_path);
     register_property(m_imageIndex);
@@ -48,17 +50,17 @@ void KeyPointApp::setup()
     
     // CV stuff
     m_cvThread = std::make_shared<CVThread>();
-    m_processNode = std::make_shared<KeyPointNode>(cv::imread(fs::search_file("kinder.jpg")));
+    m_processNode = std::make_shared<KeyPointNode>(/*cv::imread(fs::search_file("kinder.jpg"))*/);
     
     // trigger observer callbacks
     m_processNode->observe_properties();
     add_tweakbar_for_component(m_processNode);
     
     m_cvThread->setProcessingNode(m_processNode);
-    m_cvThread->streamUSBCamera();
+//    m_cvThread->streamUSBCamera();
     
-//    m_cvThread->setSourceNode(std::make_shared<CameraSource>());
-//    m_cvThread->start();
+    m_cvThread->setSourceNode(std::make_shared<CameraSource>());
+    m_cvThread->start();
     
     if(m_processNode)
     {
@@ -87,7 +89,7 @@ void KeyPointApp::update(float timeDelta)
         set_window_size( vec2(width, width / imgAspect) );
         
         
-        for(int i = 0; i < images.size(); i++)
+        for(uint32_t i = 0; i < images.size(); i++)
             gl::TextureIO::updateTexture(m_textures[i], images[i]);
         
         m_imageIndex->set_range(0, images.size() - 1);
@@ -202,8 +204,14 @@ void KeyPointApp::update_property(const Property::ConstPtr &theProperty)
     {
         if(!m_img_path->value().empty() && m_processNode)
         {
-            auto kp_node = std::dynamic_pointer_cast<KeyPointNode>(m_processNode);
-            kp_node->setReferenceImage(cv::imread(fs::search_file(*m_img_path)));
+            try
+            {
+
+                auto kp_node = std::dynamic_pointer_cast<KeyPointNode>(m_processNode);
+                kp_node->setReferenceImage(cv::imread(fs::search_file(*m_img_path), cv::IMREAD_GRAYSCALE));
+            }
+            catch(Exception &e){ LOG_WARNING << e.what(); }
+
         }
     }
 }

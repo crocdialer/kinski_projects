@@ -6,6 +6,7 @@
 //
 //
 
+#include <opencv2/features2d.hpp>
 #include "KeyPointNode.h"
 #include "boost/timer/timer.hpp"
 #include "core/Logger.hpp"
@@ -17,7 +18,7 @@ using namespace boost::timer;
 namespace kinski
 {
     KeyPointNode::KeyPointNode(const Mat &refImage):
-    m_featureDetect(ORB::create(250, 1.2, 10)),//FeatureDetector::create("ORB")),
+    m_featureDetect(AKAZE::create()),//FeatureDetector::create("ORB")),
     m_featureExtract(m_featureDetect),
     m_matcher(new BFMatcher(NORM_HAMMING2)),
     m_maxImageWidth(RangedProperty<uint32_t>::create("Max image width",
@@ -33,8 +34,8 @@ namespace kinski
         register_property(m_maxImageWidth);
         register_property(m_maxPatchWidth);
         register_property(m_minMatchCount);
-        
-        setReferenceImage(refImage);
+
+        if(!refImage.empty()){ setReferenceImage(refImage); }
         
         //m_kalmanFilter = KalmanFilter(<#int dynamParams#>, <#int measureParams#>)
     }
@@ -47,39 +48,42 @@ namespace kinski
     
     vector<Mat> KeyPointNode::doProcessing(const Mat &img)
     {
+        if(m_referenceImage.empty()) return {};
+
         vector<KeyPoint> keypoints;
         vector<DMatch> matches;
-        UMat descriptors_scene, downSized, out_img;
+        Mat downSized, out_img, descriptors_scene;
         
         float scale = (float)*m_maxImageWidth / img.cols;
         scale = min( scale, 1.f);
         resize(img, downSized, Size(), scale, scale);
-        
-        m_featureDetect->detect(downSized, keypoints);
-        m_featureExtract->compute(downSized, keypoints,descriptors_scene);
+        cv::cvtColor(downSized, downSized, CV_RGB2GRAY);
+
+        m_featureDetect->detectAndCompute(downSized, noArray(), keypoints, descriptors_scene);
+//        m_featureExtract->compute(downSized, keypoints, descriptors_scene);
         m_matcher->match(descriptors_scene, m_trainDescriptors, matches);
-        
-        m_outImg = img.getUMat(ACCESS_RW);
+
+        m_outImg = img;//img.getUMat(ACCESS_RW);
         
         //-- Quick calculation of max and min distances between keypoints
         double max_dist = 0; double min_dist = 200;
-        for( int i = 0; i < matches.size(); i++ )
+        for(const auto &m : matches)
         {
-            double dist = matches[i].distance;
+            double dist = m.distance;
             if( dist < min_dist ) min_dist = dist;
             if( dist > max_dist ) max_dist = dist;
         }
         
         //-- Leave only "good" matches (i.e. whose distance is less than x * min_dist )
-        vector< DMatch > good_matches;
+        vector<DMatch> good_matches;
         
-        for( int i = 0; i < matches.size(); i++ )
+        for(uint32_t i = 0; i < matches.size(); ++i)
         {
             if( matches[i].distance < min((double) *m_maxFeatureDist, 2 * min_dist))
                 good_matches.push_back( matches[i]);
         }
         
-        m_homography = UMat();
+        m_homography = Mat();
         
         Mat camMatrix;
         Mat camRotation;
@@ -93,10 +97,10 @@ namespace kinski
             vector<Point2f> pts_train, pts_query;
             matches2points(m_trainKeypoints, keypoints, good_matches, pts_train,
                            pts_query);
-            m_homography = findHomography(pts_train, pts_query, CV_RANSAC, 3, inliers).getUMat(ACCESS_READ);
+            m_homography = findHomography(pts_train, pts_query, CV_RANSAC, 3, inliers);//.getUMat(ACCESS_READ);
             
             vector<Point3f> trainPts3;
-            for (int i=0; i<pts_train.size(); i++)
+            for (uint32_t i= 0; i < pts_train.size(); ++i)
             {
                 const Point2f p = pts_train[i];
                 trainPts3.push_back(Point3f(p.x, 0, -p.y));
@@ -120,7 +124,7 @@ namespace kinski
         if(true)
         {
             // draw good_matches
-            for (int i=0; i<good_matches.size(); i++)
+            for (uint32_t i = 0; i < good_matches.size(); ++i)
             {
                 const DMatch &m = good_matches[i];
                 
@@ -162,25 +166,24 @@ namespace kinski
         //[   0.          465.94360054  323.30103704]
         //[   0.            0.            1.        ]]
         
-        return { m_referenceImage.getMat(ACCESS_READ), m_outImg.getMat(ACCESS_READ) };
+        return { m_referenceImage, m_outImg };
     }
     
     void KeyPointNode::setReferenceImage(const Mat &theImg)
     {
-        m_referenceImage = theImg.getUMat(ACCESS_READ);
-        
-        GaussianBlur(theImg, m_referenceImage, Size(7, 7), 1.5);
-
-        // scale down if necessary (ORB did not properly manage large ref-images)
-        float scale = (float)*m_maxPatchWidth / m_referenceImage.cols;
-        scale = min(scale, 1.f);
-        resize(m_referenceImage, m_referenceImage, Size(), scale, scale);
+//        m_referenceImage = theImg.getUMat(ACCESS_READ);
+        m_referenceImage = theImg;
+//        GaussianBlur(theImg, m_referenceImage, Size(7, 7), 1.5);
+//        // scale down if necessary (ORB did not properly manage large ref-images)
+//        float scale = (float)*m_maxPatchWidth / m_referenceImage.cols;
+//        scale = min(scale, 1.f);
+//        resize(m_referenceImage, m_referenceImage, Size(), scale, scale);
         
         m_trainKeypoints.clear();
-        
-        m_featureDetect->detect(m_referenceImage, m_trainKeypoints);
-        m_featureExtract->compute(m_referenceImage, m_trainKeypoints,
-                                  m_trainDescriptors);
+        m_featureDetect->detectAndCompute(theImg, noArray(), m_trainKeypoints, m_trainDescriptors);
+        LOG_DEBUG << "got reference image";
+//        m_featureExtract->compute(m_referenceImage, m_trainKeypoints,
+//                                  m_trainDescriptors);
     }
     
     void KeyPointNode::matches2points(const vector<KeyPoint>& train,
@@ -193,11 +196,9 @@ namespace kinski
         pts_query.clear();
         pts_train.reserve(matches.size());
         pts_query.reserve(matches.size());
-        
-        size_t i = 0;
-        for (; i < matches.size(); i++)
+
+        for (const DMatch &dmatch : matches)
         {
-            const DMatch &dmatch = matches[i];
             pts_query.push_back(query[dmatch.queryIdx].pt);
             pts_train.push_back(train[dmatch.trainIdx].pt);
         }

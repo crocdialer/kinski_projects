@@ -325,9 +325,12 @@ void GrowthApp::refresh_lsystem()
 {
     inc_task();
     m_dirty_lsystem = false;
-    
+    m_lsystem.cancel();
+
     auto finish_cb = [this](gl::MeshPtr new_mesh)
     {
+        if(!new_mesh){ return; }
+
         // create a mesh from our lsystem geometry
         scene()->remove_object(m_mesh);
         m_mesh = new_mesh;
@@ -355,9 +358,9 @@ void GrowthApp::refresh_lsystem()
         
         uint32_t min = 0, max = m_entries.front().num_indices - 1;
         m_max_index->set_range(min, max);
-        
         LOG_DEBUG << "radius: " << glm::length(m_mesh->bounding_box().halfExtents());
-        
+
+        // task done
         dec_task();
     };
     
