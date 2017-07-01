@@ -154,12 +154,47 @@ void ModelViewer::draw()
     gl::set_matrices(camera());
     if(draw_grid()){ gl::draw_grid(50, 50); }
 
+    gl::Fbo depth_fbo;
+
+    auto draw_fn = [this]()
+    {
+        scene()->render(camera());
+        if(m_selected_mesh){ gl::draw_boundingbox(m_selected_mesh); }
+
+        // draw enabeld light dummies
+        m_light_component->draw_light_dummies();
+
+        if(m_mesh && *m_display_bones) // slow!
+        {
+            // crunch bone data
+            vector<vec3> skel_points;
+            vector<string> bone_names;
+            build_skeleton(m_mesh->root_bone(), skel_points, bone_names);
+            gl::load_matrix(gl::MODEL_VIEW_MATRIX, camera()->view_matrix() * m_mesh->global_transform());
+
+            // draw bone data
+            gl::draw_lines(skel_points, gl::COLOR_DARK_RED, 5.f);
+
+            for(const auto &p : skel_points)
+            {
+                vec3 p_trans = (m_mesh->global_transform() * vec4(p, 1.f)).xyz();
+                vec2 p2d = gl::project_point_to_screen(p_trans, camera());
+                gl::draw_circle(p2d, 5.f, false);
+            }
+        }
+    };
+
     if(*m_use_post_process)
     {
-        auto tex = gl::render_to_texture(scene(), m_post_process_fbo, camera());
+        auto tex = gl::render_to_texture(m_post_process_fbo, [this, draw_fn]()
+        {
+            gl::clear();
+            draw_fn();
+        });
         m_post_process_mat->set_textures({  m_post_process_fbo.texture(),
                                             m_post_process_fbo.depth_texture() });
         textures()[TEXTURE_OFFSCREEN] = tex;
+        depth_fbo = m_post_process_fbo;
     }
     if(*m_use_warping)
     {
@@ -172,7 +207,11 @@ void ModelViewer::draw()
         }
         else
         {
-            textures()[TEXTURE_OUTPUT] = gl::render_to_texture(scene(), m_offscreen_fbo, camera());
+            textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_offscreen_fbo, [this, draw_fn]()
+            {
+                draw_fn();
+            });
+            depth_fbo = m_offscreen_fbo;
         }
         
         for(uint32_t i = 0; i < m_warp_component->num_warps(); i++)
@@ -186,41 +225,15 @@ void ModelViewer::draw()
     else
     {
         if(*m_use_post_process){ gl::draw_quad(m_post_process_mat, gl::window_dimension()); }
-        else{ scene()->render(camera()); }
+        else{ draw_fn(); }
     }
-    
-    //if(m_light_component->draw_light_dummies())
-    {
-        m_light_component->draw_light_dummies();
-    }
-    
+
     if(*m_draw_fps)
     {
         gl::draw_text_2D(to_string(fps(), 1), fonts()[0],
                          glm::mix(gl::COLOR_OLIVE, gl::COLOR_WHITE,
                                   glm::smoothstep(0.f, 1.f, fps() / max_fps())),
                          gl::vec2(10));
-    }
-
-    if(m_selected_mesh){ gl::draw_boundingbox(m_selected_mesh); }
-
-    if(m_mesh && *m_display_bones) // slow!
-    {
-        // crunch bone data
-        vector<vec3> skel_points;
-        vector<string> bone_names;
-        build_skeleton(m_mesh->root_bone(), skel_points, bone_names);
-        gl::load_matrix(gl::MODEL_VIEW_MATRIX, camera()->view_matrix() * m_mesh->global_transform());
-
-        // draw bone data
-        gl::draw_lines(skel_points, gl::COLOR_DARK_RED, 5.f);
-
-        for(const auto &p : skel_points)
-        {
-            vec3 p_trans = (m_mesh->global_transform() * vec4(p, 1.f)).xyz();
-            vec2 p2d = gl::project_point_to_screen(p_trans, camera());
-            gl::draw_circle(p2d, 5.f, false);
-        }
     }
 
     if(is_loading())
