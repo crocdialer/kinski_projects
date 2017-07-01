@@ -18,7 +18,7 @@ using namespace boost::timer;
 namespace kinski
 {
     KeyPointNode::KeyPointNode(const Mat &refImage):
-    m_featureDetect(AKAZE::create()),//FeatureDetector::create("ORB")),
+    m_featureDetect(ORB::create()),//FeatureDetector::create("ORB")),
     m_featureExtract(m_featureDetect),
     m_matcher(new BFMatcher(NORM_HAMMING2)),
     m_maxImageWidth(RangedProperty<uint32_t>::create("Max image width",
@@ -52,7 +52,7 @@ namespace kinski
 
         vector<KeyPoint> keypoints;
         vector<DMatch> matches;
-        Mat downSized, out_img, descriptors_scene;
+        UMat downSized, out_img, descriptors_scene;
         
         float scale = (float)*m_maxImageWidth / img.cols;
         scale = min( scale, 1.f);
@@ -63,7 +63,9 @@ namespace kinski
 //        m_featureExtract->compute(downSized, keypoints, descriptors_scene);
         m_matcher->match(descriptors_scene, m_trainDescriptors, matches);
 
-        m_outImg = img;//img.getUMat(ACCESS_RW);
+//        return {m_referenceImage.getMat(ACCESS_RW)};
+
+        m_outImg = img; //img.getUMat(ACCESS_RW);
         
         //-- Quick calculation of max and min distances between keypoints
         double max_dist = 0; double min_dist = 200;
@@ -83,7 +85,7 @@ namespace kinski
                 good_matches.push_back( matches[i]);
         }
         
-        m_homography = Mat();
+//        m_homography = UMat();
         
         Mat camMatrix;
         Mat camRotation;
@@ -97,7 +99,7 @@ namespace kinski
             vector<Point2f> pts_train, pts_query;
             matches2points(m_trainKeypoints, keypoints, good_matches, pts_train,
                            pts_query);
-            m_homography = findHomography(pts_train, pts_query, CV_RANSAC, 3, inliers);//.getUMat(ACCESS_READ);
+            m_homography = findHomography(pts_train, pts_query, CV_RANSAC, 3, inliers).getUMat(ACCESS_READ);
             
             vector<Point3f> trainPts3;
             for (uint32_t i= 0; i < pts_train.size(); ++i)
@@ -127,12 +129,12 @@ namespace kinski
             for (uint32_t i = 0; i < good_matches.size(); ++i)
             {
                 const DMatch &m = good_matches[i];
-                
+
                 KeyPoint &kp = keypoints[m.queryIdx];
                 circle(m_outImg, kp.pt * (1.f / scale),kp.size * (1.f / scale),
                        Scalar(0,180,255));
             }
-            
+
             // draw outline of object
             if(!m_homography.empty())
             {
@@ -141,9 +143,9 @@ namespace kinski
                 objPts.push_back(Point2f(0, m_referenceImage.rows));
                 objPts.push_back(Point2f(m_referenceImage.cols, m_referenceImage.rows));
                 objPts.push_back(Point2f(m_referenceImage.cols,0));
-                
+
                 perspectiveTransform(objPts, scenePts, m_homography);
-                
+
                 line(m_outImg, scenePts[0]* (1.f / scale), scenePts[1]* (1.f / scale),
                      Scalar(0, 255, 0), 3);
                 line(m_outImg, scenePts[1]* (1.f / scale), scenePts[2]* (1.f / scale),
@@ -153,7 +155,7 @@ namespace kinski
                 line(m_outImg, scenePts[3]* (1.f / scale), scenePts[0]* (1.f / scale),
                      Scalar(0, 255, 0), 3);
             }
-            
+
         }
         
         // iphone4s scaled
@@ -166,13 +168,14 @@ namespace kinski
         //[   0.          465.94360054  323.30103704]
         //[   0.            0.            1.        ]]
         
-        return { m_referenceImage, m_outImg };
+        return { m_referenceImage.getMat(ACCESS_RW), m_outImg };
     }
     
     void KeyPointNode::setReferenceImage(const Mat &theImg)
     {
+        auto gpu_img = theImg.getUMat(ACCESS_READ);
+
 //        m_referenceImage = theImg.getUMat(ACCESS_READ);
-        m_referenceImage = theImg;
 //        GaussianBlur(theImg, m_referenceImage, Size(7, 7), 1.5);
 //        // scale down if necessary (ORB did not properly manage large ref-images)
 //        float scale = (float)*m_maxPatchWidth / m_referenceImage.cols;
@@ -180,10 +183,11 @@ namespace kinski
 //        resize(m_referenceImage, m_referenceImage, Size(), scale, scale);
         
         m_trainKeypoints.clear();
-        m_featureDetect->detectAndCompute(theImg, noArray(), m_trainKeypoints, m_trainDescriptors);
+        m_featureDetect->detectAndCompute(gpu_img, noArray(), m_trainKeypoints, m_trainDescriptors);
         LOG_DEBUG << "got reference image";
 //        m_featureExtract->compute(m_referenceImage, m_trainKeypoints,
 //                                  m_trainDescriptors);
+        m_referenceImage = gpu_img;
     }
     
     void KeyPointNode::matches2points(const vector<KeyPoint>& train,

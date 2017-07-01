@@ -34,8 +34,9 @@ namespace kinski
         cv::Ptr<cv::DescriptorMatcher> m_matcher;
         
         std::vector<cv::KeyPoint> m_trainKeypoints;
-        cv::Mat m_outImg, m_trainDescriptors, m_homography;
-        cv::Mat m_referenceImage;
+        cv::UMat m_trainDescriptors, m_homography;
+        cv::UMat m_referenceImage;
+        cv::Mat m_outImg;
 
         cv::KalmanFilter m_kalmanFilter;
         
