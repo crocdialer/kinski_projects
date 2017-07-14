@@ -71,7 +71,7 @@ void ModelViewer::setup()
     
     // add groundplane
     m_ground_mesh = gl::Mesh::create(gl::Geometry::create_plane(400, 400),
-                                        gl::Material::create(gl::create_shader(gl::ShaderType::PHONG_SHADOWS)));
+                                     gl::Material::create(gl::create_shader(gl::ShaderType::PHONG_SHADOWS)));
     m_ground_mesh->material()->set_shadow_properties(gl::Material::SHADOW_RECEIVE);
     m_ground_mesh->transform() = glm::rotate(mat4(), -glm::half_pi<float>(), gl::X_AXIS);
     m_ground_mesh->add_tag(tag_ground_plane);
@@ -88,8 +88,9 @@ void ModelViewer::update(float timeDelta)
     update_shader();
     
     // check fbo
-    gl::vec2 sz = m_offscreen_resolution->value() != gl::vec2() ?
-    m_offscreen_resolution->value() : gl::window_dimension();
+    gl::vec2 offscreen_sz = *m_offscreen_resolution;
+    gl::vec2 sz = (offscreen_sz.x > 0 && offscreen_sz.y > 0) ?
+        *m_offscreen_resolution : gl::window_dimension();
     
     if(*m_use_warping)
     {
