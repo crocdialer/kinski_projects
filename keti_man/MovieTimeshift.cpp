@@ -188,6 +188,8 @@ void MovieTimeshift::update(float timeDelta)
 
 void MovieTimeshift::draw()
 {
+    KINSKI_CHECK_GL_ERRORS();
+
     if((*m_use_warping || *m_use_syphon) && m_offscreen_fbo)
     {
         textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_offscreen_fbo, [this]()
@@ -195,6 +197,7 @@ void MovieTimeshift::draw()
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             gl::draw_quad(m_custom_mat, gl::window_dimension());
         });
+        KINSKI_CHECK_GL_ERRORS();
         
         if(*m_use_warping)
         {
@@ -203,6 +206,7 @@ void MovieTimeshift::draw()
                 if(m_warp_component->enabled(i))
                 {
                     m_warp_component->render_output(i, textures()[TEXTURE_OUTPUT]);
+                    KINSKI_CHECK_GL_ERRORS();
                 }
             }
         }
@@ -230,7 +234,12 @@ void MovieTimeshift::draw()
 void MovieTimeshift::set_fullscreen(bool b, int monitor_index)
 {
     ViewerApp::set_fullscreen(b, monitor_index);
-    main_queue().submit([this](){ m_offscreen_size->notify_observers(); });
+    main_queue().submit([this]()
+    {
+        m_noise = gl::Noise(gl::vec2(m_noise_scale_x->value(), m_noise_scale_y->value()),
+                            *m_noise_map_size);
+        m_offscreen_size->notify_observers();
+    });
 }
 
 /////////////////////////////////////////////////////////////////
