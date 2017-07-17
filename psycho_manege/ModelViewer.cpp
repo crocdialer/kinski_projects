@@ -207,10 +207,10 @@ void ModelViewer::update(float timeDelta)
             {
                 diffuse_tex = mat->textures()[0];
             }
-            mat->textures().clear();
+            mat->clear_textures();
             
-            if(diffuse_tex){ mat->textures().push_back(diffuse_tex); }
-            mat->textures().push_back(textures()[TEXTURE_NOISE]);
+            if(diffuse_tex){ mat->add_texture(diffuse_tex); }
+            mat->add_texture(textures()[TEXTURE_NOISE]);
         }
     }
     
@@ -229,11 +229,8 @@ void ModelViewer::draw()
     gl::set_matrices(camera());
     if(draw_grid()){ gl::draw_grid(50, 50); }
     
-    if(m_light_component->draw_light_dummies())
-    {
-        for (auto l : lights()){ gl::draw_light(l); }
-    }
-    
+    m_light_component->draw_light_dummies();
+
     // render scene and debug elements
     scene()->render(camera());
     
@@ -769,7 +766,7 @@ void ModelViewer::reset_lvl(size_t the_lvl)
             *m->materials()[j] = *materials[j];
             m->materials()[j]->set_two_sided(*m_obj_wire_frame);
             m->materials()[j]->set_wireframe(*m_obj_wire_frame);
-            if(!*m_obj_texturing){ m->materials()[j]->textures().clear(); }
+            if(!*m_obj_texturing){ m->materials()[j]->clear_textures(); }
         }
         
         // use standard (white) vertex color

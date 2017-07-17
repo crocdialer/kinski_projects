@@ -41,7 +41,7 @@ namespace kinski
         RangedProperty<int>::Ptr
         m_input_source = RangedProperty<int>::create("input source", 0, 0, 3);
         
-        media::MovieControllerPtr m_movie = media::MovieController::create();
+        media::MediaControllerPtr m_movie = media::MediaController::create();
         media::CameraControllerPtr m_camera = media::CameraController::create();
         
         bool m_needs_movie_refresh = false;
@@ -128,7 +128,7 @@ namespace kinski
         void teardown() override;
         void update_property(const Property::ConstPtr &theProperty) override;
         void key_press(const KeyEvent &e) override;
-        
+        void set_fullscreen(bool b, int monitor_index) override;
         void on_movie_load();
         
     };

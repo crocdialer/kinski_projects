@@ -90,7 +90,7 @@ void MovieTimeshift::update(float timeDelta)
     if(*m_input_source == INPUT_MOVIE && m_needs_movie_refresh)
     {
         m_needs_movie_refresh = false;
-        m_movie = media::MovieController::create(*m_movie_path);
+        m_movie = media::MediaController::create(*m_movie_path);
         
         Stopwatch t;
         t.start();
@@ -223,6 +223,14 @@ void MovieTimeshift::draw()
         draw_textures(textures());
         gl::draw_text_2D(m_input_source_names[InputSource(m_input_source->value())], fonts()[0]);
     }
+}
+
+/////////////////////////////////////////////////////////////////
+
+void MovieTimeshift::set_fullscreen(bool b, int monitor_index)
+{
+    ViewerApp::set_fullscreen(b, monitor_index);
+    main_queue().submit([this](){ m_offscreen_size->notify_observers(); });
 }
 
 /////////////////////////////////////////////////////////////////

@@ -20,7 +20,7 @@ namespace kinski
     KeyPointNode::KeyPointNode(const Mat &refImage):
     m_featureDetect(ORB::create()),//FeatureDetector::create("ORB")),
     m_featureExtract(m_featureDetect),
-    m_matcher(new BFMatcher(NORM_HAMMING2)),
+    m_matcher(DescriptorMatcher::create("BruteForce-Hamming")), //(new BFMatcher(NORM_HAMMING2)),
     m_maxImageWidth(RangedProperty<uint32_t>::create("Max image width",
                                                       1024, 100, 1920)),
     m_maxPatchWidth(RangedProperty<uint32_t>::create("Max patch width",
@@ -34,6 +34,11 @@ namespace kinski
         register_property(m_maxImageWidth);
         register_property(m_maxPatchWidth);
         register_property(m_minMatchCount);
+
+        const double akaze_thresh = 3e-4;
+        auto akaze_detector = AKAZE::create();
+        akaze_detector->setThreshold(akaze_thresh);
+//        m_featureDetect = akaze_detector;
 
         if(!refImage.empty()){ setReferenceImage(refImage); }
         
@@ -62,8 +67,6 @@ namespace kinski
         m_featureDetect->detectAndCompute(downSized, noArray(), keypoints, descriptors_scene);
 //        m_featureExtract->compute(downSized, keypoints, descriptors_scene);
         m_matcher->match(descriptors_scene, m_trainDescriptors, matches);
-
-//        return {m_referenceImage.getMat(ACCESS_RW)};
 
         m_outImg = img; //img.getUMat(ACCESS_RW);
         
