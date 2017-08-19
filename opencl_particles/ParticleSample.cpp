@@ -48,6 +48,8 @@ void ParticleSample::init_particles(uint32_t the_num)
     glGetFloatv(GL_POINT_SIZE_RANGE, vals);
     m_point_size->set_range(vals[0], vals[1]);
     m_particle_mesh->material()->set_point_size(*m_point_size);
+    m_particle_mesh->material()->set_diffuse(*m_point_color);
+    m_particle_mesh->add_tag(gl::SceneRenderer::TAG_NO_CULL);
     m_particle_system->set_gravity(*m_gravity);
     m_particle_system->set_lifetime(*m_lifetime_min, *m_lifetime_max);
     m_particle_system->set_start_velocity(*m_start_velocity_min, *m_start_velocity_max);
