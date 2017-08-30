@@ -60,12 +60,12 @@ void MeditationRoom::setup()
     
     set_fbo_state();
     
-    gl::Shader rgb_shader;
+    gl::ShaderPtr rgb_shader;
     
 #if defined(KINSKI_GLES)
-    rgb_shader.loadFromData(unlit_vert, fs::read_file("rgb_shift_es2.frag"));
+    rgb_shader = gl::Shader::create(unlit_vert, fs::read_file("rgb_shift_es2.frag"));
 #else
-    rgb_shader.load_from_data(unlit_vert, fs::read_file("rgb_shift.frag"));
+    rgb_shader = gl::Shader::create(unlit_vert, fs::read_file("rgb_shift.frag"));
 #endif
     
     
@@ -246,7 +246,7 @@ void MeditationRoom::draw()
             gl::draw_circle(gl::window_dimension() / 2.f, m_current_circ_radius, gl::COLOR_WHITE,
                             true, 48);
         });
-        m_mat_rgb_shift->textures() = {m_fbos[0].texture()};
+        m_mat_rgb_shift->set_textures({m_fbos[0].texture()});
         
         // apply distortion shader
         textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_fbos[1], [this]()
@@ -539,7 +539,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 
                 if(m_movie)
                 {
-                    m_movie->set_media_ended_callback([this](media::MovieControllerPtr mc)
+                    m_movie->set_media_ended_callback([this](media::MediaControllerPtr mc)
                     {
                         LOG_DEBUG << "movie ended";
                         m_timer_movie_pause.cancel();

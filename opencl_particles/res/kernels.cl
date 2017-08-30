@@ -196,6 +196,7 @@ __kernel void update_particles(__global float3* pos,
     {
         // color code remaining lifetime
         float ratio = life / params->life_max;
+        //ratio = get_global_id(0) / (float)get_global_size(0);
         color[i] = jet(ratio);
         color[i].w = ratio;
     }

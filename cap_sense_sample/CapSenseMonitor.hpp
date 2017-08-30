@@ -11,7 +11,7 @@
 #include "core/Timer.hpp"
 
 // modules
-#include "http/http.h"
+#include "http/http.hpp"
 #include "sensors/sensors.h"
 #include "bluetooth/Bluetooth_UART.hpp"
 
