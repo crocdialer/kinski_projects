@@ -7,7 +7,24 @@ typedef struct Params
     float bouncyness;
     float life_min, life_max;
     bool debug_life;
+    unsigned int num_alive;
 }Params;
+
+// typedef struct ParticleState
+// {
+//     __global float3* pos;
+//     __global float4* color;
+//     __global float* point_sizes;
+//     __global float4* vel;
+//     __global float4* pos_gen;
+// }ParticleState;
+
+inline void swap_indices(__global unsigned int* lhs, __global unsigned int* rhs)
+{
+    unsigned int tmp = *lhs;
+    *lhs = *rhs;
+    *rhs = tmp;
+}
 
 __constant float inverse_int_max = 1.0 / 4294967295.0;
 
@@ -95,13 +112,14 @@ __kernel void set_colors_from_image(image2d_t image, __global float3* pos, __glo
 // apply forces and change velocities
 __kernel void apply_forces( __global float3* pos,
                             __global float4* vel,
+                            __global unsigned int* indices,
                             __constant float4* force_positions,
                             int num_forces,
                             float dt,
                             __constant struct Params *params)
 {
     //get our index in the array
-    unsigned int i = get_global_id(0);
+    unsigned int i = indices[get_global_id(0)];
 
     float3 p = pos[i];
 
@@ -125,12 +143,13 @@ __kernel void apply_forces( __global float3* pos,
 
 __kernel void apply_contraints( __global float3* pos,
                                 __global float4* velocity,
+                                __global unsigned int* indices,
                                 __constant float4* planes,
                                 int num_planes,
                                 __constant struct Params *params)
 {
     //get our index in the array
-    unsigned int i = get_global_id(0);
+    unsigned int i = indices[get_global_id(0)];
 
     float3 p = pos[i];
     float4 v = velocity[i];
@@ -145,17 +164,45 @@ __kernel void apply_contraints( __global float3* pos,
     velocity[i] = v;
 }
 
+__kernel void spawn_particle(__global float3* pos,
+                             __global float4* color,
+                             __global float* point_sizes,
+                             __global float4* vel,
+                             __global float4* pos_gen,
+                             __global unsigned int* indices,
+                             __constant struct Params *params)
+{
+    //spawning
+
+    //get our index in the array
+    unsigned int i = indices[get_global_id(0)];
+
+    __global float3 *p = pos + i;
+    __global float4 *v = vel + i;
+
+    // if(v->w <= 0.f)
+    {
+        // Get the global id in 1D
+        uint seed = get_global_id(1) * get_global_size(0) + get_global_id(0) + dot(*p, *p);
+
+        *p = pos_gen[i].xyz + params->emitter_position.xyz;
+        float3 rnd_vel = linear_rand(params->velocity_min.xyz, params->velocity_max.xyz, seed++);
+        v->xyz = matrix_mult_3x3(params->rotation_matrix, rnd_vel);
+        v->w = mix(params->life_min, params->life_max, random(seed++));
+    }
+}
+
 __kernel void update_particles(__global float3* pos,
                                __global float4* color,
                                __global float* point_sizes,
                                __global float4* vel,
                                __global float4* pos_gen,
-                               __global float4* vel_gen,
+                               __global unsigned int* indices,
                                float dt,
-                               __constant struct Params *params)
+                               __global struct Params *params)
 {
     //get our index in the array
-    unsigned int i = get_global_id(0);
+    unsigned int i = indices[get_global_id(0)];
 
     //copy position and velocity for this iteration to a local variable
     //note: if we were doing many more calculations we would want to have opencl
@@ -164,23 +211,8 @@ __kernel void update_particles(__global float3* pos,
     float4 v = vel[i];
 
     //we've stored the life in the fourth component of our velocity array
-    float life = vel[i].w;
-
     //decrease the life by the time step (this value could be adjusted to lengthen or shorten particle life
-    life -= dt;
-
-    //if the life is 0 or less we reset the particle's values back to the original values and set life to 1
-    if(life <= 0)
-    {
-        // Get the global id in 1D
-        uint seed = get_global_id(1) * get_global_size(0) + get_global_id(0) + dot(p, p);
-
-        p = pos_gen[i].xyz + params->emitter_position.xyz;
-        //v = vel_gen[i];
-        v.xyz = linear_rand(params->velocity_min.xyz, params->velocity_max.xyz, seed++);
-        v.xyz = matrix_mult_3x3(params->rotation_matrix, v.xyz);
-        life = mix(params->life_min, params->life_max, random(seed++));//vel_gen[i].w;
-    }
+    float life = max(vel[i].w - dt, 0.f);
 
     //update the position with the new velocity
     p.xyz += v.xyz * dt;
@@ -199,5 +231,17 @@ __kernel void update_particles(__global float3* pos,
         //ratio = get_global_id(0) / (float)get_global_size(0);
         color[i] = jet(ratio);
         color[i].w = ratio;
+    }
+
+    //if the life is 0 or less we reset the particle's values back to the original values and set life to 1
+    if(life <= 0)
+    {
+        //particle dies
+        int old_max = atomic_dec(&params->num_alive) - 1;
+
+        if(old_max > 0)
+        {
+            swap_indices(indices + get_global_id(0), indices + old_max);
+        }
     }
 }

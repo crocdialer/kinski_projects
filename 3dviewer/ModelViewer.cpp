@@ -78,6 +78,8 @@ void ModelViewer::setup()
     scene()->add_object(m_ground_mesh);
 
     load_settings();
+    
+    log(Severity::INFO, "lalala: %d", 69);
 }
 
 /////////////////////////////////////////////////////////////////

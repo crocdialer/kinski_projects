@@ -111,6 +111,13 @@ void ParticleSample::resize(int w ,int h)
 void ParticleSample::key_press(const KeyEvent &e)
 {
     ViewerApp::key_press(e);
+    
+    switch(e.getCode())
+    {
+        case Key::_E:
+            m_particle_system->emit_particles(50000);
+            break;
+    }
 }
 
 /////////////////////////////////////////////////////////////////

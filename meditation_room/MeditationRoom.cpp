@@ -464,7 +464,7 @@ bool MeditationRoom::change_state(State the_state, bool force_change)
                 
                 animations()[AUDIO_FADE_OUT]->set_finish_callback([this]()
                 {
-                    if(m_movie){ m_movie->seek_to_time(0); }
+                    if(m_movie){ m_movie->seek_to_time(0); LOG_DEBUG << "m_movie->seek_to_time(0)"; }
                 });
                 break;
             
