@@ -192,6 +192,23 @@ __kernel void spawn_particle(__global float3* pos,
     }
 }
 
+__kernel void kill_particles(__global float4* vel,
+                             __global unsigned int* indices,
+                             __global struct Params *params)
+{
+    float life = vel[indices[get_global_id(0)]].w;
+
+    //if the life is 0 or less we reset the particle's values back to the original values and set life to 1
+    if(life <= 0)
+    {
+        //particle dies -> decrease global counter
+        int old_max = atomic_dec(&params->num_alive) - 1;
+
+        // swap with last element in active range
+        if(old_max > 0){ swap_indices(indices + get_global_id(0), indices + old_max); }
+    }
+}
+
 __kernel void update_particles(__global float3* pos,
                                __global float4* color,
                                __global float* point_sizes,
@@ -199,7 +216,7 @@ __kernel void update_particles(__global float3* pos,
                                __global float4* pos_gen,
                                __global unsigned int* indices,
                                float dt,
-                               __global struct Params *params)
+                               __constant struct Params *params)
 {
     //get our index in the array
     unsigned int i = indices[get_global_id(0)];
@@ -233,15 +250,13 @@ __kernel void update_particles(__global float3* pos,
         color[i].w = ratio;
     }
 
-    //if the life is 0 or less we reset the particle's values back to the original values and set life to 1
-    if(life <= 0)
-    {
-        //particle dies
-        int old_max = atomic_dec(&params->num_alive) - 1;
-
-        if(old_max > 0)
-        {
-            swap_indices(indices + get_global_id(0), indices + old_max);
-        }
-    }
+    // //if the life is 0 or less we reset the particle's values back to the original values and set life to 1
+    // if(life <= 0)
+    // {
+    //     //particle dies -> decrease global counter
+    //     int old_max = atomic_dec(&params->num_alive) - 1;
+    //
+    //     // swap with last element in active range
+    //     if(old_max > 0){ swap_indices(indices + get_global_id(0), indices + old_max); }
+    // }
 }
