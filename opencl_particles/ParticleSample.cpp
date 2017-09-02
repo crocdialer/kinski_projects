@@ -21,6 +21,7 @@ void ParticleSample::setup()
     register_property(m_draw_fps);
     register_property(m_texture_path);
     register_property(m_num_particles);
+    register_property(m_emission_rate);
     register_property(m_gravity);
     register_property(m_point_size);
     register_property(m_point_color);
@@ -57,7 +58,7 @@ void ParticleSample::init_particles(uint32_t the_num)
     m_particle_system->forces() = {gl::vec4(0, 15, 0, 500)};
     m_particle_system->planes() = { gl::Plane(gl::vec3(), gl::vec3(0, 1, 0)) };
     m_particle_system->set_mesh(m_particle_mesh);
-
+    m_particle_system->set_emission_rate(*m_emission_rate);
     scene()->add_object(m_particle_system);
 
 //    m_particle_system->transform() = gl::rotate(gl::mat4(), glm::pi<float>() / 6.f, gl::X_AXIS);
@@ -235,6 +236,10 @@ void ParticleSample::update_property(const Property::ConstPtr &theProperty)
             theProperty == m_start_velocity_max)
     {
         m_particle_system->set_start_velocity(*m_start_velocity_min, *m_start_velocity_max);
+    }
+    else if(theProperty == m_emission_rate)
+    {
+        m_particle_system->set_emission_rate(*m_emission_rate);
     }
     else if(theProperty == m_lifetime_min ||
             theProperty == m_lifetime_max)
