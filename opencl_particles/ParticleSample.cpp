@@ -98,6 +98,16 @@ void ParticleSample::draw()
                                   glm::smoothstep(0.f, 1.f, fps() / max_fps())),
                          gl::vec2(10));
     }
+    
+    if(displayTweakBar())
+    {
+        gl::draw_text_2D(format("particles: %d / %d", m_particle_system->num_particles(),
+                                m_particle_system->max_num_particles()), fonts()[0],
+                         gl::COLOR_WHITE, gl::vec2(gl::window_dimension().x - 250, 10));
+        
+        gl::draw_text_2D(format("press 'e' to emit bursts"), fonts()[0],
+                         gl::COLOR_WHITE, gl::vec2(gl::window_dimension().x - 250, 30));
+    }
 }
 
 /////////////////////////////////////////////////////////////////

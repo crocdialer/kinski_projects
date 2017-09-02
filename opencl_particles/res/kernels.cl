@@ -180,16 +180,13 @@ __kernel void spawn_particle(__global float3* pos,
     __global float3 *p = pos + i;
     __global float4 *v = vel + i;
 
-    // if(v->w <= 0.f)
-    {
-        // Get the global id in 1D
-        uint seed = get_global_id(1) * get_global_size(0) + get_global_id(0) + dot(*p, *p);
+    // Get the global id in 1D
+    uint seed = get_global_id(1) * get_global_size(0) + get_global_id(0) + dot(*p, *p);
 
-        *p = pos_gen[i].xyz + params->emitter_position.xyz;
-        float3 rnd_vel = linear_rand(params->velocity_min.xyz, params->velocity_max.xyz, seed++);
-        v->xyz = matrix_mult_3x3(params->rotation_matrix, rnd_vel);
-        v->w = mix(params->life_min, params->life_max, random(seed++));
-    }
+    *p = pos_gen[i].xyz + params->emitter_position.xyz;
+    float3 rnd_vel = linear_rand(params->velocity_min.xyz, params->velocity_max.xyz, seed++);
+    v->xyz = matrix_mult_3x3(params->rotation_matrix, rnd_vel);
+    v->w = mix(params->life_min, params->life_max, random(seed++));
 }
 
 __kernel void kill_particles(__global float4* vel,
@@ -198,7 +195,7 @@ __kernel void kill_particles(__global float4* vel,
 {
     float life = vel[indices[get_global_id(0)]].w;
 
-    //if the life is 0 or less we reset the particle's values back to the original values and set life to 1
+    //if the life is 0 or less we swap this particle's index out
     if(life <= 0)
     {
         //particle dies -> decrease global counter
@@ -227,11 +224,10 @@ __kernel void update_particles(__global float3* pos,
     float3 p = pos[i];
     float4 v = vel[i];
 
-    //we've stored the life in the fourth component of our velocity array
-    //decrease the life by the time step (this value could be adjusted to lengthen or shorten particle life
+    // life is stored in the fourth component of our velocity array
     float life = max(vel[i].w - dt, 0.f);
 
-    //update the position with the new velocity
+    //update the position with the velocity
     p.xyz += v.xyz * dt;
 
     //store the updated life in the velocity array
@@ -249,14 +245,4 @@ __kernel void update_particles(__global float3* pos,
         color[i] = jet(ratio);
         color[i].w = ratio;
     }
-
-    // //if the life is 0 or less we reset the particle's values back to the original values and set life to 1
-    // if(life <= 0)
-    // {
-    //     //particle dies -> decrease global counter
-    //     int old_max = atomic_dec(&params->num_alive) - 1;
-    //
-    //     // swap with last element in active range
-    //     if(old_max > 0){ swap_indices(indices + get_global_id(0), indices + old_max); }
-    // }
 }
