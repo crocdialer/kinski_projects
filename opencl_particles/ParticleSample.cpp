@@ -22,6 +22,7 @@ void ParticleSample::setup()
     register_property(m_texture_path);
     register_property(m_num_particles);
     register_property(m_emission_rate);
+    register_property(m_num_burst_particles);
     register_property(m_gravity);
     register_property(m_point_size);
     register_property(m_point_color);
@@ -99,7 +100,7 @@ void ParticleSample::draw()
                          gl::vec2(10));
     }
     
-    if(displayTweakBar())
+    if(Logger::get()->severity() >= Severity::DEBUG)
     {
         gl::draw_text_2D(format("particles: %d / %d", m_particle_system->num_particles(),
                                 m_particle_system->max_num_particles()), fonts()[0],
@@ -126,7 +127,7 @@ void ParticleSample::key_press(const KeyEvent &e)
     switch(e.getCode())
     {
         case Key::_E:
-            m_particle_system->emit_particles(50000);
+            m_particle_system->emit_particles(*m_num_burst_particles);
             break;
     }
 }

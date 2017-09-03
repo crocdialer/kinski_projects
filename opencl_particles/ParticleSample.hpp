@@ -26,8 +26,12 @@ namespace kinski
 
         Property_<bool>::Ptr m_draw_fps = Property_<bool>::create("draw fps", true);
         Property_<string>::Ptr m_texture_path = Property_<string>::create("texture path", "");
-        RangedProperty<int>::Ptr m_num_particles = RangedProperty<int>::create("num particles", 100000, 1, 10000000);
-        RangedProperty<int>::Ptr m_emission_rate = RangedProperty<int>::create("spawn rate", 1000, 0, 1000000);
+        
+        RangedProperty<int>::Ptr
+        m_num_particles = RangedProperty<int>::create("num particles", 100000, 1, 10000000),
+        m_emission_rate = RangedProperty<int>::create("spawn rate", 1000, 0, 1000000),
+        m_num_burst_particles = RangedProperty<int>::create("num burst particles", 50000, 0, 10000000);
+        
         RangedProperty<float>::Ptr m_point_size = RangedProperty<float>::create("point size", 3.f, 1.f, 64.f);
         Property_<gl::Color>::Ptr m_point_color = Property_<gl::Color>::create("point color", gl::COLOR_WHITE);
 
