@@ -33,7 +33,10 @@ namespace kinski
 
         //! timer for periodic udp broadcasts
         Timer m_broadcast_timer, m_scan_for_device_timer;
-
+        
+        //! udp-server for sensor discovery
+        net::udp_server m_udp_server{background_queue().io_service()};
+        
         gl::ScenePtr m_gui_scene = gl::Scene::create();
 
         Property_<string>::Ptr

@@ -324,6 +324,29 @@ void CapSenseMonitor::reset_sensors()
         }
     };
     
+    m_udp_server.start_listen(55555);
+    m_udp_server.set_receive_function([this, query_cb](const std::vector<uint8_t>& the_data,
+                                                       const std::string& the_ip,
+                                                       uint16_t the_port)
+    {
+        std::string device_str(the_data.begin(), the_data.end());
+        
+        LOG_DEBUG << "device via udp: " << device_str;
+        
+        // create tcp-connection
+        auto con = net::tcp_connection::create(background_queue().io_service(), the_ip, 33333);
+        
+        con->set_timeout(5.0);
+        con->set_connect_cb([query_cb, device_str](ConnectionPtr the_con)
+        {
+            query_cb(device_str, the_con);
+        });
+        con->set_disconnect_cb([con](ConnectionPtr the_con)
+        {
+            the_con->set_disconnect_cb();
+        });
+    });
+    
 //    m_bluetooth->set_connect_cb([this, query_cb](ConnectionPtr p)
 //    {
 ////        sensors::query_device(p, background_queue().io_service(), query_cb);
@@ -331,5 +354,5 @@ void CapSenseMonitor::reset_sensors()
 //    });
 //    m_bluetooth->open();
     
-    sensors::scan_for_devices(background_queue().io_service(), query_cb);
+    sensors::scan_for_serials(background_queue().io_service(), query_cb);
 }
