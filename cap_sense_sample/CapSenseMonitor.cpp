@@ -324,14 +324,13 @@ void CapSenseMonitor::reset_sensors()
         }
     };
     
+    // network-sensors are supposed to broadcast their ID on port 55555
     m_udp_server.start_listen(55555);
     m_udp_server.set_receive_function([this, query_cb](const std::vector<uint8_t>& the_data,
                                                        const std::string& the_ip,
                                                        uint16_t the_port)
     {
         std::string device_str(the_data.begin(), the_data.end());
-        
-        LOG_DEBUG << "device via udp: " << device_str;
         
         // create tcp-connection
         auto con = net::tcp_connection::create(background_queue().io_service(), the_ip, 33333);
