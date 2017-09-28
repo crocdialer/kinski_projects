@@ -2,7 +2,7 @@
 #include "core/Serial.hpp"
 
 #include "RtMidi.h"
-#include "DMXController.hpp"
+#include "dmx/DMXController.hpp"
 
 #include <boost/asio.hpp>
 
@@ -22,28 +22,20 @@ private:
     gl::Font m_font_large, m_font_small;
     
     // Serial communication with Arduino device
-    SerialPtr m_serial = Serial::create();
+    SerialPtr m_serial = Serial::create(main_queue().io_service());
     
     net::udp_server m_udp_server;
     Property_<uint32_t>::Ptr m_local_udp_port = Property_<uint32_t>::create("udp port", 11111);
     
     // Communication with Enttec DMXUSB Pro
-    DMXController m_dmx_control;
+    dmx::DMXController m_dmx_control{main_queue().io_service()};
     
     Property_<string>::Ptr m_arduino_device_name;
     
     // used for analog input measuring
     string m_input_prefix = "a_";
     
-    std::vector<Measurement<float>> m_analog_in {   Measurement<float>(1000, "Harp 1 - 1"),
-                                                    Measurement<float>(1000, "Harp 1 - 2"),
-                                                    Measurement<float>(1000, "Harp 1 - 3"),
-                                                    Measurement<float>(1000, "Harp 1 - 4"),
-                                                    Measurement<float>(1000, "Harp 1 - 5"),
-                                                    Measurement<float>(1000, "Harp 1 - 6"),
-                                                    Measurement<float>(1000, "Harp 1 - 7"),
-                                                    Measurement<float>(1000, "Harp 1 - 8")
-                                                };
+    std::vector<CircularBuffer<float>> m_analog_in;
     std::vector<bool> m_channel_activity;
     
     // display plot for selected index
@@ -119,11 +111,13 @@ public:
     void setup() override
     {
         ViewerApp::setup();
-        
+
+        m_analog_in.resize(8, CircularBuffer<float>(1000));
+
         // prepare 2 font objects
-        string font_name = "Courier New Bold.ttf";
-        m_font_small.load(font_name, 24);
-        m_font_large.load(font_name, 80);
+        //string font_name = "Courier New Bold.ttf";
+        m_font_small = fonts()[0];
+        m_font_large.load(fonts()[0].path(), 80);
         
         outstream_gl().set_font(m_font_small);
         outstream_gl().set_color(gl::COLOR_BLACK);
@@ -179,15 +173,14 @@ public:
         
         // drain the serial buffer before we start
         m_serial->drain();
-        m_serial->flush();
         
         m_ortho_cam = gl::OrthographicCamera::create(0, gl::window_dimension().x, 0,
                                                      gl::window_dimension().y, 0, 1);
         
-        for(auto &m : m_analog_in)
-        {
-            m.set_filter(std::make_shared<FalloffFilter<float>>());
-        }
+//        for(auto &m : m_analog_in)
+//        {
+//            m.set_filter(std::make_shared<FalloffFilter<float>>());
+//        }
         
         
         m_channel_activity.assign(m_analog_in.size(), false);
@@ -228,23 +221,24 @@ public:
         ViewerApp::update(timeDelta);
         
         // parse arduino input
-        if(m_serial->is_initialized())
+        if(m_serial->is_open())
         {
-            for(string line : m_serial->read_lines())
-            {
-                parse_line(line);
-            }
+            // TODO: rewrite this part with new api
+//            for(string line : m_serial-)
+//            {
+//                parse_line(line);
+//            }
         }
         
         // apply current state
         for(int i = 0; i < m_analog_in.size(); i++)
         {
-            if(m_analog_in[i].last_value() > *m_thresh_high &&
+            if(m_analog_in[i].back() > *m_thresh_high &&
                !m_channel_activity[i])
             {
                 m_channel_activity[i] = true;
                 int string_velocity = kinski::clamp<float>(*m_midi_plug_multiplier * 127 *
-                                                           m_analog_in[i].last_value() / 1023.f,
+                                                           m_analog_in[i].back() / 1023.f,
                                                            0,
                                                            127);
                 
@@ -257,7 +251,7 @@ public:
                     reset_idle_timer();
                 };
             }
-            else if(!m_idle_active && m_analog_in[i].last_value() < *m_thresh_low &&
+            else if(!m_idle_active && m_analog_in[i].back() < *m_thresh_low &&
                     m_channel_activity[i])
             {
                 m_channel_activity[i] = false;
@@ -267,11 +261,11 @@ public:
         
         const auto &measure = m_analog_in[*m_selected_index];
         
-        m_points.resize(measure.history().size(), vec3(0));
-        for (int i = 0; i < measure.history().size(); i++)
+        m_points.resize(measure.size(), vec3(0));
+        for (int i = 0; i < measure.size(); i++)
         {
-            m_points[i].x = i * gl::window_dimension().x / measure.history().size();
-            m_points[i].y = measure.history()[i] / 2.f;
+            m_points[i].x = i * gl::window_dimension().x / measure.size();
+            m_points[i].y = measure[i] / 2.f;
         }
         
         // light control
