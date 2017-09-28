@@ -29,7 +29,7 @@ void VarioDisplay::setup()
 //    m_proto_triangles->set_scale(10.f);
     setup_vario_map();
     
-    auto aabb = m_proto_lines->bounding_box();
+    auto aabb = m_proto_lines->aabb();
     
     for(int i = -2; i < 3; ++i)
     {
@@ -215,7 +215,7 @@ gl::MeshPtr VarioDisplay::create_proto()
     };
     
     geom->set_primitive_type(GL_LINES);
-    geom->compute_bounding_box();
+    geom->compute_aabb();
     gl::MeshPtr ret = gl::Mesh::create(geom, gl::Material::create());
     
     gl::Mesh::Entry e;
@@ -235,7 +235,7 @@ gl::MeshPtr VarioDisplay::create_proto()
     auto active_mat = gl::Material::create(gl::ShaderType::LINES_2D);
     active_mat->uniform("u_line_thickness", 11.f);
     active_mat->set_line_width(11.f);
-//    active_mat->uniform("u_window_size", gl::window_dimension());
+    active_mat->uniform("u_window_size", gl::window_dimension());
     active_mat->set_diffuse(gl::COLOR_ORANGE);
     ret->materials().push_back(active_mat);
     
@@ -277,7 +277,7 @@ gl::MeshPtr VarioDisplay::create_proto_triangles(float line_width)
         i += 4;
     }
     ret->geometry()->colors().resize(dst_verts.size(), gl::COLOR_WHITE);
-    ret->geometry()->compute_bounding_box();
+    ret->geometry()->compute_aabb();
     
     // active material
     auto active_mat = gl::Material::create();

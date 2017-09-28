@@ -242,7 +242,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
             m_mesh = m;
             scene()->add_object(m_mesh);
             
-            auto aabb = m->bounding_box();
+            auto aabb = m->aabb();
             
             float scale_factor = 50.f / aabb.width();
             m->set_scale(scale_factor);

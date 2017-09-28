@@ -240,12 +240,12 @@ void AsteroidField::load_assets()
             vec3 centroid = gl::calculate_centroid(verts);
             for(auto &v : verts){ v -= centroid; }
             mesh->geometry()->create_gl_buffers();
-            mesh->geometry()->compute_bounding_box();
+            mesh->geometry()->compute_aabb();
             
             mesh->material()->set_shader(shader);
             mesh->material()->set_ambient(gl::COLOR_WHITE);
             
-            auto aabb = mesh->bounding_box();
+            auto aabb = mesh->aabb();
             float scale_factor = 50.f / aabb.width();
             mesh->set_scale(scale_factor);
             

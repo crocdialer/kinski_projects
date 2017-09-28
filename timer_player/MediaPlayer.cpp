@@ -142,7 +142,7 @@ void MediaPlayer::draw()
     {
         auto tmp_mesh = fonts()[2].create_mesh(secs_to_time_str(0));
         tmp_mesh->set_scale(m_current_scale);
-        vec2 sz = tmp_mesh->bounding_box().size().xy();
+        vec2 sz = tmp_mesh->aabb().size().xy();
 
         auto countdown_str = secs_to_time_str(m_timer_restart_movie.expires_from_now());
         auto m = fonts()[2].create_mesh(countdown_str);

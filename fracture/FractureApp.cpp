@@ -310,7 +310,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
             m_physics.remove_mesh_from_simulation(m_mesh);
             m_mesh = m;
             
-            auto aabb = m->bounding_box();
+            auto aabb = m->aabb();
             float scale_factor = 10.f / aabb.width();
             m->set_scale(scale_factor);
             
@@ -323,7 +323,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
         auto ft = fs::get_file_type(*m_crosshair_path);
         if(ft == fs::FileType::MOVIE)
         {
-            m_crosshair_movie = media::MovieController::create(*m_crosshair_path, true, true);
+            m_crosshair_movie = media::MediaController::create(*m_crosshair_path, true, true);
         }
         else if(ft == fs::FileType::IMAGE)
         {
@@ -347,7 +347,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
                 catch (Exception &e) { LOG_WARNING << e.what(); }
             }else if(fs::get_file_type(f) == fs::FileType::MOVIE)
             {
-                m_movie = media::MovieController::create(f, false, true);
+                m_movie = media::MediaController::create(f, false, true);
                 m_movie->set_on_load_callback([this, tex_array](media::MediaControllerPtr m)
                 {
                     m_needs_refracture = true;
@@ -470,7 +470,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
         ground->geometry()->colors().clear();
         
         ground->set_scale(vec3(100, 1, 100));
-        auto ground_aabb = ground->bounding_box();
+        auto ground_aabb = ground->aabb();
         ground->position().y -= ground_aabb.halfExtents().y;
         auto col_shape = std::make_shared<btBoxShape>(physics::type_cast(ground_aabb.halfExtents()));
         btRigidBody *rb = m_physics.add_mesh_to_simulation(ground, 0.f, col_shape);
@@ -480,14 +480,14 @@ void FractureApp::fracture_test(uint32_t num_shards)
         // back plane
         auto back = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), ground_mat);
         back->set_scale(vec3(100, 20, .3));
-        auto back_aabb = back->bounding_box();
+        auto back_aabb = back->aabb();
         back->position() += vec3(0, back_aabb.halfExtents().y, -2.f * back_aabb.halfExtents().z);
         col_shape = std::make_shared<btBoxShape>(physics::type_cast(back_aabb.halfExtents()));
         
         // stopper
         auto stopper = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), ground_mat);
         stopper->set_scale(vec3(m_obj_scale->value().x, .1f, .1f));
-        auto stopper_aabb = back->bounding_box();
+        auto stopper_aabb = back->aabb();
         stopper->position() = vec3(0, 0,  - m_obj_scale->value().z / 2.f);
         col_shape = std::make_shared<btBoxShape>(physics::type_cast(stopper_aabb.halfExtents()));
         m_physics.add_mesh_to_simulation(stopper);
@@ -513,7 +513,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
     
     auto m = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), gl::Material::create(phong_shadow));
     m->set_scale(*m_obj_scale);
-    auto aabb = m->bounding_box();
+    auto aabb = m->aabb();
     m->position().y += aabb.halfExtents().y;
     
 //    std::vector<gl::Texture> textures;
@@ -576,7 +576,7 @@ void FractureApp::fracture_test(uint32_t num_shards)
         rb->setRollingFriction(*m_friction);
         
         //ccd
-        auto aabb = mesh_copy->bounding_box();
+        auto aabb = mesh_copy->aabb();
         rb->setCcdSweptSphereRadius(glm::length(aabb.halfExtents()) / 2.f);
         rb->setCcdMotionThreshold(glm::length(aabb.halfExtents()) / 2.f);
         

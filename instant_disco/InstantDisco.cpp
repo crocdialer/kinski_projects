@@ -29,7 +29,7 @@ namespace
 gl::MeshPtr create_button(const std::string &icon_path)
 {
     auto geom = gl::Geometry::create_plane(1, 1);
-    vec3 center = geom->bounding_box().center();
+    vec3 center = geom->aabb().center();
     for(auto &v : geom->vertices()){ v -= center; }
 
     auto select_mesh = gl::Mesh::create(geom, gl::Material::create());
@@ -114,7 +114,7 @@ void InstantDisco::setup()
     m_timer_led.expires_from_now(1.0);
 
     // position buttons
-    auto button_aabb = m_buttons->bounding_box();
+    auto button_aabb = m_buttons->aabb();
     m_buttons->set_position(gl::vec3(0, gl::window_dimension().y - button_aabb.height() - 150, 0));
 
 #if defined(KINSKI_RASPI)
@@ -168,7 +168,7 @@ void InstantDisco::resize(int w ,int h)
     ViewerApp::resize(w, h);
     
     // position buttons
-    auto button_aabb = m_buttons->bounding_box();
+    auto button_aabb = m_buttons->aabb();
     m_buttons->set_position(gl::vec3(0, h - button_aabb.height() - 150, 0));
 }
 

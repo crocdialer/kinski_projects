@@ -682,7 +682,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
         }
         
         // apply scaling
-        auto aabb = m->bounding_box();
+        auto aabb = m->aabb();
         float scale_factor = random(1.f, 3.f) * 25.f / length(aabb.halfExtents());
         m->set_scale(scale_factor);
         
@@ -713,9 +713,9 @@ void ModelViewer::update_select_indicator()
     
     if(auto m = selected_mesh())
     {
-        auto aabb = m->bounding_box();
+        auto aabb = m->aabb();
         aabb = aabb.transform(m->global_transform());
-        float h = aabb.height() + m_select_indicator->bounding_box().height();
+        float h = aabb.height() + m_select_indicator->aabb().height();
         
         gl::Object3DPtr mesh_root = m->parent();
         mesh_root = mesh_root ? mesh_root->parent() : mesh_root;

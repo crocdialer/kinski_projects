@@ -50,7 +50,7 @@ void GrowthApp::setup()
     {
         m_bounding_mesh = gl::Mesh::create(gl::Geometry::create_box(vec3(50)),
                                            gl::Material::create());
-        m_bounding_mesh->position() += m_bounding_mesh->bounding_box().center();
+        m_bounding_mesh->position() += m_bounding_mesh->aabb().center();
         
         // some material props
         auto &bound_mat = m_bounding_mesh->material();
@@ -358,7 +358,7 @@ void GrowthApp::refresh_lsystem()
         
         uint32_t min = 0, max = m_entries.front().num_indices - 1;
         m_max_index->set_range(min, max);
-        LOG_DEBUG << "radius: " << glm::length(m_mesh->bounding_box().halfExtents());
+        LOG_DEBUG << "radius: " << glm::length(m_mesh->aabb().halfExtents());
 
         // task done
         dec_task();

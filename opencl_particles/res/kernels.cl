@@ -10,6 +10,17 @@ typedef struct Params
     unsigned int num_alive;
 }Params;
 
+typedef struct AABB
+{
+    float4 min, max;
+}AABB;
+
+inline AABB combine_AABB(AABB* lhs, AABB* rhs)
+{
+    AABB ret;
+    return ret;
+}
+
 // typedef struct ParticleState
 // {
 //     __global float3* pos;

@@ -332,18 +332,22 @@ void CapSenseMonitor::reset_sensors()
     {
         std::string device_str(the_data.begin(), the_data.end());
         
-        // create tcp-connection
-        auto con = net::tcp_connection::create(background_queue().io_service(), the_ip, 33333);
-        
-        con->set_timeout(5.0);
-        con->set_connect_cb([query_cb, device_str](ConnectionPtr the_con)
+        if(device_str == CapacitiveSensor::id())
         {
-            query_cb(device_str, the_con);
-        });
-        con->set_disconnect_cb([con](ConnectionPtr the_con)
-        {
-            the_con->set_disconnect_cb();
-        });
+            // create tcp-connection
+            auto con = net::tcp_connection::create(background_queue().io_service(), the_ip, 33333);
+            
+            con->set_timeout(5.0);
+            con->set_connect_cb([query_cb, device_str](ConnectionPtr the_con)
+            {
+                query_cb(device_str, the_con);
+            });
+            
+            con->set_disconnect_cb([con](ConnectionPtr the_con)
+            {
+                the_con->set_disconnect_cb();
+            });
+        }
     });
     
 //    m_bluetooth->set_connect_cb([this, query_cb](ConnectionPtr p)
