@@ -547,7 +547,7 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
                 m->material()->set_two_sided();
                 gl::vec3 s = m->scale();
                 m->set_scale(gl::vec3(s.x * t.aspect_ratio(), s.y, 1.f));
-                m->position().y += m->bounding_box().height() / 2.f;
+                m->position().y += m->aabb().height() / 2.f;
             });
         }
             break;
@@ -559,7 +559,7 @@ gl::MeshPtr ModelViewer::load_asset(const std::string &the_path)
     if(m)
     {
         // apply scaling
-        auto aabb = m->bounding_box();
+        auto aabb = m->aabb();
         float scale_factor = 50.f / length(aabb.halfExtents());
         m->set_scale(scale_factor);
 
