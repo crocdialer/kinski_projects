@@ -147,68 +147,69 @@ void ModelViewer::update(float timeDelta)
         m_needs_cam_refresh = false;
         setup_offscreen_cameras(*m_num_screens, !*m_use_offscreen_manual_angle);
     }
-    
+
     // fetch all meshes in scenegraph
     gl::SelectVisitor<gl::Mesh> mv;
     scene()->root()->accept(mv);
-    
+
     //////////////////////////////// Parallax Lvls /////////////////////////////////////////
-    
+
     float p_rot[NUM_LVLS] = {*m_rotation_lvl_1, *m_rotation_lvl_2, *m_rotation_lvl_3};
-    
+
     for(size_t i = 0; i < m_roots.size(); i++)
     {
         m_roots[i]->transform() = rotate(m_roots[i]->transform(), glm::radians(p_rot[i] * timeDelta),
                                          gl::Y_AXIS);
     }
-    
+
     //////////////////////////////// Joystick //////////////////////////////////////////////
-    
+
     process_joystick_input(timeDelta);
-    
+
     //////////////////////////////// Midi / Audio //////////////////////////////////////////
-    
+
     update_audio();
-    
+
     float audio_low = std::max(m_last_volumes[0], m_last_volumes[1]) * *m_obj_audio_react_low;
     float audio_hi = std::max(m_last_volumes[2], m_last_volumes[3]) * *m_obj_audio_react_hi;
-    
+
     if(audio_low > 0.f)
     {
         float max = m_displace_factor->range().second;
-        
+
         // LOWS
         *m_displace_factor = audio_low * max;
-        
+
     }
-    
+
     if(audio_hi > 0.f)
     {
         // HIGHS
         float max = m_obj_scale->range().second;
-        
+
         // LOWS
         *m_displace_res = audio_hi * max;
     }
-    
+
     //////////////////////////////// Displacement //////////////////////////////////////////
-    
+
     // update displacement map
     textures()[TEXTURE_NOISE] = m_noise.simplex(get_application_time() * *m_displace_velocity);
-    
+//    gl::reset_state();
+
     // update displacement textures in models
     for(gl::Mesh *m : mv.get_objects())
     {
         for(auto &mat : m->materials())
         {
             gl::Texture diffuse_tex;
-            
+
             if(mat->textures().size() > 1)
             {
                 diffuse_tex = mat->textures()[0];
             }
             mat->clear_textures();
-            
+
             if(diffuse_tex){ mat->add_texture(diffuse_tex); }
             mat->add_texture(textures()[TEXTURE_NOISE]);
         }
@@ -233,34 +234,34 @@ void ModelViewer::draw()
 
     // render scene and debug elements
     scene()->render(camera());
-    
+
     m_debug_scene->render(camera());
-    
+
     if(*m_use_syphon)
     {
         auto tex = textures()[TEXTURE_OUPUT] = create_offscreen_texture();
         m_syphon_out.publish_texture(tex);
     }
-    
-    if(selected_mesh() && *m_display_bones) // slow!
-    {
-        // crunch bone data
-        vector<vec3> skel_points;
-        vector<string> bone_names;
-        build_skeleton(selected_mesh()->root_bone(), skel_points, bone_names);
-        gl::load_matrix(gl::MODEL_VIEW_MATRIX, camera()->view_matrix() * selected_mesh()->global_transform());
-        
-        // draw bone data
-        gl::draw_lines(skel_points, gl::COLOR_DARK_RED);
-        
-        for(const auto &p : skel_points)
-        {
-            vec3 p_trans = (selected_mesh()->global_transform() * vec4(p, 1.f)).xyz();
-            vec2 p2d = gl::project_point_to_screen(p_trans, camera());
-            gl::draw_circle(p2d, 5.f, false);
-        }
-    }
-    
+
+//    if(selected_mesh() && *m_display_bones) // slow!
+//    {
+//        // crunch bone data
+//        vector<vec3> skel_points;
+//        vector<string> bone_names;
+//        build_skeleton(selected_mesh()->root_bone(), skel_points, bone_names);
+//        gl::load_matrix(gl::MODEL_VIEW_MATRIX, camera()->view_matrix() * selected_mesh()->global_transform());
+//
+//        // draw bone data
+//        gl::draw_lines(skel_points, gl::COLOR_DARK_RED);
+//
+//        for(const auto &p : skel_points)
+//        {
+//            vec3 p_trans = (selected_mesh()->global_transform() * vec4(p, 1.f)).xyz();
+//            vec2 p2d = gl::project_point_to_screen(p_trans, camera());
+//            gl::draw_circle(p2d, 5.f, false);
+//        }
+//    }
+
     // draw texture map(s)
     if(displayTweakBar())
     {
@@ -269,9 +270,9 @@ void ModelViewer::draw()
             textures()[TEXTURE_SELECTED] = selected_mesh()->material()->textures()[0];
         }
         else{ textures()[TEXTURE_SELECTED].reset(); }
-        
+
         draw_textures(textures());
-        
+
         // draw fft vals
         for (uint32_t i = 0; i < m_last_volumes.size(); i++)
         {
@@ -766,7 +767,11 @@ void ModelViewer::reset_lvl(size_t the_lvl)
             *m->materials()[j] = *materials[j];
             m->materials()[j]->set_two_sided(*m_obj_wire_frame);
             m->materials()[j]->set_wireframe(*m_obj_wire_frame);
-            if(!*m_obj_texturing){ m->materials()[j]->clear_textures(); }
+            if(!*m_obj_texturing)
+            {
+                m->materials()[j]->clear_textures();
+                m->materials()[j]->texture_paths().clear();
+            }
         }
         
         // use standard (white) vertex color
