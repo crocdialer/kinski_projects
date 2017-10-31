@@ -331,13 +331,23 @@ void CapSenseMonitor::reset_sensors()
                                                        uint16_t the_port)
     {
         std::string device_str(the_data.begin(), the_data.end());
+        LOG_TRACE << the_ip << ": " << device_str;
         
         if(device_str == CapacitiveSensor::id())
         {
+            // check for doubles
+            for(auto &s : m_sensors)
+            {
+                auto tcp_con = std::dynamic_pointer_cast<net::tcp_connection>(s->device_connection());
+                if(tcp_con && tcp_con->remote_ip() == the_ip){ return; }
+            }
+            
+//            m_udp_server.stop_listen();
+            
             // create tcp-connection
             auto con = net::tcp_connection::create(background_queue().io_service(), the_ip, 33333);
             
-            con->set_timeout(5.0);
+            con->set_timeout(3.0);
             con->set_connect_cb([query_cb, device_str](ConnectionPtr the_con)
             {
                 query_cb(device_str, the_con);
