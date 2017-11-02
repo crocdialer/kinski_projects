@@ -342,7 +342,7 @@ void CapSenseMonitor::reset_sensors()
                 if(tcp_con && tcp_con->remote_ip() == the_ip){ return; }
             }
             
-//            m_udp_server.stop_listen();
+            m_udp_server.stop_listen();
             
             // create tcp-connection
             auto con = net::tcp_connection::create(background_queue().io_service(), the_ip, 33333);
@@ -350,6 +350,9 @@ void CapSenseMonitor::reset_sensors()
             con->set_timeout(3.0);
             con->set_connect_cb([query_cb, device_str](ConnectionPtr the_con)
             {
+                // this is a workaround for the Arduino/Adafruit Ethernet2 library.
+                // it won't establish a connection without seeing at least one byte on the wire
+                the_con->write("\n");
                 query_cb(device_str, the_con);
             });
             
