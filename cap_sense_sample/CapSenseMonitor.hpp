@@ -13,7 +13,6 @@
 // modules
 #include "http/http.hpp"
 #include "sensors/sensors.h"
-#include "bluetooth/Bluetooth_UART.hpp"
 
 namespace kinski
 {
@@ -25,8 +24,6 @@ namespace kinski
         enum FontEnum{FONT_SMALL = 0, FONT_MEDIUM = 1, FONT_LARGE = 2};
         
         std::vector<CapacitiveSensorPtr> m_sensors;
-        
-        bluetooth::Bluetooth_UARTPtr m_bluetooth = bluetooth::Bluetooth_UART::create();
         
         //! used for http-requests
         net::http::Client m_http{background_queue().io_service()};
