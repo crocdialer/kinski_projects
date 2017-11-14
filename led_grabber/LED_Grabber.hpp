@@ -8,7 +8,7 @@
 #pragma once
 
 #include "core/Connection.hpp"
-#include "gl/Texture.hpp"
+#include "core/Image.hpp"
 
 namespace kinski
 {
@@ -30,7 +30,7 @@ public:
     
     bool is_initialized() const;
     
-    bool grab_from_texture(const gl::Texture &the_tex);
+    bool grab_from_image(const ImagePtr &the_image);
     
 private:
     

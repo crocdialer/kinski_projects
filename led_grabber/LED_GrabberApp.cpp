@@ -99,6 +99,12 @@ void LED_GrabberApp::setup()
     m_check_ip_timer.expires_from_now(5.f);
 
     textures()[8] = fonts()[0].glyph_texture();
+    
+    auto con = net::tcp_connection::create(background_queue().io_service(), "192.168.0.206", 33333);
+    con->set_connect_cb([this](ConnectionPtr c)
+    {
+        if(m_led_grabber->connect(c)){ LOG_DEBUG << "grabber connected: " << c->description(); }
+    });
 }
 
 /////////////////////////////////////////////////////////////////
@@ -204,6 +210,12 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                     next_index += next_index < 0 ? m_playlist.size() : 0;
                     m_current_playlist_index = next_index;
                     *m_media_path = m_playlist[m_current_playlist_index];
+                }
+                break;
+                
+            case Key::_L:
+                {
+                    m_led_grabber->grab_from_image(ImagePtr());
                 }
                 break;
             default:

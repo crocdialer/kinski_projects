@@ -17,6 +17,7 @@
 #include "gl/Texture.hpp"
 
 #include "media/media.h"
+#include "LED_Grabber.hpp"
 
 namespace kinski
 {
@@ -25,7 +26,9 @@ namespace kinski
     private:
 
         enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_OUTPUT = 1};
-
+        
+        LED_GrabberPtr m_led_grabber = LED_Grabber::create();
+        
         media::MediaControllerPtr m_media = media::MediaController::create();
         bool m_reload_media = false, m_needs_redraw = true;
         int m_is_syncing = 0;

@@ -59,13 +59,32 @@ ConnectionPtr LED_Grabber::device_connection() const
     
 bool LED_Grabber::is_initialized() const
 {
-    m_impl->m_connection && m_impl->m_connection->is_open();
+    return m_impl->m_connection && m_impl->m_connection->is_open();
 }
 
-bool LED_Grabber::grab_from_texture(const gl::Texture &the_tex)
+bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
 {
     if(is_initialized())
     {
+        constexpr size_t num_segs = 3, num_leds_per_seg = 58;
+        
+        // WBRG byte-order in debug SK6812-RGBW strip
+        uint32_t cols[num_segs] =
+        {
+            static_cast<uint32_t>((0 << 24) | (0 << 16) | (255 << 8) | 0),
+            static_cast<uint32_t>((0 << 24) | (0 << 16) | (0 << 8) | 255),
+            static_cast<uint32_t>((0 << 24) | (255 << 16) | (0 << 8) | 0),
+        };
+        
+        std::vector<uint32_t> pixel_values(num_segs * num_leds_per_seg, 0);
+        
+        for(uint32_t i = 0; i < pixel_values.size(); ++i)
+        {
+            pixel_values[i] = cols[i / num_leds_per_seg];
+        }
+        m_impl->m_connection->write("DATA:" +
+                                    to_string(pixel_values.size() * sizeof(pixel_values[0])) + "\n");
+        m_impl->m_connection->write(pixel_values);
         return true;
     }
     return false;
