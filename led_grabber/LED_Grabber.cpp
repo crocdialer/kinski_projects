@@ -17,6 +17,7 @@ std::array<uint8_t, 256> create_gamma_lut(float the_brighntess, float the_gamma,
                                           uint8_t the_max_out = 255)
 {
     std::array<uint8_t, 256> ret;
+    
     for(int i = 0; i < 256; ++i)
     {
         ret[i] = roundf(the_max_out * the_brighntess * pow((float)i / 255, the_gamma));
@@ -37,10 +38,10 @@ LED_Grabber::LED_Grabber():
 m_impl(std::make_unique<LED_GrabberImpl>())
 {
     float brighntess = 0.4f;
-    m_impl->m_gamma_r = create_gamma_lut(brighntess, 3.8f, 220);
+    m_impl->m_gamma_r = create_gamma_lut(brighntess, 3.2f);
     m_impl->m_gamma_g = create_gamma_lut(brighntess, 2.2f);
     m_impl->m_gamma_b = create_gamma_lut(brighntess, 2.8f);
-    m_impl->m_gamma_w = create_gamma_lut(brighntess, 2.8f);
+    m_impl->m_gamma_w = create_gamma_lut(brighntess, 3.2f, 128);
 }
     
 LED_Grabber::~LED_Grabber()
@@ -101,11 +102,14 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
         for(; ptr < end_ptr; ptr += 4)
         {
             uint32_t c = *(reinterpret_cast<uint32_t*>(ptr));
+            uint8_t *ch = reinterpret_cast<uint8_t*>(&c);
             
-            ptr[offset_w] = 0;
-            ptr[offset_b] = m_impl->m_gamma_b[(uint8_t)((reinterpret_cast<uint8_t*>(&c))[0])];
-            ptr[offset_r] = m_impl->m_gamma_r[(uint8_t)((reinterpret_cast<uint8_t*>(&c))[2])];
-            ptr[offset_g] = m_impl->m_gamma_g[(uint8_t)((reinterpret_cast<uint8_t*>(&c))[1])];
+            ptr[offset_b] = m_impl->m_gamma_b[ch[0]];
+            ptr[offset_g] = m_impl->m_gamma_g[ch[1]];
+            ptr[offset_r] = m_impl->m_gamma_r[ch[2]];
+            
+            // Y′ = 0.299 R′ + 0.587 G′ + 0.114 B′
+            ptr[offset_w] = m_impl->m_gamma_w[(uint8_t)(ch[2] * 0.299f + ch[1] * 0.587f + ch[0] * 0.114f)];
         }
         
         // reverse every second line (using a zigzag wiring-layout)
