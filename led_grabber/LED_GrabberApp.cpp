@@ -97,8 +97,6 @@ void LED_GrabberApp::setup()
     });
     m_check_ip_timer.set_periodic();
     m_check_ip_timer.expires_from_now(5.f);
-
-    textures()[8] = fonts()[0].glyph_texture();
     
     auto con = net::tcp_connection::create(background_queue().io_service(), "192.168.0.206", 33333);
     con->set_connect_cb([this](ConnectionPtr c)
@@ -114,7 +112,22 @@ void LED_GrabberApp::update(float timeDelta)
     if(m_reload_media){ reload_media(); }
     
     if(m_media)
-        m_needs_redraw = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT]) || m_needs_redraw;
+    {
+        int w, h;
+        
+        bool has_new_image = m_media->copy_frame(m_img_buffer, &w, &h);
+        
+        if(has_new_image)
+        {
+            auto img = Image::create(m_img_buffer.data(), w, h, 4, true);
+            m_led_grabber->grab_from_image(img);
+            textures()[TEXTURE_LEDS] = m_led_grabber->output_texture();
+            textures()[TEXTURE_INPUT] = gl::create_texture_from_image(img);
+            textures()[TEXTURE_INPUT].set_swizzle(GL_BLUE, GL_GREEN, GL_RED, GL_ONE);
+        }
+//        m_needs_redraw = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT]) || m_needs_redraw;
+        m_needs_redraw = has_new_image || m_needs_redraw;
+    }
     else
         m_needs_redraw = true;
 }

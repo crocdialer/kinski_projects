@@ -25,9 +25,10 @@ namespace kinski
     {
     private:
 
-        enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_OUTPUT = 1};
+        enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_OUTPUT = 1, TEXTURE_LEDS = 2};
         
         LED_GrabberPtr m_led_grabber = LED_Grabber::create();
+        std::vector<uint8_t> m_img_buffer;
         
         media::MediaControllerPtr m_media = media::MediaController::create();
         bool m_reload_media = false, m_needs_redraw = true;
