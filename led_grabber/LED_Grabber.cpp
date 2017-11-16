@@ -29,19 +29,29 @@ struct LED_GrabberImpl
 {
     ConnectionPtr m_connection;
     std::string m_device_name;
+    
+    gl::vec4 m_brightness;
+    gl::ivec2 m_resolution;
     ImagePtr m_buffer_img;
+    bool m_dirty_lut = true;
     
     std::array<uint8_t, 256> m_gamma_r, m_gamma_g, m_gamma_b, m_gamma_w;
+    
+    void create_lut()
+    {
+        m_gamma_r = create_gamma_lut(m_brightness.r, 3.2f);
+        m_gamma_g = create_gamma_lut(m_brightness.g, 2.2f);
+        m_gamma_b = create_gamma_lut(m_brightness.b, 2.8f);
+        m_gamma_w = create_gamma_lut(m_brightness.w, 3.2f);
+        m_dirty_lut = false;
+    }
 };
 
 LED_Grabber::LED_Grabber():
 m_impl(std::make_unique<LED_GrabberImpl>())
 {
-    float brighntess = 0.4f;
-    m_impl->m_gamma_r = create_gamma_lut(brighntess, 3.2f);
-    m_impl->m_gamma_g = create_gamma_lut(brighntess, 2.2f);
-    m_impl->m_gamma_b = create_gamma_lut(brighntess, 2.8f);
-    m_impl->m_gamma_w = create_gamma_lut(brighntess, 3.2f, 128);
+    set_resolution(58, 6);
+    set_brightness(gl::vec4(0.4f, 0.4f, 0.4f, 0.2f));
 }
     
 LED_Grabber::~LED_Grabber()
@@ -86,7 +96,7 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
 {
     if(is_initialized())
     {
-        constexpr size_t num_segs = 3, num_leds_per_seg = 58;
+        size_t num_segs = m_impl->m_resolution.y, num_leds_per_seg = m_impl->m_resolution.x;
         
         // WBRG byte-order in debug SK6812-RGBW strip
         constexpr uint8_t offset_r = 1, offset_g = 3, offset_b = 2, offset_w = 0;
@@ -98,7 +108,10 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
         uint8_t *ptr = resized_img->data;
         uint8_t *end_ptr = resized_img->data + resized_img->num_bytes();
         
-        // swizzle components
+        // create/update lookup tables, if necessary
+        if(m_impl->m_dirty_lut){ m_impl->create_lut(); }
+        
+        // swizzle components, apply brightness and gamma
         for(; ptr < end_ptr; ptr += 4)
         {
             uint32_t c = *(reinterpret_cast<uint32_t*>(ptr));
@@ -138,5 +151,32 @@ gl::Texture LED_Grabber::output_texture()
 //    ret.set_swizzle()
     return ret;
 }
+    
+gl::vec4 LED_Grabber::brightness() const
+{
+    return m_impl->m_brightness;
+}
 
+void LED_Grabber::set_brightness(const gl::vec4 &the_brightness)
+{
+    m_impl->m_brightness = glm::clamp(the_brightness, glm::vec4(0.f), glm::vec4(1.f));
+    m_impl->m_dirty_lut = true;
+}
+    
+void LED_Grabber::set_brightness(float the_brightness)
+{
+    set_brightness(gl::vec4(the_brightness));
+}
+
+gl::ivec2 LED_Grabber::resolution() const
+{
+    return m_impl->m_resolution;
+}
+
+
+void LED_Grabber::set_resolution(uint32_t the_width, uint32_t the_height)
+{
+    m_impl->m_resolution = gl::ivec2(the_width, the_height);
+}
+    
 }// namespace

@@ -97,12 +97,6 @@ void LED_GrabberApp::setup()
     });
     m_check_ip_timer.set_periodic();
     m_check_ip_timer.expires_from_now(5.f);
-    
-    auto con = net::tcp_connection::create(background_queue().io_service(), "192.168.0.206", 33333);
-    con->set_connect_cb([this](ConnectionPtr c)
-    {
-        if(m_led_grabber->connect(c)){ LOG_DEBUG << "grabber connected: " << c->description(); }
-    });
 }
 
 /////////////////////////////////////////////////////////////////
@@ -395,6 +389,23 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
                     m_ip_timestamps[remote_ip] = get_application_time();
                     
                     ping_delay(remote_ip);
+                }
+                else if(str == LED_Grabber::id())
+                {
+                    auto tcp_con = std::dynamic_pointer_cast<net::tcp_connection>(m_led_grabber->device_connection());
+                    
+                    if(!tcp_con || tcp_con->remote_ip() != remote_ip)
+                    {
+                        auto con = net::tcp_connection::create(background_queue().io_service(),
+                                                               remote_ip, 33333);
+                        con->set_connect_cb([this](ConnectionPtr c)
+                        {
+                            if(m_led_grabber->connect(c))
+                            {
+                                LOG_DEBUG << "grabber connected: " << c->description();
+                            }
+                        });
+                    }
                 }
             });
             begin_network_sync();

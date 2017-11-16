@@ -34,6 +34,21 @@ public:
     
     gl::Texture output_texture();
     
+    //!
+    gl::vec4 brightness() const;
+    
+    //!
+    void set_brightness(float the_brightness);
+    
+    //!
+    void set_brightness(const gl::vec4 &the_brightness);
+    
+    //!
+    gl::ivec2 resolution() const;
+    
+    //!
+    void set_resolution(uint32_t the_width, uint32_t the_height);
+    
 private:
     
     LED_Grabber();
