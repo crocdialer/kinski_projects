@@ -39,9 +39,9 @@ struct LED_GrabberImpl
     
     void create_lut()
     {
-        m_gamma_r = create_gamma_lut(m_brightness.r, 3.2f);
+        m_gamma_r = create_gamma_lut(m_brightness.r, 2.6f);
         m_gamma_g = create_gamma_lut(m_brightness.g, 2.2f);
-        m_gamma_b = create_gamma_lut(m_brightness.b, 2.8f);
+        m_gamma_b = create_gamma_lut(m_brightness.b, 2.2f);
         m_gamma_w = create_gamma_lut(m_brightness.w, 3.2f);
         m_dirty_lut = false;
     }

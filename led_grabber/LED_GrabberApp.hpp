@@ -61,6 +61,10 @@ namespace kinski
         Property_<uint32_t>::Ptr
         m_broadcast_port = Property_<uint32_t>::create("discovery broadcast port", 55555);
         
+        Property_<gl::Color>::Ptr
+        m_led_channels = Property_<gl::Color>::create("LED channel brightness",
+                                                     gl::Color(0.4f, 0.4f, 0.4f, 0.2f));
+        
         std::string secs_to_time_str(float the_secs) const;
         void setup_rpc_interface();
         void reload_media();

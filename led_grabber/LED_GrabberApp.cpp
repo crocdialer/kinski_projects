@@ -56,6 +56,7 @@ void LED_GrabberApp::setup()
     register_property(m_is_master);
     register_property(m_use_discovery_broadcast);
     register_property(m_broadcast_port);
+    register_property(m_led_channels);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
 
@@ -88,7 +89,6 @@ void LED_GrabberApp::setup()
             else{ *m_media_path = p; }
         }
     }
-    
     m_ip_adress = net::local_ip();
     m_check_ip_timer = Timer(background_queue().io_service(), [this]()
     {
@@ -97,6 +97,8 @@ void LED_GrabberApp::setup()
     });
     m_check_ip_timer.set_periodic();
     m_check_ip_timer.expires_from_now(5.f);
+    
+    m_led_grabber->set_resolution(58, 3);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -422,6 +424,10 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
                 m_is_syncing = 0;
             });
         }
+    }
+    else if(theProperty == m_led_channels)
+    {
+        m_led_grabber->set_brightness(*m_led_channels);
     }
 }
 
