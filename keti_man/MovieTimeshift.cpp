@@ -31,7 +31,6 @@ void MovieTimeshift::setup()
     register_property(m_use_syphon);
     register_property(m_syphon_server_name);
     register_property(m_offscreen_size);
-    register_property(m_flip_image);
     register_property(m_cam_id);
     register_property(m_syphon_in_index);
     register_property(m_movie_speed);
@@ -103,36 +102,32 @@ void MovieTimeshift::update(float timeDelta)
             m_custom_mat->set_textures({m_array_tex});
         }
     }
-    
-    int w, h;
+
     bool advance_index = false;
     
     // fetch data from camera, if available. then upload to array texture
     if(m_camera && m_camera->is_capturing())
     {
         
-        if(m_camera->copy_frame(m_camera_data, &w, &h))
+        if(m_camera->copy_frame_to_image(m_camera_img))
         {
-            LOG_TRACE << "received frame: " << w << " x " << h;
-            textures()[TEXTURE_INPUT].update(&m_camera_data[0], GL_UNSIGNED_BYTE, g_px_fmt, w, h,
-                                             *m_flip_image);
+            textures()[TEXTURE_INPUT] = gl::create_texture_from_image(m_camera_img);
             
             if(m_needs_array_refresh)
             {
                 m_needs_array_refresh = false;
-                
                 gl::Texture::Format fmt;
                 fmt.set_target(GL_TEXTURE_3D);
 //                fmt.setInternalFormat(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT);
-                m_array_tex = gl::Texture(w, h, *m_num_buffer_frames, fmt);
-                m_array_tex.set_flipped(*m_flip_image);
+                m_array_tex = gl::Texture(m_camera_img->width, m_camera_img->height, *m_num_buffer_frames, fmt);
+                m_array_tex.set_flipped(true);
                 
                 m_custom_mat->set_textures({m_array_tex});
                 m_custom_mat->uniform("u_num_frames", m_array_tex.depth());
             }
             
             // insert camera raw data into array texture
-            insert_data_into_array_texture(m_camera_data, m_array_tex, w, h, m_current_index);
+            insert_image_into_array_texture(m_camera_img, m_array_tex, m_current_index);
             advance_index = true;
         }
     }
@@ -152,8 +147,8 @@ void MovieTimeshift::update(float timeDelta)
         
         textures()[TEXTURE_INPUT] = tex;
         
-        w = textures()[TEXTURE_INPUT].width();
-        h = textures()[TEXTURE_INPUT].height();
+        auto w = textures()[TEXTURE_INPUT].width();
+        auto h = textures()[TEXTURE_INPUT].height();
         
         if(m_needs_array_refresh)
         {
@@ -162,7 +157,7 @@ void MovieTimeshift::update(float timeDelta)
             gl::Texture::Format fmt;
             fmt.set_target(GL_TEXTURE_3D);
             m_array_tex = gl::Texture(w, h, *m_num_buffer_frames, fmt);
-            m_array_tex.set_flipped(!*m_flip_image);
+//            m_array_tex.set_flipped(!*m_flip_image);
             
             m_custom_mat->set_textures({m_array_tex});
             m_custom_mat->uniform("u_num_frames", m_array_tex.depth());
@@ -279,33 +274,29 @@ void MovieTimeshift::on_movie_load()
 
 /////////////////////////////////////////////////////////////////
 
-bool MovieTimeshift::insert_data_into_array_texture(const std::vector<uint8_t> &the_data,
-                                                    gl::Texture &the_array_tex,
-                                                    uint32_t the_width,
-                                                    uint32_t the_height,
-                                                    uint32_t the_index)
+bool MovieTimeshift::insert_image_into_array_texture(const ImagePtr &the_image,
+                                                     gl::Texture &the_array_tex,
+                                                     uint32_t the_index)
 {
     // sanity check
-    if(!the_array_tex || the_width != the_array_tex.width() ||
-       the_height != the_array_tex.height() || the_index >= the_array_tex.depth())
+    if(!the_array_tex || !the_image || the_image->width != the_array_tex.width() ||
+       the_image->height != the_array_tex.height() || the_index >= the_array_tex.depth())
     {
         return false;
     }
     
     // upload to pbo
-    m_pbo.set_data(the_data);
+    m_pbo.set_data(the_image->data, the_image->num_bytes());
     
     // bind pbo for reading
     m_pbo.bind(GL_PIXEL_UNPACK_BUFFER);
 
     // upload new frame to array texture
     the_array_tex.bind();
-    glTexSubImage3D(the_array_tex.target(), 0, 0, 0, the_index, the_width, the_height, 1,
+    glTexSubImage3D(the_array_tex.target(), 0, 0, 0, the_index, the_image->width, the_image->height, 1,
                     g_px_fmt, GL_UNSIGNED_BYTE, nullptr);
     the_array_tex.unbind();
-    
     m_pbo.unbind(GL_PIXEL_UNPACK_BUFFER);
-    
     return true;
 }
 
@@ -360,7 +351,7 @@ bool MovieTimeshift::set_input_source(InputSource the_src)
     m_needs_array_refresh = true;
     m_movie.reset();
     m_camera.reset();
-    m_camera_data.clear();
+    m_camera_img.reset();
     m_syphon_in = syphon::Input();
     
     switch (the_src)
@@ -449,9 +440,5 @@ void MovieTimeshift::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_cam_id)
     {
         m_input_source_changed = true;
-    }
-    else if(theProperty == m_flip_image)
-    {
-        m_needs_array_refresh = true;
     }
 }

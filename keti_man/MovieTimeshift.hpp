@@ -46,7 +46,7 @@ namespace kinski
         
         bool m_needs_movie_refresh = false;
         bool m_needs_array_refresh = true;
-        std::vector<uint8_t> m_camera_data;
+        ImagePtr m_camera_img;
         
         gl::Texture m_array_tex;
         gl::MaterialPtr m_custom_mat;
@@ -71,7 +71,6 @@ namespace kinski
         
         // properties
         Property_<int>::Ptr m_cam_id = Property_<int>::create("camera id", 0);
-        Property_<bool>::Ptr m_flip_image = Property_<bool>::create("flip image", true);
         Property_<string>::Ptr m_movie_path = Property_<string>::create("movie path", "");
         Property_<float>::Ptr m_movie_speed = Property_<float>::create("movie speed", 1.f);
         
@@ -105,12 +104,11 @@ namespace kinski
         bool set_input_source(InputSource the_src);
         
         /*!
-         * copy a block of bytes (interpreted as a 2D-slice) into an array texture object
+         * copy a ImagePtr into an array texture object
          */
-        bool insert_data_into_array_texture(const std::vector<uint8_t> &the_data,
-                                            gl::Texture &the_array_tex,
-                                            uint32_t the_width, uint32_t the_height,
-                                            uint32_t the_index);
+        bool insert_image_into_array_texture(const ImagePtr &the_image,
+                                             gl::Texture &the_array_tex,
+                                             uint32_t the_index);
         
         /*!
          * copy a block of bytes (interpreted as a 2D-slice) into an array texture object
