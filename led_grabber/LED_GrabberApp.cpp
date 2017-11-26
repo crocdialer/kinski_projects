@@ -47,6 +47,7 @@ void LED_GrabberApp::setup()
 
     fonts()[1].load(fonts()[0].path(), 28);
     register_property(m_media_path);
+    register_property(m_scale_to_fit);
     register_property(m_loop);
     register_property(m_auto_play);
     register_property(m_volume);
@@ -137,8 +138,37 @@ void LED_GrabberApp::draw()
             }
         }
     }
-    else{ gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension(), gl::vec2(0),
-                           *m_brightness); }
+    else
+    {
+        if(*m_scale_to_fit)
+        {
+            gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension(), gl::vec2(0),
+                             *m_brightness);
+        }
+        else
+        {
+            if(textures()[TEXTURE_INPUT])
+            {
+                float aspect = textures()[TEXTURE_INPUT].aspect_ratio();
+                float window_aspect = gl::window_dimension().x / gl::window_dimension().y;
+                gl::vec2 pos, size;
+                
+                if(window_aspect < aspect)
+                {
+                    // arrange y-position
+                    size = gl::vec2(gl::window_dimension().x, gl::window_dimension().x / aspect);
+                    pos = gl::vec2(0, (gl::window_dimension().y - size.y) / 2.f);
+                }
+                else
+                {
+                    // arrange x-position
+                    size = gl::vec2(gl::window_dimension().y * aspect, gl::window_dimension().y);
+                    pos = gl::vec2((gl::window_dimension().x - size.x) / 2.f, 0);
+                }
+                gl::draw_texture(textures()[TEXTURE_INPUT], size, pos, *m_brightness);
+            }
+        }
+    }
     
     if(!*m_is_master && m_is_syncing && Logger::get()->severity() >= Severity::DEBUG)
     {
