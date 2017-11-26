@@ -102,8 +102,8 @@ void ParticleSample::draw()
     
     if(Logger::get()->severity() >= Severity::DEBUG)
     {
-        gl::draw_text_2D(format("particles: %d / %d", m_particle_system->num_particles(),
-                                m_particle_system->max_num_particles()), fonts()[0],
+        gl::draw_text_2D(format("particles: %dk / %dk", m_particle_system->num_particles() / 1000,
+                                m_particle_system->max_num_particles() / 1000), fonts()[0],
                          gl::COLOR_WHITE, gl::vec2(gl::window_dimension().x - 250, 10));
         
         gl::draw_text_2D(format("press 'e' to emit bursts"), fonts()[0],

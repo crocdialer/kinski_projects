@@ -73,7 +73,7 @@ const std::string LED_Grabber::id()
     
 bool LED_Grabber::connect(ConnectionPtr the_device)
 {
-    if(the_device /*&& the_uart_device->is_open()*/)
+    if(the_device && the_device->is_open())
     {
         the_device->drain();
         m_impl->m_connection = the_device;
@@ -99,8 +99,12 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
         size_t num_segs = m_impl->m_resolution.y, num_leds_per_seg = m_impl->m_resolution.x;
         
         // WBRG byte-order in debug SK6812-RGBW strip
-        constexpr uint8_t offset_r = 1, offset_g = 3, offset_b = 2, offset_w = 0;
-        
+        constexpr uint8_t dst_offset_r = 1, dst_offset_g = 3, dst_offset_b = 2, dst_offset_w = 0;
+        uint8_t src_offset_r, src_offset_g, src_offset_b;
+
+        // get channel offsets
+        the_image->offsets(&src_offset_r, &src_offset_g, &src_offset_b);
+
         auto resized_img = the_image->resize(num_leds_per_seg, num_segs, 4);
         
         if(!resized_img->data){ return false; }
@@ -116,17 +120,17 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
         {
             uint32_t c = *(reinterpret_cast<uint32_t*>(ptr));
             uint8_t *ch = reinterpret_cast<uint8_t*>(&c);
-            
-            ptr[offset_b] = m_impl->m_gamma_b[ch[0]];
-            ptr[offset_g] = m_impl->m_gamma_g[ch[1]];
-            ptr[offset_r] = m_impl->m_gamma_r[ch[2]];
-            
+
+            ptr[dst_offset_r] = m_impl->m_gamma_r[ch[src_offset_r]];
+            ptr[dst_offset_g] = m_impl->m_gamma_g[ch[src_offset_g]];
+            ptr[dst_offset_b] = m_impl->m_gamma_b[ch[src_offset_b]];
+
             // Y′ = 0.299 R′ + 0.587 G′ + 0.114 B′
-            ptr[offset_w] = m_impl->m_gamma_w[(uint8_t)(ch[2] * 0.299f + ch[1] * 0.587f + ch[0] * 0.114f)];
+            ptr[dst_offset_w] = m_impl->m_gamma_w[(uint8_t)(ch[2] * 0.299f + ch[1] * 0.587f + ch[0] * 0.114f)];
         }
         
         // reverse every second line (using a zigzag wiring-layout)
-        for(int i = 0; i < resized_img->height; ++i)
+        for(uint32_t i = 0; i < resized_img->height; ++i)
         {
             if(i % 2)
             {

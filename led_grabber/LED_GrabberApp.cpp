@@ -98,7 +98,7 @@ void LED_GrabberApp::setup()
     m_check_ip_timer.set_periodic();
     m_check_ip_timer.expires_from_now(5.f);
     
-    m_led_grabber->set_resolution(58, 3);
+    m_led_grabber->set_resolution(58, 6);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -109,19 +109,14 @@ void LED_GrabberApp::update(float timeDelta)
     
     if(m_media)
     {
-        int w, h;
-        
-        bool has_new_image = m_media->copy_frame(m_img_buffer, &w, &h);
+        bool has_new_image = m_media->copy_frame_to_image(m_image_input);
         
         if(has_new_image)
         {
-            auto img = Image::create(m_img_buffer.data(), w, h, 4, true);
-            m_led_grabber->grab_from_image(img);
+            m_led_grabber->grab_from_image(m_image_input);
             textures()[TEXTURE_LEDS] = m_led_grabber->output_texture();
-            textures()[TEXTURE_INPUT] = gl::create_texture_from_image(img);
-            textures()[TEXTURE_INPUT].set_swizzle(GL_BLUE, GL_GREEN, GL_RED, GL_ONE);
+            textures()[TEXTURE_INPUT] = gl::create_texture_from_image(m_image_input);
         }
-//        m_needs_redraw = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT]) || m_needs_redraw;
         m_needs_redraw = has_new_image || m_needs_redraw;
     }
     else
