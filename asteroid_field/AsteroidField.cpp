@@ -233,7 +233,7 @@ void AsteroidField::load_assets()
     
     for (const auto &p : get_directory_entries(*m_model_folder, fs::FileType::MODEL))
     {
-        auto mesh = gl::AssimpConnector::loadModel(p);
+        auto mesh = assimp::load_model(p);
         if(mesh)
         {
             auto &verts = mesh->geometry()->vertices();

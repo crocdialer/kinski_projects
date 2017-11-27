@@ -228,7 +228,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_model_path)
     {
-        gl::MeshPtr m = gl::AssimpConnector::loadModel(*m_model_path);
+        gl::MeshPtr m = gl::AssimpConnector::load_model(*m_model_path);
         
         if(m)
         {

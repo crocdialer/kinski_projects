@@ -644,7 +644,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
             break;
             
         case fs::FileType::MODEL:
-            m = gl::AssimpConnector::loadModel(the_path);
+            m = assimp::load_model(the_path);
             break;
             
         case fs::FileType::IMAGE:
@@ -692,7 +692,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
         
         for(const auto &f : get_directory_entries(animation_folder, fs::FileType::MODEL))
         {
-            gl::AssimpConnector::add_animations_to_mesh(f, m);
+            assimp::add_animations_to_mesh(f, m);
         }
         
         // insert into proto array

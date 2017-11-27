@@ -300,7 +300,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
     if(theProperty == m_model_path)
     {
         fs::add_search_path(fs::get_directory_part(*m_model_path));
-        gl::MeshPtr m = gl::AssimpConnector::loadModel(*m_model_path);
+        gl::MeshPtr m = assimp::load_model(*m_model_path);
         
         if(m)
         {
