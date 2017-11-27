@@ -169,7 +169,7 @@ public:
         
         observe_properties();
         add_tweakbar_for_component(shared_from_this());
-        displayTweakBar(false);
+        set_display_tweakbar(false);
         
         // drain the serial buffer before we start
         m_serial->drain();

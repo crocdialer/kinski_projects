@@ -106,7 +106,7 @@ void KeyPointApp::draw()
     // draw fullscreen image
     gl::draw_texture(textures()[*m_imageIndex], gl::window_dimension());
     
-    if(displayTweakBar()){ draw_textures(textures()); }
+    if(display_tweakbar()){ draw_textures(textures()); }
 }
 
 /////////////////////////////////////////////////////////////////

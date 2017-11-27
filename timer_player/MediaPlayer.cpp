@@ -156,7 +156,7 @@ void MediaPlayer::draw()
         gl::mult_matrix(gl::MODEL_VIEW_MATRIX, m->transform());
         gl::draw_mesh(m);
     }
-    if(displayTweakBar())
+    if(display_tweakbar())
     {
         gl::draw_text_2D(m_media->is_loaded() ? fs::get_filename_part(m_media->path()) : *m_media_path,
                          fonts()[1], gl::COLOR_WHITE, gl::vec2(10));

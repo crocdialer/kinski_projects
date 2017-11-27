@@ -263,7 +263,7 @@ void ModelViewer::draw()
 //    }
 
     // draw texture map(s)
-    if(displayTweakBar())
+    if(display_tweakbar())
     {
         if(selected_mesh() && !selected_mesh()->material()->textures().empty())
         {

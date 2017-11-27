@@ -255,7 +255,7 @@ public:
         
         //gl::drawPoints(m_geom->vertexBuffer().id(), m_numParticles, gl::MaterialPtr(), sizeof(vec4));
         
-        if(displayTweakBar())
+        if(display_tweakbar())
         {
             // draw opencv maps
             float w = (gl::window_dimension()/8.f).x;

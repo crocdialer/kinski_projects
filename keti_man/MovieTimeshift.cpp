@@ -217,7 +217,7 @@ void MovieTimeshift::draw()
         gl::draw_quad(m_custom_mat, gl::window_dimension());
     }
     
-    if(displayTweakBar())
+    if(display_tweakbar())
     {
         draw_textures(textures());
         gl::draw_text_2D(m_input_source_names[InputSource(m_input_source->value())], fonts()[0]);

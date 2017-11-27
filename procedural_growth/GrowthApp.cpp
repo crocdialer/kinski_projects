@@ -101,7 +101,7 @@ void GrowthApp::draw()
     }
     
     // draw texture map(s)
-    if(displayTweakBar())
+    if(display_tweakbar())
     {
         draw_textures(textures());
         
@@ -133,7 +133,7 @@ void GrowthApp::key_press(const KeyEvent &e)
 {
     ViewerApp::key_press(e);
     
-    if(!displayTweakBar())
+    if(!display_tweakbar())
     {
         switch (e.getCode())
         {

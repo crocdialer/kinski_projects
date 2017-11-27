@@ -273,7 +273,7 @@ void MeditationRoom::draw()
         m_warp_component->render_output(1, textures()[TEXTURE_DEBUG]);
     }
     
-    if(displayTweakBar())
+    if(display_tweakbar())
     {
         draw_textures(textures());
     }
@@ -296,7 +296,7 @@ void MeditationRoom::key_press(const KeyEvent &e)
     std::vector<State> states = {State::IDLE, State::WELCOME, State::MANDALA_ILLUMINATED,
         State::DESC_MOVIE, State::MEDITATION};
     
-    if(!displayTweakBar())
+    if(!display_tweakbar())
     {
         switch (e.getCode())
         {

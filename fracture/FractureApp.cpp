@@ -167,7 +167,7 @@ void FractureApp::draw()
     }
     
     // draw texture map(s)
-    if(displayTweakBar()){ draw_textures(textures()); }
+    if(display_tweakbar()){ draw_textures(textures()); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -185,7 +185,7 @@ void FractureApp::key_press(const KeyEvent &e)
 {
     ViewerApp::key_press(e);
     
-    if(!displayTweakBar())
+    if(!display_tweakbar())
     {
         switch (e.getCode())
         {

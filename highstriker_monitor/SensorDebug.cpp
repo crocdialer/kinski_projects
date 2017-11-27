@@ -234,7 +234,7 @@ void SensorDebug::mouse_wheel(const MouseEvent &e)
 
 void SensorDebug::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    displayTweakBar(!displayTweakBar());
+    set_display_tweakbar(!display_tweakbar());
 }
 
 /////////////////////////////////////////////////////////////////

@@ -96,7 +96,7 @@ void MediaPlayer::draw()
                          gl::COLOR_WHITE, gl::window_dimension() / 2.f - vec2(50));
     }
 
-    if(displayTweakBar())
+    if(display_tweakbar())
     {
         gl::draw_text_2D(secs_to_time_str(m_movie->current_time()) + " / " +
                          secs_to_time_str(m_movie->duration()) + " - " +
