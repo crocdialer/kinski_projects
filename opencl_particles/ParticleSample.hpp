@@ -24,6 +24,8 @@ namespace kinski
     {
     private:
 
+        enum TextureEnum{TEXTURE_PARTICLE = 0};
+
         Property_<bool>::Ptr m_draw_fps = Property_<bool>::create("draw fps", true);
         Property_<string>::Ptr m_texture_path = Property_<string>::create("texture path", "");
         

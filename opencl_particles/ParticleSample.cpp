@@ -35,6 +35,7 @@ void ParticleSample::setup()
     register_property(m_debug_life);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
+    add_tweakbar_for_component(m_light_component);
     load_settings();
 }
 
@@ -51,6 +52,10 @@ void ParticleSample::init_particles(uint32_t the_num)
     m_point_size->set_range(vals[0], vals[1]);
     m_particle_mesh->material()->set_point_size(*m_point_size);
     m_particle_mesh->material()->set_diffuse(*m_point_color);
+
+    auto t = textures()[TEXTURE_PARTICLE];
+    if(t){ m_particle_mesh->material()->set_textures({t}); }
+    m_particle_mesh->material()->set_shader(gl::create_shader(gl::ShaderType::POINTS_SPHERE));
     m_particle_mesh->add_tag(gl::SceneRenderer::TAG_NO_CULL);
     m_particle_system->set_gravity(*m_gravity);
     m_particle_system->set_lifetime(*m_lifetime_min, *m_lifetime_max);
@@ -212,7 +217,7 @@ void ParticleSample::mouse_wheel(const MouseEvent &e)
 
 void ParticleSample::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
-    for(const string &f : files){ LOG_INFO << f; }
+    for(const string &f : files){ *m_texture_path = f; break; }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -275,5 +280,14 @@ void ParticleSample::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_use_contraints)
     {
         m_particle_system->set_use_constraints(*m_use_contraints);
+    }
+    else if(theProperty == m_texture_path)
+    {
+        async_load_texture(*m_texture_path, [this](gl::Texture t)
+        {
+            textures()[TEXTURE_PARTICLE] = t;
+
+            if(m_particle_mesh){ m_particle_mesh->material()->set_textures({t}); }
+        });
     }
 }
