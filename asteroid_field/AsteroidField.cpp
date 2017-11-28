@@ -11,7 +11,7 @@
 #include "gl/Visitor.hpp"
 
 // module headers
-#include "assimp/AssimpConnector.h"
+#include "assimp/assimp.hpp"
 
 using namespace std;
 using namespace kinski;

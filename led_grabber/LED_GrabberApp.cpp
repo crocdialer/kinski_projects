@@ -128,6 +128,8 @@ void LED_GrabberApp::update(float timeDelta)
 
 void LED_GrabberApp::draw()
 {
+    gl::clear();
+
     if(*m_use_warping)
     {
         for(uint32_t i = 0; i < m_warp_component->num_warps(); i++)

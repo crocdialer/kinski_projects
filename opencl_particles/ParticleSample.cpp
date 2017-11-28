@@ -85,6 +85,7 @@ void ParticleSample::update(float timeDelta)
 
 void ParticleSample::draw()
 {
+    gl::clear();
     gl::set_matrices(camera());
     if(*m_draw_grid){ gl::draw_grid(50, 50); }
 

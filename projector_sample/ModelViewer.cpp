@@ -7,7 +7,7 @@
 //
 
 #include "ModelViewer.h"
-#include "AssimpConnector.h"
+#include "assimp.hpp"
 
 using namespace std;
 using namespace kinski;

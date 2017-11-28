@@ -47,12 +47,10 @@ void FontSample::update(float timeDelta)
 
 void FontSample::draw()
 {
-//    gl::set_matrices(camera());
-    
+    gl::clear();
     gl::set_matrices(gui_camera());
     gl::draw_boundingbox(m_text_root);
     gl::draw_transform(m_text_root->global_transform(), *m_font_size);
-    
     scene()->render(gui_camera());
 }
 

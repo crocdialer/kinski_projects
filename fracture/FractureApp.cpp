@@ -9,7 +9,7 @@
 #include <gl/DeferredRenderer.hpp>
 #include "core/Timer.hpp"
 #include "FractureApp.h"
-#include "assimp/AssimpConnector.h"
+#include "assimp/assimp.hpp"
 #include "gl/ShaderLibrary.h"
 
 using namespace std;
@@ -119,6 +119,8 @@ void FractureApp::update(float timeDelta)
 
 void FractureApp::draw()
 {
+    gl::clear();
+
     // draw the output texture
     if(m_fbos[0] && m_fbo_cam && *m_use_syphon)
     {

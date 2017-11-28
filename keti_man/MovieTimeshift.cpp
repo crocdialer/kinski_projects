@@ -183,7 +183,7 @@ void MovieTimeshift::update(float timeDelta)
 
 void MovieTimeshift::draw()
 {
-    KINSKI_CHECK_GL_ERRORS();
+    gl::clear();
 
     if((*m_use_warping || *m_use_syphon) && m_offscreen_fbo)
     {

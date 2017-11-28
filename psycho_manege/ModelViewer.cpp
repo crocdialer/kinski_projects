@@ -12,7 +12,7 @@
 #include "gl/Visitor.hpp"
 
 // internal module includes
-#include "assimp/AssimpConnector.h"
+#include "assimp/assimp.hpp"
 
 using namespace std;
 using namespace kinski;
@@ -227,6 +227,7 @@ void ModelViewer::update(float timeDelta)
 
 void ModelViewer::draw()
 {
+    gl::clear();
     gl::set_matrices(camera());
     if(draw_grid()){ gl::draw_grid(50, 50); }
     

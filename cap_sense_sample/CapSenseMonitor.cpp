@@ -60,6 +60,8 @@ void CapSenseMonitor::update(float timeDelta)
 
 void CapSenseMonitor::draw()
 {
+    gl::clear();
+
     if(textures()[0]){ gl::draw_texture(textures()[0], gl::window_dimension()); }
 
     const int offset_x = 40;

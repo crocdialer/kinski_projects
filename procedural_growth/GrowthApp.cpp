@@ -84,6 +84,7 @@ void GrowthApp::update(float timeDelta)
 
 void GrowthApp::draw()
 {
+    gl::clear();
     gl::set_matrices(camera());
     if(draw_grid()){ gl::draw_grid(50, 50); }
     
