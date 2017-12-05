@@ -43,7 +43,7 @@ private:
     
     // used for data rendering
     vector<vec3> m_points;
-    gl::OrthographicCamera::Ptr m_ortho_cam;
+    gl::OrthoCamera::Ptr m_ortho_cam;
     
     // midi output
     Property_<uint32_t>::Ptr m_midi_start_note = Property_<uint32_t>::create("Midi start note", 48);
@@ -174,7 +174,7 @@ public:
         // drain the serial buffer before we start
         m_serial->drain();
         
-        m_ortho_cam = gl::OrthographicCamera::create(0, gl::window_dimension().x, 0,
+        m_ortho_cam = gl::OrthoCamera::create(0, gl::window_dimension().x, 0,
                                                      gl::window_dimension().y, 0, 1);
         
 //        for(auto &m : m_analog_in)

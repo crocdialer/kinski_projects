@@ -57,7 +57,7 @@ void FractureApp::setup()
     m_shoot_mesh->material()->queue_texture_load("~/Downloads/tennisball.jpg");
     m_shoot_mesh->material()->set_specular(gl::COLOR_BLACK);
     
-    m_gui_cam = gl::OrthographicCamera::create(0, gl::window_dimension().x, gl::window_dimension().y,
+    m_gui_cam = gl::OrthoCamera::create(0, gl::window_dimension().x, gl::window_dimension().y,
                                                0, 0, 1);
     
     // init joystick crosshairs
@@ -178,7 +178,7 @@ void FractureApp::resize(int w ,int h)
 {
     ViewerApp::resize(w, h);
     
-    m_gui_cam = gl::OrthographicCamera::create(0, w, h, 0, 0, 1);
+    m_gui_cam = gl::OrthoCamera::create(0, w, h, 0, 0, 1);
 }
 
 /////////////////////////////////////////////////////////////////

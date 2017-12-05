@@ -813,7 +813,8 @@ void LED_GrabberApp::setup_rpc_interface()
         if(!rpc_args.empty())
         {
             float secs = 0.f;
-            auto splits = split(rpc_args.front(), ':');
+            auto split_list = split(rpc_args.front(), ':');
+            std::vector<std::string> splits(split_list.begin(), split_list.end());
 
             switch (splits.size())
             {

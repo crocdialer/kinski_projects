@@ -64,6 +64,7 @@ void VarioDisplay::update(float timeDelta)
 
 void VarioDisplay::draw()
 {
+    gl::clear();
     gl::set_matrices(camera());
     if(*m_draw_grid){ gl::draw_grid(50, 50); }
     scene()->render(camera());

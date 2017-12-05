@@ -425,8 +425,11 @@ void MovieTimeshift::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_offscreen_size)
     {
-        m_offscreen_fbo = gl::Fbo(m_offscreen_size->value().x,
-                                  m_offscreen_size->value().y);
+        gl::vec2 tmp = *m_offscreen_size;
+        
+        if(tmp.x <= 0 || tmp.y <= 0){ tmp = gl::window_dimension(); }
+        
+        m_offscreen_fbo = gl::Fbo(tmp);
     }
     else if(theProperty == m_use_syphon)
     {
