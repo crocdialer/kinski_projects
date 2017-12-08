@@ -97,6 +97,7 @@ void SensorDebug::update(float timeDelta)
 
 void SensorDebug::draw()
 {
+    gl::clear();
     gl::set_matrices_for_window();
     
     // draw debug UI
@@ -355,10 +356,11 @@ void SensorDebug::update_sensor_values(float time_delta)
             }
             
             size_t max_index = std::min(m_measurements.size(), splits.size());
-            
+            auto split_it = splits.begin();
+
             for(size_t i = 0; i < max_index; i++)
             {
-                auto v = string_to<float>(splits[i]);
+                auto v = string_to<float>(*split_it++);
                 v = clamp(*m_force_multiplier * v / 16.f, 0.f, 1.f);
                 m_measurements[i].push_back(v);
                 m_sensor_last_max = std::max(m_sensor_last_max, v);
