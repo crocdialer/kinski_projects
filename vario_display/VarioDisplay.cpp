@@ -298,6 +298,7 @@ gl::MeshPtr VarioDisplay::create_cursor()
     geom->set_primitive_type(GL_LINE_STRIP);
     geom->vertices() = {gl::vec3(-w/2, -h, 0), gl::vec3(0), gl::vec3(w/2, -h, 0)};
     geom->indices() = {0, 1, 2};
+    geom->colors().resize(3, gl::COLOR_WHITE);
     auto ret = gl::Mesh::create(geom, m_proto_lines->materials()[1]);
     return ret;
 }
