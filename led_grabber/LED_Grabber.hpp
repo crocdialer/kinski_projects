@@ -25,8 +25,8 @@ public:
     virtual ~LED_Grabber();
     
     bool connect(ConnectionPtr the_device);
-    
-    ConnectionPtr device_connection() const;
+
+    const std::set<ConnectionPtr>& connections() const;
     
     bool is_initialized() const;
     

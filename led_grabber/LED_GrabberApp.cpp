@@ -421,9 +421,15 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
                 }
                 else if(str == LED_Grabber::id())
                 {
-                    auto tcp_con = std::dynamic_pointer_cast<net::tcp_connection>(m_led_grabber->device_connection());
-                    
-                    if(!tcp_con || tcp_con->remote_ip() != remote_ip)
+                    bool is_new_connection = true;
+
+                    for(const auto &c : m_led_grabber->connections())
+                    {
+                        auto tcp_con = std::dynamic_pointer_cast<net::tcp_connection>(c);
+                        if(tcp_con && tcp_con->remote_ip() == remote_ip){ is_new_connection = false; break;}
+                    }
+
+                    if(is_new_connection)
                     {
                         auto con = net::tcp_connection::create(background_queue().io_service(),
                                                                remote_ip, 33333);

@@ -6,6 +6,7 @@
 //
 
 #include <array>
+#include <mutex>
 #include "LED_Grabber.hpp"
 
 #define DEVICE_ID "LEDS"
@@ -27,7 +28,9 @@ std::array<uint8_t, 256> create_gamma_lut(float the_brighntess, float the_gamma,
     
 struct LED_GrabberImpl
 {
-    ConnectionPtr m_connection;
+//    ConnectionPtr m_connection;
+    std::mutex m_connection_mutex;
+    std::set<ConnectionPtr> m_connections;
     std::string m_device_name;
     
     gl::vec4 m_brightness;
@@ -75,21 +78,22 @@ bool LED_Grabber::connect(ConnectionPtr the_device)
 {
     if(the_device && the_device->is_open())
     {
+        std::unique_lock<std::mutex> lock(m_impl->m_connection_mutex);
         the_device->drain();
-        m_impl->m_connection = the_device;
+        m_impl->m_connections.insert(the_device);
         return true;
     }
     return false;
 }
     
-ConnectionPtr LED_Grabber::device_connection() const
+const std::set<ConnectionPtr>& LED_Grabber::connections() const
 {
-    return m_impl->m_connection;
+    return m_impl->m_connections;
 }
     
 bool LED_Grabber::is_initialized() const
 {
-    return m_impl->m_connection && m_impl->m_connection->is_open();
+    return !m_impl->m_connections.empty();
 }
 
 bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
@@ -99,13 +103,15 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
         size_t num_segs = m_impl->m_resolution.y, num_leds_per_seg = m_impl->m_resolution.x;
         
         // WBRG byte-order in debug SK6812-RGBW strip
-        constexpr uint8_t dst_offset_r = 1, dst_offset_g = 3, dst_offset_b = 2, dst_offset_w = 0;
+        constexpr uint8_t dst_offset_r = 1, dst_offset_g = 0, dst_offset_b = 2, dst_offset_w = 3;
         uint8_t src_offset_r, src_offset_g, src_offset_b;
 
         // get channel offsets
         the_image->offsets(&src_offset_r, &src_offset_g, &src_offset_b);
 
-        auto resized_img = the_image->resize(num_leds_per_seg, num_segs, 4);
+        auto resized_img = the_image->resize(3 * num_leds_per_seg, 3 *num_segs, 3);
+        resized_img = resized_img->blur();
+        resized_img = resized_img->resize(num_leds_per_seg, num_segs, 4);
         
         if(!resized_img->data){ return false; }
         
@@ -138,10 +144,14 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
                 std::reverse(line_ptr, line_ptr + resized_img->width);
             }
         }
-        
-        m_impl->m_connection->write("DATA:" +
-                                    to_string(resized_img->num_bytes()) + "\n");
-        m_impl->m_connection->write_bytes(resized_img->data, resized_img->num_bytes());
+
+        std::unique_lock<std::mutex> lock(m_impl->m_connection_mutex);
+
+        for(auto &c : m_impl->m_connections)
+        {
+            c->write("DATA:" + to_string(resized_img->num_bytes()) + "\n");
+            c->write_bytes(resized_img->data, resized_img->num_bytes());
+        }
         m_impl->m_buffer_img = resized_img;
         return true;
     }
