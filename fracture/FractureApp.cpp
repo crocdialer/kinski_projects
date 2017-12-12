@@ -140,7 +140,7 @@ void FractureApp::draw()
                 {
                     gl::draw_texture(m_crosshair_tex, vec2(crosshair_width), p - vec2(crosshair_width) / 2.f);
                 }
-                else{ gl::draw_circle(p, 15.f, false); }
+                else{ gl::draw_circle(p, 15.f, gl::COLOR_WHITE, false); }
             }
             
         });

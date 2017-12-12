@@ -190,7 +190,7 @@ void MovieTimeshift::draw()
         textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_offscreen_fbo, [this]()
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            gl::draw_quad(m_custom_mat, gl::window_dimension());
+            gl::draw_quad(gl::window_dimension(), m_custom_mat);
         });
         KINSKI_CHECK_GL_ERRORS();
         
@@ -214,7 +214,7 @@ void MovieTimeshift::draw()
     }
     else
     {
-        gl::draw_quad(m_custom_mat, gl::window_dimension());
+        gl::draw_quad(gl::window_dimension(), m_custom_mat);
     }
     
     if(display_tweakbar())

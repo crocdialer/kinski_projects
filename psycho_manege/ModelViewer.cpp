@@ -278,8 +278,8 @@ void ModelViewer::draw()
         for (uint32_t i = 0; i < m_last_volumes.size(); i++)
         {
             float v = m_last_volumes[i];
-            gl::draw_quad(gl::COLOR_ORANGE,
-                          vec2(40, gl::window_dimension().y * v),
+            gl::draw_quad(vec2(40, gl::window_dimension().y * v),
+                          gl::COLOR_ORANGE,
                           vec2(100 + i * 50, gl::window_dimension().y * (1 - v)));
         }
     }
@@ -620,7 +620,7 @@ gl::Texture ModelViewer::create_offscreen_texture()
             // set viewport here
             gl::set_window_dimension(vec2(screen_width, screen_height), vec2(i * screen_width, 0));
             
-            if(*m_use_test_pattern){ gl::draw_quad(m_cam_colors[i], gl::window_dimension()); }
+            if(*m_use_test_pattern){ gl::draw_quad(gl::window_dimension(), m_cam_colors[i]); }
             else{ scene()->render(m_offscreen_cams[i]); }
         }
         

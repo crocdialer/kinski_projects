@@ -84,8 +84,8 @@ void CapSenseMonitor::draw()
             sz_frac = s->is_touched(i) ? vec2(sz) : sz * vec2(1.f, proxi_val);
 
 
-            gl::draw_quad(gl::COLOR_ORANGE, sz, pos, false);
-            gl::draw_quad(color, sz_frac, pos + vec2(0.f, sz.y - sz_frac.y));
+            gl::draw_quad(sz, gl::COLOR_ORANGE, pos, false);
+            gl::draw_quad(sz_frac, color, pos + vec2(0.f, sz.y - sz_frac.y));
 
             if(i == 12)
             {

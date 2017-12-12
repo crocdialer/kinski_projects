@@ -110,7 +110,7 @@ void SensorDebug::draw()
         float val = m_measurements[i].back();
 
         // rectangle for current value
-        gl::draw_quad(gl::COLOR_GRAY, vec2(val * w, h), offset);
+        gl::draw_quad(vec2(val * w, h), gl::COLOR_GRAY, offset);
 
         gl::draw_text_2D(to_string(100.f * val, 1) + "%", fonts()[FONT_MEDIUM], gl::COLOR_WHITE,
                          offset + vec2(val * w, 0));
@@ -158,7 +158,7 @@ void SensorDebug::draw()
     else
     {
         auto color_ready = gl::COLOR_GREEN; color_ready.a = .3f;
-        gl::draw_quad(color_ready, vec2(75), vec2(gl::window_dimension().x - 100, 25));
+        gl::draw_quad(vec2(75), color_ready, vec2(gl::window_dimension().x - 100, 25));
     }
 }
 
