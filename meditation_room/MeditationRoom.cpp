@@ -252,7 +252,7 @@ void MeditationRoom::draw()
         textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_fbos[1], [this]()
         {
             gl::clear();
-            gl::draw_quad(m_mat_rgb_shift, gl::window_dimension());
+            gl::draw_quad(gl::window_dimension(), m_mat_rgb_shift);
         });
     }
     
@@ -672,8 +672,8 @@ void MeditationRoom::read_bio_sensor(ConnectionPtr the_uart, const std::vector<u
         {
             main_queue().submit([this, splits]()
             {
-                m_bio_acceleration.push_back(string_to<float>(splits[0]));
-                m_bio_elongation.push_back(string_to<float>(splits[1]));
+                m_bio_acceleration.push_back(string_to<float>(splits.front()));
+                m_bio_elongation.push_back(string_to<float>(splits.back()));
                 *m_bio_score = median<float>(m_bio_acceleration) + median<float>(m_bio_elongation);
                 LOG_TRACE_1 << m_bio_score->value() << " - " <<  median<float>(m_bio_elongation);
             });
@@ -761,7 +761,7 @@ void MeditationRoom::draw_status_info()
     
     offset += gl::vec2(145, 0);
     gl::Color c(m_led_color->value().a); c.a = 1;
-    gl::draw_quad(c, gl::vec2(50.f), offset);
+    gl::draw_quad(gl::vec2(50.f), c, offset);
     
 }
 

@@ -82,7 +82,7 @@ void AsteroidField::update(float timeDelta)
         m->position() += m_velocity->value() * timeDelta;
         
         // reposition within AABB if necessary
-        if(!m_aabb.contains(m->position()))
+        if(!m_aabb.intersect(m->position()))
         {
             auto &p = m->position();
             

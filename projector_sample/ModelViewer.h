@@ -32,7 +32,7 @@ namespace kinski
         
         gl::PerspectiveCamera::Ptr m_projector;
         gl::MeshPtr m_projector_mesh;
-        media::MovieControllerPtr m_movie = media::MovieController::create();
+        media::MediaControllerPtr m_movie = media::MediaController::create();
         
         gl::MaterialPtr m_draw_depth_mat;
         
