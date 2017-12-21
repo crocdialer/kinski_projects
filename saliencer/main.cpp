@@ -17,7 +17,7 @@ private:
     
     gl::Texture m_textures[4];
     
-    gl::Material::Ptr m_material;
+    gl::MaterialPtr m_material;
     
     Property_<bool>::Ptr m_activator;
     
@@ -31,8 +31,8 @@ public:
     
     void setup()
     {
-        setBarColor(vec4(0, 0 ,0 , .5));
-        setBarSize(ivec2(250, 500));
+        set_bar_color(vec4(0, 0 ,0 , .5));
+        set_bar_size(ivec2(250, 500));
 
         // add 2 empty textures
         m_material = gl::Material::create();
@@ -62,7 +62,7 @@ public:
         
         if(m_processNode)
         {
-            addPropertyListToTweakBar(m_processNode->get_property_list());
+            add_list_to_tweakbar(m_processNode->get_property_list());
             m_processNode->observe_properties();
             LOG_INFO<<"CVProcessNode: \n"<<m_processNode->getDescription();
         }
@@ -72,7 +72,7 @@ public:
         try
         {
             m_material->set_shader(gl::create_shader_from_file("applyMap.vert", "applyMap.frag"));
-            Serializer::loadComponentState(shared_from_this(), "config.json", PropertyIO_GL());
+            json::load_state(shared_from_this(), "config.json", PropertyIO_GL());
             
         }catch(Exception &e)
         {
@@ -83,7 +83,7 @@ public:
     void teardown()
     {
         m_cvThread->stop();
-        Serializer::saveComponentState(shared_from_this(), "config.json", PropertyIO_GL());
+        json::save_state(shared_from_this(), "config.json", PropertyIO_GL());
         
         LOG_PRINT<<"ciao saliencer";
     }
@@ -92,13 +92,13 @@ public:
     {
         if(m_cvThread->hasImage())
         {
-            m_material->textures().clear();
+            m_material->clear_textures();
             vector<cv::Mat> images = m_cvThread->getImages();
             
-            for(int i=0;i<images.size();i++)
+            for(uint32_t i = 0; i < images.size(); ++i)
             {
                 gl::TextureIO::updateTexture(m_textures[i], images[i]);
-                m_material->textures().push_back(m_textures[i]);
+                m_material->add_texture(m_textures[i]);
             }
             
             m_imageIndex->set_range(0, images.size() - 1);
@@ -112,7 +112,7 @@ public:
     {
         // draw fullscreen image
         if(*m_activator)
-            gl::draw_quad(m_material, gl::window_dimension());
+            gl::draw_quad(gl::window_dimension(), m_material);
         else
             gl::draw_texture(m_material->textures()[*m_imageIndex], gl::window_dimension());
         
@@ -120,7 +120,7 @@ public:
         float w = (gl::window_dimension() / 6.f).x;
         glm::vec2 offset(gl::window_dimension().x - w - 10, 10);
         
-        for(int i=0;i<m_cvThread->getImages().size();i++)
+        for(uint32_t i = 0; i < m_cvThread->getImages().size(); ++i)
         {
             if(!m_textures[i]) continue;
             float h = m_textures[i].height() * w / m_textures[i].width();
@@ -138,7 +138,7 @@ public:
     {
         if(e.getChar() == GLFW_KEY_SPACE)
         {
-            displayTweakBar(!displayTweakBar());
+            set_display_tweakbar(!display_tweakbar());
         }
     }
 };

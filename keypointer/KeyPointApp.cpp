@@ -64,7 +64,7 @@ void KeyPointApp::setup()
     
     if(m_processNode)
     {
-        addPropertyListToTweakBar(m_processNode->get_property_list());
+        add_list_to_tweakbar(m_processNode->get_property_list());
         LOG_INFO<<"CVProcessNode: "<<m_processNode->getDescription();
     }
     

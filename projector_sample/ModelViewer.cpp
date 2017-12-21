@@ -68,14 +68,13 @@ void ModelViewer::update(float timeDelta)
     
     if(m_mesh)
     {
-        m_mesh->material()->uniform("u_light_mvp", m_projector->getProjectionMatrix() *
-                                    m_projector->getViewMatrix() * m_mesh->global_transform());
+        m_mesh->material()->uniform("u_light_mvp", m_projector->projection_matrix() *
+                                    m_projector->view_matrix() * m_mesh->global_transform());
     }
     
     if(m_movie->copy_frame_to_texture(textures()[TEXTURE_MOVIE], true))
     {
-        auto &t = m_mesh->material()->textures();
-        t = {textures().front(), textures()[TEXTURE_MOVIE], m_fbos[0].depth_texture()};
+        m_mesh->material()->set_textures({textures().front(), textures()[TEXTURE_MOVIE], m_fbos[0].depth_texture()});
     }
 }
 
@@ -86,11 +85,7 @@ void ModelViewer::draw()
     gl::set_matrices(camera());
     if(draw_grid()){ gl::draw_grid(50, 50); }
     
-    if(m_light_component->draw_light_dummies())
-    {
-        for (auto l : lights()){ gl::draw_light(l); }
-    }
-    
+    m_light_component->draw_light_dummies();
     scene()->render(camera());
     
     // draw texture map(s)
@@ -193,8 +188,8 @@ void ModelViewer::file_drop(const MouseEvent &e, const std::vector<std::string> 
                     
                     if(m_mesh)
                     {
-                        m_mesh->material()->textures().clear();
-                        m_mesh->material()->textures().push_back(textures().back());
+                        m_mesh->material()->clear_textures();
+                        m_mesh->material()->add_texture(textures().back());
                     }
                 }
                 catch (Exception &e) { LOG_WARNING << e.what();}
@@ -228,13 +223,11 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_model_path)
     {
-        gl::MeshPtr m = gl::AssimpConnector::load_model(*m_model_path);
+        gl::MeshPtr m = assimp::load_model(*m_model_path);
         
         if(m)
         {
             m->material()->set_shader(m_draw_depth_mat->shader());
-//            m->material()->add_texture(m_fbos[0].getDepthTexture());
-            m->createVertexArray();
             
             for(auto &t : m->material()->textures()){ textures()[0] = t; }
             
@@ -251,7 +244,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_movie_path)
     {
         m_movie->load(*m_movie_path, true, true);
-        m_movie->set_on_load_callback([&](media::MovieControllerPtr m){ m->set_volume(0); });
+        m_movie->set_on_load_callback([&](media::MediaControllerPtr m){ m->set_volume(0); });
     }
 }
 
@@ -261,11 +254,11 @@ gl::PerspectiveCamera::Ptr ModelViewer::create_camera_from_viewport()
 {
     gl::PerspectiveCamera::Ptr ret = std::make_shared<gl::PerspectiveCamera>();
     *ret = *camera();
-    ret->setClippingPlanes(.1, 100.f);
+    ret->set_clipping(.1, 100.f);
     return ret;
 }
 
 glm::mat4 create_projector_matrix(gl::Camera::Ptr eye, gl::Camera::Ptr projector)
 {
-    return eye->global_transform() * projector->getViewMatrix() * projector->getProjectionMatrix();
+    return eye->global_transform() * projector->view_matrix() * projector->projection_matrix();
 }
