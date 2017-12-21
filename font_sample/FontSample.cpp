@@ -27,9 +27,9 @@ void FontSample::setup()
     add_tweakbar_for_component(shared_from_this());
     
     fonts()[1].load(fonts()[0].path(), 100, true);
-    m_text_root = fonts()[1].create_text_obj("Hallo der Onkel,\nwerd schnell gesund.\npupuu.",
-                                             gl::Font::Align::CENTER,
-                                             1000);
+    m_text_root = fonts()[1].create_text_object("Hallo der Onkel,\nwerd schnell gesund.\npupuu.",
+                                                gl::Font::Align::CENTER,
+                                                1000);
     m_text_root->set_position(-m_text_root->aabb().center());
     scene()->add_object(m_text_root);
     
@@ -159,6 +159,7 @@ void FontSample::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_use_sdf)
     {
+        fonts()[1].set_use_sdf(*m_use_sdf);
         gl::SelectVisitor<gl::Mesh> v;
         m_text_root->accept(v);
         
