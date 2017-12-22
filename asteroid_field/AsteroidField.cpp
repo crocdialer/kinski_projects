@@ -101,6 +101,8 @@ void AsteroidField::update(float timeDelta)
 
 void AsteroidField::draw()
 {
+    gl::clear();
+    
     // skybox drawing
     if(*m_mode == MODE_NORMAL)
     {
@@ -272,7 +274,12 @@ void AsteroidField::create_scene(int num_objects)
     // add lights to scene
     for (auto l : lights()){ scene()->add_object(l ); }
     m_light_component->set_lights(lights());
-    
+
+    if(m_proto_objects.empty())
+    {
+        LOG_WARNING << "could not create scene: no proto objects loaded ...";
+        return;
+    }
     int m = 0;
     
     for(int i = 0; i < num_objects; i++)
