@@ -18,12 +18,10 @@ namespace kinski
     private:
         
         enum Mode{MODE_NORMAL = 0, MODE_LIGHTSPEED = 1};
-        
+
         std::vector<gl::MeshPtr> m_proto_objects;
         std::vector<gl::Texture> m_proto_textures;
         std::vector<gl::MeshPtr> m_objects;
-        
-        gl::MeshPtr m_skybox_mesh;
         
         gl::AABB m_aabb;
         

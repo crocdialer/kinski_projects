@@ -35,15 +35,8 @@ void AsteroidField::setup()
     add_tweakbar_for_component(shared_from_this());
     add_tweakbar_for_component(m_light_component);
     
-    m_skybox_mesh = gl::Mesh::create(gl::Geometry::create_sphere(1.f, 16), gl::Material::create());
-    m_skybox_mesh->material()->set_depth_write(false);
-    m_skybox_mesh->material()->set_two_sided();
-    
     // finally load state from file
     load_settings();
-    
-    // and load our assets
-    load_assets();
 }
 
 /////////////////////////////////////////////////////////////////
@@ -52,11 +45,7 @@ void AsteroidField::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
     
-    if(m_dirty_flag)
-    {
-        m_dirty_flag = false;
-        create_scene(*m_num_objects);
-    }
+    if(m_dirty_flag){ create_scene(*m_num_objects); }
     
     switch (*m_mode)
     {
@@ -102,18 +91,6 @@ void AsteroidField::update(float timeDelta)
 void AsteroidField::draw()
 {
     gl::clear();
-    
-    // skybox drawing
-    if(*m_mode == MODE_NORMAL)
-    {
-        gl::set_projection(camera());
-        mat4 m = camera()->view_matrix();
-        m[3] = vec4(0, 0, 0, 1);
-        gl::load_matrix(gl::MODEL_VIEW_MATRIX, m);
-        gl::draw_mesh(m_skybox_mesh);
-    }
-    
-    /////////////////////////////////////////////////////////
     
     // draw asteroid field
     gl::set_matrices(camera());
@@ -198,20 +175,16 @@ void AsteroidField::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
     
-    if(theProperty == m_model_folder)
+    if(theProperty == m_model_folder ||
+       theProperty == m_texture_folder)
     {
-        
-    }
-    else if(theProperty == m_texture_folder)
-    {
-        
+        m_proto_objects.clear();
+        m_proto_textures.clear();
+        m_dirty_flag = true;
     }
     else if(theProperty == m_sky_box_path)
     {
-        try
-        {
-            m_skybox_mesh->material()->set_textures({gl::create_texture_from_file(*m_sky_box_path, true, true)});
-        }
+        try{ scene()->set_skybox(gl::create_texture_from_file(*m_sky_box_path, true, true)); }
         catch (Exception &e){ LOG_WARNING << e.what(); }
     }
     else if(theProperty == m_half_extents)
@@ -241,16 +214,13 @@ void AsteroidField::load_assets()
             auto &verts = mesh->geometry()->vertices();
             vec3 centroid = gl::calculate_centroid(verts);
             for(auto &v : verts){ v -= centroid; }
-            mesh->geometry()->create_gl_buffers();
             mesh->geometry()->compute_aabb();
-            
             mesh->material()->set_shader(shader);
             mesh->material()->set_ambient(gl::COLOR_WHITE);
             
             auto aabb = mesh->aabb();
-            float scale_factor = 50.f / aabb.width();
+            float scale_factor = 50.f / gl::length(aabb.halfExtents());
             mesh->set_scale(scale_factor);
-            
             m_proto_objects.push_back(mesh);
         }
     }
@@ -277,8 +247,13 @@ void AsteroidField::create_scene(int num_objects)
 
     if(m_proto_objects.empty())
     {
-        LOG_WARNING << "could not create scene: no proto objects loaded ...";
-        return;
+        load_assets();
+
+        if(m_proto_objects.empty())
+        {
+            LOG_WARNING << "could not create scene: no proto objects loaded ...";
+            return;
+        }
     }
     int m = 0;
     
@@ -288,7 +263,7 @@ void AsteroidField::create_scene(int num_objects)
         test_mesh->set_scale(test_mesh->scale() * random<float>(.5f, 3.f));
         m++;
         
-        if(test_mesh->material()->textures().empty())
+        if(test_mesh->material()->textures().empty() && !m_proto_textures.empty())
         {
             test_mesh->material()->add_texture(m_proto_textures[m % m_proto_textures.size()]);
         }
@@ -299,10 +274,15 @@ void AsteroidField::create_scene(int num_objects)
         // object rotation via update-functor
         vec3 rot_vec = glm::ballRand(1.f);
         float rot_speed = glm::radians(random<float>(10.f, 90.f));
-        test_mesh->set_update_function([test_mesh, rot_vec, rot_speed](float t)
+        auto weak_mesh = gl::Object3DWeakPtr(test_mesh);
+
+        test_mesh->set_update_function([weak_mesh, rot_vec, rot_speed](float t)
         {
-            test_mesh->transform() = glm::rotate(test_mesh->transform(), rot_speed * t, rot_vec);
+            auto obj = weak_mesh.lock();
+            if(obj){ obj->transform() = glm::rotate(obj->transform(), rot_speed * t, rot_vec); }
         });
         scene()->add_object(test_mesh);
     }
+    m_sky_box_path->notify_observers();
+    m_dirty_flag = false;
 }
