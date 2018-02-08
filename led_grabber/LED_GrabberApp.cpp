@@ -8,6 +8,7 @@
 
 #include "LED_GrabberApp.hpp"
 #include <mutex>
+#include <thread>
 
 using namespace std;
 using namespace kinski;
@@ -99,7 +100,7 @@ void LED_GrabberApp::setup()
     m_check_ip_timer.set_periodic();
     m_check_ip_timer.expires_from_now(5.f);
     
-    m_led_grabber->set_resolution(58, 6);
+    m_led_grabber->set_resolution(58, 7);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -251,7 +252,11 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                 
             case Key::_L:
                 {
-                    m_led_grabber->grab_from_image(ImagePtr());
+//                    m_led_grabber->grab_from_image(ImagePtr());
+                    background_queue().submit([this]()
+                    {
+                        run_calibration();
+                    });
                 }
                 break;
             default:
@@ -876,4 +881,21 @@ void LED_GrabberApp::setup_rpc_interface()
     {
         con->write(to_string(m_media->is_playing()));
     });
+}
+
+void LED_GrabberApp::run_calibration()
+{
+    std::vector<uint32_t> calib_data(58 * 12, 0);
+
+    for(size_t j = 0; j < calib_data.size(); ++j)
+    {
+        calib_data[j] = std::numeric_limits<uint32_t >::max();
+
+        // send data
+        m_led_grabber->send_data((uint8_t*)calib_data.data(), calib_data.size() * sizeof(uint32_t));
+
+        calib_data[j] = 0;
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+    }
 }

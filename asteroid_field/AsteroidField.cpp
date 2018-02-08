@@ -91,12 +91,13 @@ void AsteroidField::update(float timeDelta)
 void AsteroidField::draw()
 {
     gl::clear();
-    
+
     // draw asteroid field
+    scene()->render(camera());
+
+    // draw grid
     gl::set_matrices(camera());
     if(*m_draw_grid){ gl::draw_grid(50, 50); }
-    
-    scene()->render(camera());
 }
 
 /////////////////////////////////////////////////////////////////

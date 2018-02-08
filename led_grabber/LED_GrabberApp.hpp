@@ -76,6 +76,8 @@ namespace kinski
         void send_network_cmd(const std::string &the_cmd);
         void ping_delay(const std::string &the_ip);
         void create_playlist(const std::string &the_base_dir);
+
+        void run_calibration();
         
     public:
 

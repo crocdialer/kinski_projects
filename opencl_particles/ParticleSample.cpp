@@ -98,6 +98,9 @@ void ParticleSample::draw()
 
     scene()->render(camera());
 
+    // draw enabled light dummies
+    m_light_component->draw_light_dummies();
+    
     if(*m_draw_fps)
     {
         gl::draw_text_2D(to_string(fps(), 1), fonts()[0],

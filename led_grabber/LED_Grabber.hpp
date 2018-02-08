@@ -48,6 +48,10 @@ public:
     
     //!
     void set_resolution(uint32_t the_width, uint32_t the_height);
+
+    void send_data(const std::vector<uint8_t> &the_data) const;
+
+    void send_data(const uint8_t *the_data, size_t the_num_bytes) const;
     
 private:
     

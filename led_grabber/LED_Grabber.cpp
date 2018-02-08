@@ -100,7 +100,8 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
 {
     if(is_initialized())
     {
-        size_t num_segs = m_impl->m_resolution.y, num_leds_per_seg = m_impl->m_resolution.x;
+        size_t num_segs = m_impl->m_resolution.y * m_impl->m_connections.size();
+        size_t num_leds_per_seg = m_impl->m_resolution.x;
         
         // WBRG byte-order in debug SK6812-RGBW strip
         constexpr uint8_t dst_offset_r = 1, dst_offset_g = 0, dst_offset_b = 2, dst_offset_w = 3;
@@ -109,7 +110,7 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
         // get channel offsets
         the_image->offsets(&src_offset_r, &src_offset_g, &src_offset_b);
 
-        auto resized_img = the_image->resize(3 * num_leds_per_seg, 3 *num_segs, 3);
+        auto resized_img = the_image->resize(3 * num_leds_per_seg, 3 * num_segs, 3);
         resized_img = resized_img->blur();
         resized_img = resized_img->resize(num_leds_per_seg, num_segs, 4);
         
@@ -145,13 +146,8 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
             }
         }
 
-        std::unique_lock<std::mutex> lock(m_impl->m_connection_mutex);
+        send_data(resized_img->data, resized_img->num_bytes());
 
-        for(auto &c : m_impl->m_connections)
-        {
-            c->write("DATA:" + to_string(resized_img->num_bytes()) + "\n");
-            c->write_bytes(resized_img->data, resized_img->num_bytes());
-        }
         m_impl->m_buffer_img = resized_img;
         return true;
     }
@@ -192,5 +188,40 @@ void LED_Grabber::set_resolution(uint32_t the_width, uint32_t the_height)
 {
     m_impl->m_resolution = gl::ivec2(the_width, the_height);
 }
-    
+
+void LED_Grabber::send_data(const std::vector<uint8_t> &the_data) const
+{
+
+}
+
+void LED_Grabber::send_data(const uint8_t *the_data, size_t the_num_bytes) const
+{
+    size_t max_bytes = 4 * m_impl->m_resolution.x * m_impl->m_resolution.y;
+    std::unique_lock<std::mutex> lock(m_impl->m_connection_mutex);
+    size_t total_bytes_written = 0;
+
+    std::list<ConnectionPtr> cons(m_impl->m_connections.begin(), m_impl->m_connections.end());
+    cons.sort([](const ConnectionPtr &lhs, const ConnectionPtr &rhs)
+    {
+        return lhs->description() < rhs->description();
+    });
+
+    for(auto &c : cons)
+    {
+        size_t bytes_to_write = std::min(max_bytes, the_num_bytes);
+        if(!bytes_to_write){ return; }
+        the_num_bytes -= bytes_to_write;
+
+        c->write("DATA:" + to_string(bytes_to_write) + "\n");
+
+        while(bytes_to_write)
+        {
+            size_t num_bytes_tranferred = c->write_bytes(the_data + total_bytes_written,
+                                                         bytes_to_write);
+            bytes_to_write -= num_bytes_tranferred;
+            total_bytes_written += num_bytes_tranferred;
+        }
+    }
+}
+
 }// namespace
