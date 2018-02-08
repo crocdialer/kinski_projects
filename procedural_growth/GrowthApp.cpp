@@ -23,6 +23,7 @@ void GrowthApp::setup()
     
     set_precise_selection(false);
     
+    register_property(m_draw_fps);
     register_property(m_branch_angles);
     register_property(m_branch_randomness);
     register_property(m_increment);
@@ -101,15 +102,18 @@ void GrowthApp::draw()
         gl::draw_mesh(m_bounding_mesh);
     }
     
+    if(*m_draw_fps)
+    {
+        gl::draw_text_2D(to_string(fps(), 1), fonts()[0],
+                         glm::mix(gl::COLOR_OLIVE, gl::COLOR_WHITE,
+                                  glm::smoothstep(0.f, 1.f, fps() / max_fps())),
+                         gl::vec2(10));
+    }
+    
     // draw texture map(s)
     if(display_tweakbar())
     {
         draw_textures(textures());
-        
-        // draw fps string
-        gl::draw_text_2D(kinski::to_string(fps()), fonts()[0],
-                       vec4(vec3(1) - clear_color().xyz(), 1.f),
-                       glm::vec2(gl::window_dimension().x - 110, gl::window_dimension().y - 70));
     }
     
     if(is_loading())

@@ -35,9 +35,9 @@ namespace kinski
         register_property(m_maxPatchWidth);
         register_property(m_minMatchCount);
 
-        const double akaze_thresh = 3e-4;
-        auto akaze_detector = AKAZE::create();
-        akaze_detector->setThreshold(akaze_thresh);
+//        const double akaze_thresh = 3e-4;
+//        auto akaze_detector = AKAZE::create();
+//        akaze_detector->setThreshold(akaze_thresh);
 //        m_featureDetect = akaze_detector;
 
         if(!refImage.empty()){ setReferenceImage(refImage); }

@@ -69,7 +69,9 @@ namespace kinski
             Property_<std::string>::create("Rule 4", "")
         };
         
-        Property_<bool>::Ptr m_use_bounding_mesh = Property_<bool>::create("use bounding mesh", false);
+        Property_<bool>::Ptr
+        m_draw_fps = Property_<bool>::create("draw fps", true),
+        m_use_bounding_mesh = Property_<bool>::create("use bounding mesh", false);
         
         Property_<uint32_t>::Ptr m_shader_index = Property_<uint32_t>::create("shader index", 0);
         

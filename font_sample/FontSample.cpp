@@ -159,6 +159,7 @@ void FontSample::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_use_sdf)
     {
+        fonts()[1].set_use_sdf(*m_use_sdf);
         gl::SelectVisitor<gl::Mesh> v;
         m_text_root->accept(v);
         
