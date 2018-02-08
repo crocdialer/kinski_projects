@@ -238,31 +238,22 @@ void ModelViewer::draw()
 
     m_debug_scene->render(camera());
 
-    if(*m_use_syphon)
+    if(*m_use_syphon || *m_use_warping)
     {
-        auto tex = textures()[TEXTURE_OUPUT] = create_offscreen_texture();
-        m_syphon_out.publish_texture(tex);
+        auto tex = textures()[TEXTURE_OUTPUT] = create_offscreen_texture();
     }
-
-//    if(selected_mesh() && *m_display_bones) // slow!
-//    {
-//        // crunch bone data
-//        vector<vec3> skel_points;
-//        vector<string> bone_names;
-//        build_skeleton(selected_mesh()->root_bone(), skel_points, bone_names);
-//        gl::load_matrix(gl::MODEL_VIEW_MATRIX, camera()->view_matrix() * selected_mesh()->global_transform());
-//
-//        // draw bone data
-//        gl::draw_lines(skel_points, gl::COLOR_DARK_RED);
-//
-//        for(const auto &p : skel_points)
-//        {
-//            vec3 p_trans = (selected_mesh()->global_transform() * vec4(p, 1.f)).xyz();
-//            vec2 p2d = gl::project_point_to_screen(p_trans, camera());
-//            gl::draw_circle(p2d, 5.f, false);
-//        }
-//    }
-
+    if(*m_use_syphon){ m_syphon_out.publish_texture(textures()[TEXTURE_OUTPUT]); }
+    if(*m_use_warping)
+    {
+        for(uint32_t i = 0; i < m_warp_component->num_warps(); i++)
+        {
+            if(m_warp_component->enabled(i))
+            {
+                m_warp_component->render_output(i, textures()[TEXTURE_OUTPUT]);
+            }
+        }
+    }
+    
     // draw texture map(s)
     if(display_tweakbar())
     {
@@ -603,12 +594,12 @@ gl::Texture ModelViewer::create_offscreen_texture()
     if(!m_offscreen_fbo)
     {
         LOG_WARNING << "no fbo defined";
-        return textures()[TEXTURE_OUPUT];
+        return textures()[TEXTURE_OUTPUT];
     }
     
     float screen_width = m_offscreen_size->value().x, screen_height = m_offscreen_size->value().y;
     
-    textures()[TEXTURE_OUPUT] = gl::render_to_texture(m_offscreen_fbo,
+    textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_offscreen_fbo,
                                                       [this, screen_width, screen_height]
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -625,7 +616,7 @@ gl::Texture ModelViewer::create_offscreen_texture()
         }
         
     });
-    return textures()[TEXTURE_OUPUT];
+    return textures()[TEXTURE_OUTPUT];
 }
 
 /////////////////////////////////////////////////////////////////

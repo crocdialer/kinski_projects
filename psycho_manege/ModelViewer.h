@@ -41,7 +41,7 @@ namespace kinski
         enum ShaderEnum{SHADER_UNLIT = 0, SHADER_UNLIT_SKIN = 1, SHADER_PHONG = 2,
             SHADER_PHONG_SKIN = 3, SHADER_UNLIT_DISPLACE = 4, SHADER_UNLIT_SKIN_DISPLACE = 5};
         
-        enum TextureEnum{TEXTURE_OUPUT = 0, TEXTURE_NOISE = 1, TEXTURE_SELECTED = 2};
+        enum TextureEnum{TEXTURE_OUTPUT = 0, TEXTURE_NOISE = 1, TEXTURE_SELECTED = 2};
         
         enum JoystickEnum{JOY_CROSS_LEFT = 2, JOY_CROSS_DOWN = 1, JOY_CROSS_RIGHT = 3,
             JOY_CROSS_UP = 0, JOY_START = 4, JOY_BACK = 5, JOY_RIGHT = 9, JOY_LEFT = 8,

@@ -54,7 +54,7 @@ void FractureApp::setup()
     m_box_geom = gl::Geometry::create_box(vec3(.5f));
     m_shoot_mesh = gl::Mesh::create(gl::Geometry::create_sphere(.5f, 24),
                                     gl::Material::create(gl::ShaderType::PHONG));
-    m_shoot_mesh->material()->queue_texture_load("~/Downloads/tennisball.jpg");
+//    m_shoot_mesh->material()->queue_texture_load("~/Downloads/tennisball.jpg");
     m_shoot_mesh->material()->set_specular(gl::COLOR_BLACK);
     
     m_gui_cam = gl::OrthoCamera::create(0, gl::window_dimension().x, gl::window_dimension().y,
@@ -64,11 +64,9 @@ void FractureApp::setup()
     m_crosshair_pos.resize(get_joystick_states().size());
     for(auto &p : m_crosshair_pos){ p = gl::window_dimension() / 2.f; }
 
-    scene()->set_renderer(gl::DeferredRenderer::create());
+//    scene()->set_renderer(gl::DeferredRenderer::create());
 
     load_settings();
-    
-//    fracture_test(*m_num_fracture_shards);
 }
 
 /////////////////////////////////////////////////////////////////
