@@ -7,12 +7,50 @@
 
 #include <array>
 #include <mutex>
+#include <thread>
 #include "LED_Grabber.hpp"
+
+#include "opencv2/imgproc.hpp"
+#include "opencv2/videoio.hpp"
 
 #define DEVICE_ID "LEDS"
 
 namespace kinski
 {
+
+gl::vec2 find_dot(const cv::Mat &the_frame, float the_thresh)
+{
+    cv::UMat gray, thresh;
+    cv::cvtColor(the_frame, gray, cv::COLOR_RGB2GRAY);
+    cv::blur(gray, gray, cv::Size(5, 5));
+    
+    cv::threshold(gray, thresh, the_thresh, 255, cv::THRESH_TOZERO);
+    auto kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
+    cv::morphologyEx(thresh, thresh, cv::MORPH_OPEN, kernel);
+    
+    cv::Moments mom = cv::moments(thresh, false);
+    return gl::vec2(mom.m10 / mom.m00, mom.m01 / mom.m00);
+    
+//    float weight_sum = 0.0;
+//    gl::vec2 center(0);
+//
+//    for(size_t y = 0; y < gray.rows; ++y)
+//    {
+//        uint8_t* line_ptr = gray.ptr<uint8_t>(y);
+//        uint8_t* thresh_ptr = thresh.ptr<uint8_t>(y);
+//
+//        for(size_t x = 0; x < gray.cols; ++x)
+//        {
+//            if(thresh_ptr[x])
+//            {
+//                float weight = line_ptr[x] / 255.f;
+//                weight_sum += weight;
+//                center += weight * gl::vec2(x, y);
+//            }
+//        }
+//    }
+//    return center / weight_sum;
+}
     
 std::array<uint8_t, 256> create_gamma_lut(float the_brighntess, float the_gamma,
                                           uint8_t the_max_out = 255)
@@ -222,6 +260,42 @@ void LED_Grabber::send_data(const uint8_t *the_data, size_t the_num_bytes) const
             total_bytes_written += num_bytes_tranferred;
         }
     }
+}
+    
+std::vector<gl::vec2> LED_Grabber::run_calibration()
+{
+    std::vector<uint32_t> calib_data(58 * 7, 0);
+    
+    cv::Mat frame;
+    cv::VideoCapture cap;
+    cap.open(0);
+    std::vector<gl::vec2> points(calib_data.size());
+    
+    for(size_t j = 0; j < calib_data.size(); ++j)
+    {
+        calib_data[j] = std::numeric_limits<uint32_t >::max();
+        
+        // send data
+        send_data((uint8_t*)calib_data.data(), calib_data.size() * sizeof(uint32_t));
+        
+        calib_data[j] = 0;
+        
+        // wait for LEDs to update
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+        
+        // grab frame and find location of dot
+        if(cap.read(frame) && !frame.empty())
+        {
+//            constexpr size_t num_samples = 3;
+            
+            //TODO: mask input with quad
+            auto p = find_dot(frame, 245.f);
+            LOG_DEBUG << "got frame: " << j << " --> " << glm::to_string(p);
+            points[j] = p / gl::vec2(frame.cols, frame.rows);
+        }
+    }
+    cap.release();
+    return points;
 }
 
 }// namespace

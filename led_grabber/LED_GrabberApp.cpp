@@ -8,7 +8,6 @@
 
 #include "LED_GrabberApp.hpp"
 #include <mutex>
-#include <thread>
 
 using namespace std;
 using namespace kinski;
@@ -131,46 +130,51 @@ void LED_GrabberApp::draw()
 {
     gl::clear();
 
-    if(*m_use_warping)
+//    {
+//        if(*m_scale_to_fit)
+//        {
+//            gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension(), gl::vec2(0),
+//                             *m_brightness);
+//        }
+//        else
+//        {
+//            if(textures()[TEXTURE_INPUT])
+//            {
+//                float aspect = textures()[TEXTURE_INPUT].aspect_ratio();
+//                float window_aspect = gl::window_dimension().x / gl::window_dimension().y;
+//                gl::vec2 pos, size;
+//
+//                if(window_aspect < aspect)
+//                {
+//                    // arrange y-position
+//                    size = gl::vec2(gl::window_dimension().x, gl::window_dimension().x / aspect);
+//                    pos = gl::vec2(0, (gl::window_dimension().y - size.y) / 2.f);
+//                }
+//                else
+//                {
+//                    // arrange x-position
+//                    size = gl::vec2(gl::window_dimension().y * aspect, gl::window_dimension().y);
+//                    pos = gl::vec2((gl::window_dimension().x - size.x) / 2.f, 0);
+//                }
+//                gl::draw_texture(textures()[TEXTURE_INPUT], size, pos, *m_brightness);
+//            }
+//        }
+//    }
+    
+    
+    // draw quad warp
+    if(m_warp_component->enabled(0))
     {
-        for(uint32_t i = 0; i < m_warp_component->num_warps(); i++)
-        {
-            if(m_warp_component->enabled(i))
-            {
-                m_warp_component->render_output(i, textures()[TEXTURE_INPUT], *m_brightness);
-            }
-        }
+        m_warp_component->render_output(0, textures()[TEXTURE_INPUT]);
     }
-    else
+    
+    // draw calibration points
     {
-        if(*m_scale_to_fit)
-        {
-            gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension(), gl::vec2(0),
-                             *m_brightness);
-        }
-        else
-        {
-            if(textures()[TEXTURE_INPUT])
-            {
-                float aspect = textures()[TEXTURE_INPUT].aspect_ratio();
-                float window_aspect = gl::window_dimension().x / gl::window_dimension().y;
-                gl::vec2 pos, size;
-                
-                if(window_aspect < aspect)
-                {
-                    // arrange y-position
-                    size = gl::vec2(gl::window_dimension().x, gl::window_dimension().x / aspect);
-                    pos = gl::vec2(0, (gl::window_dimension().y - size.y) / 2.f);
-                }
-                else
-                {
-                    // arrange x-position
-                    size = gl::vec2(gl::window_dimension().y * aspect, gl::window_dimension().y);
-                    pos = gl::vec2((gl::window_dimension().x - size.x) / 2.f, 0);
-                }
-                gl::draw_texture(textures()[TEXTURE_INPUT], size, pos, *m_brightness);
-            }
-        }
+        gl::ScopedMatrixPush mv(gl::MODEL_VIEW_MATRIX);
+        gl::load_matrix(gl::MODEL_VIEW_MATRIX, glm::scale(gl::mat4(),
+                                                          gl::vec3(gl::window_dimension(), 1.f)));
+        gl::draw_points_2D(m_points, gl::COLOR_WHITE, 3.f);
+        gl::reset_state();
     }
     
     if(!*m_is_master && m_is_syncing && Logger::get()->severity() >= Severity::DEBUG)
@@ -252,10 +256,15 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                 
             case Key::_L:
                 {
-//                    m_led_grabber->grab_from_image(ImagePtr());
                     background_queue().submit([this]()
                     {
-                        run_calibration();
+                        auto points = m_led_grabber->run_calibration();
+                        main_queue().submit([this, points]()
+                        {
+                            auto points_tmp = std::move(points);
+                            for(auto &p : points_tmp){ p = p * gl::window_dimension(); }
+                            m_points = std::move(points_tmp);
+                        });
                     });
                 }
                 break;
@@ -881,21 +890,4 @@ void LED_GrabberApp::setup_rpc_interface()
     {
         con->write(to_string(m_media->is_playing()));
     });
-}
-
-void LED_GrabberApp::run_calibration()
-{
-    std::vector<uint32_t> calib_data(58 * 12, 0);
-
-    for(size_t j = 0; j < calib_data.size(); ++j)
-    {
-        calib_data[j] = std::numeric_limits<uint32_t >::max();
-
-        // send data
-        m_led_grabber->send_data((uint8_t*)calib_data.data(), calib_data.size() * sizeof(uint32_t));
-
-        calib_data[j] = 0;
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(25));
-    }
 }

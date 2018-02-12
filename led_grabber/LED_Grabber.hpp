@@ -53,6 +53,8 @@ public:
 
     void send_data(const uint8_t *the_data, size_t the_num_bytes) const;
     
+    std::vector<gl::vec2> run_calibration();
+    
 private:
     
     LED_Grabber();

@@ -27,6 +27,7 @@ namespace kinski
 
         enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_OUTPUT = 1, TEXTURE_LEDS = 2};
         
+        std::vector<gl::vec2> m_points;
         LED_GrabberPtr m_led_grabber = LED_Grabber::create();
         ImagePtr m_image_input;
         
@@ -76,8 +77,6 @@ namespace kinski
         void send_network_cmd(const std::string &the_cmd);
         void ping_delay(const std::string &the_ip);
         void create_playlist(const std::string &the_base_dir);
-
-        void run_calibration();
         
     public:
 
