@@ -31,6 +31,7 @@ public:
     bool is_initialized() const;
     
     bool grab_from_image(const ImagePtr &the_image);
+    bool grab_from_image_calib(const ImagePtr &the_image);
     
     gl::Texture output_texture();
     
@@ -54,6 +55,10 @@ public:
     void send_data(const uint8_t *the_data, size_t the_num_bytes) const;
     
     std::vector<gl::vec2> run_calibration();
+    
+    void set_calibration_points(const std::vector<gl::vec2> &the_points);
+    
+    void set_warp_matrix(const glm::mat4 &the_matrix);
     
 private:
     

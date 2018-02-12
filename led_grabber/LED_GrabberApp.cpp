@@ -58,6 +58,8 @@ void LED_GrabberApp::setup()
     register_property(m_use_discovery_broadcast);
     register_property(m_broadcast_port);
     register_property(m_led_channels);
+    register_property(m_calibration_points);
+    m_calibration_points->set_tweakable(false);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
 
@@ -108,14 +110,17 @@ void LED_GrabberApp::update(float timeDelta)
 {
     if(m_reload_media){ reload_media(); }
     
+    if(m_camera){ m_camera->copy_frame_to_texture(textures()[TEXTURE_CAM_INPUT]); }
     if(m_media)
     {
         bool has_new_image = m_media->copy_frame_to_image(m_image_input);
         
         if(has_new_image)
         {
-            m_led_grabber->grab_from_image(m_image_input);
-            textures()[TEXTURE_LEDS] = m_led_grabber->output_texture();
+            m_led_grabber->set_warp_matrix(m_warp_component->quad_warp(0).inv_transform());
+            m_led_grabber->grab_from_image_calib(m_image_input);
+//            m_led_grabber->grab_from_image(m_image_input);
+//            textures()[TEXTURE_LEDS] = m_led_grabber->output_texture();
             textures()[TEXTURE_INPUT] = gl::create_texture_from_image(m_image_input);
         }
         m_needs_redraw = has_new_image || m_needs_redraw;
@@ -129,38 +134,6 @@ void LED_GrabberApp::update(float timeDelta)
 void LED_GrabberApp::draw()
 {
     gl::clear();
-
-//    {
-//        if(*m_scale_to_fit)
-//        {
-//            gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension(), gl::vec2(0),
-//                             *m_brightness);
-//        }
-//        else
-//        {
-//            if(textures()[TEXTURE_INPUT])
-//            {
-//                float aspect = textures()[TEXTURE_INPUT].aspect_ratio();
-//                float window_aspect = gl::window_dimension().x / gl::window_dimension().y;
-//                gl::vec2 pos, size;
-//
-//                if(window_aspect < aspect)
-//                {
-//                    // arrange y-position
-//                    size = gl::vec2(gl::window_dimension().x, gl::window_dimension().x / aspect);
-//                    pos = gl::vec2(0, (gl::window_dimension().y - size.y) / 2.f);
-//                }
-//                else
-//                {
-//                    // arrange x-position
-//                    size = gl::vec2(gl::window_dimension().y * aspect, gl::window_dimension().y);
-//                    pos = gl::vec2((gl::window_dimension().x - size.x) / 2.f, 0);
-//                }
-//                gl::draw_texture(textures()[TEXTURE_INPUT], size, pos, *m_brightness);
-//            }
-//        }
-//    }
-    
     
     // draw quad warp
     if(m_warp_component->enabled(0))
@@ -168,12 +141,29 @@ void LED_GrabberApp::draw()
         m_warp_component->render_output(0, textures()[TEXTURE_INPUT]);
     }
     
+    // draw camera input, if any
+    if(textures()[TEXTURE_CAM_INPUT])
+    {
+        auto mat = gl::Material::create();
+        mat->set_blending();
+        mat->set_depth_test(false);
+        mat->set_depth_write(false);
+        mat->set_diffuse(gl::Color(1, 1, 1, 0.8f));
+        mat->set_textures({textures()[TEXTURE_CAM_INPUT]});
+        gl::draw_quad(gl::window_dimension(), mat);
+    }
+    
     // draw calibration points
     {
-        gl::ScopedMatrixPush mv(gl::MODEL_VIEW_MATRIX);
-        gl::load_matrix(gl::MODEL_VIEW_MATRIX, glm::scale(gl::mat4(),
-                                                          gl::vec3(gl::window_dimension(), 1.f)));
-        gl::draw_points_2D(m_points, gl::COLOR_WHITE, 3.f);
+//        gl::ScopedMatrixPush mv(gl::MODEL_VIEW_MATRIX);
+        
+//        gl::load_matrix(gl::MODEL_VIEW_MATRIX, glm::scale(gl::mat4(),
+//                                                          gl::vec3(gl::window_dimension(), 1.f)));
+        
+        auto points_tmp = m_calibration_points->value();
+        for(auto &p : points_tmp){ p = p * gl::window_dimension(); }
+        
+        gl::draw_points_2D(points_tmp, gl::COLOR_WHITE, 3.f);
         gl::reset_state();
     }
     
@@ -218,6 +208,10 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                 m_media->is_playing() ? m_media->pause() : m_media->play();
                 if(*m_is_master){ send_network_cmd(m_media->is_playing() ? "play" : "pause"); }
                 break;
+            
+            case Key::_C:
+                m_camera->is_capturing() ? m_camera->stop_capture() : m_camera->start_capture();
+                break;
                 
             case Key::_LEFT:
                 m_media->seek_to_time(m_media->current_time() - (e.isShiftDown() ? 30 : 5));
@@ -256,14 +250,17 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                 
             case Key::_L:
                 {
+                    m_camera->stop_capture();
+                    
                     background_queue().submit([this]()
                     {
                         auto points = m_led_grabber->run_calibration();
                         main_queue().submit([this, points]()
                         {
-                            auto points_tmp = std::move(points);
-                            for(auto &p : points_tmp){ p = p * gl::window_dimension(); }
-                            m_points = std::move(points_tmp);
+                            auto points_tmp = points;
+//                            for(auto &p : points_tmp){ p = p * gl::window_dimension(); }
+//                            m_points = std::move(points_tmp);
+                            m_calibration_points->set_value(std::move(points));
                         });
                     });
                 }
@@ -475,6 +472,10 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_led_channels)
     {
         m_led_grabber->set_brightness(*m_led_channels);
+    }
+    else if(theProperty == m_calibration_points)
+    {
+        m_led_grabber->set_calibration_points(m_calibration_points->value());
     }
 }
 

@@ -18,6 +18,12 @@
 namespace kinski
 {
 
+namespace
+{
+    // WBRG byte-order in debug SK6812-RGBW strip
+    constexpr uint8_t dst_offset_r = 1, dst_offset_g = 0, dst_offset_b = 2, dst_offset_w = 3;
+}
+    
 gl::vec2 find_dot(const cv::Mat &the_frame, float the_thresh)
 {
     cv::UMat gray, thresh;
@@ -75,6 +81,9 @@ struct LED_GrabberImpl
     gl::ivec2 m_resolution;
     ImagePtr m_buffer_img;
     bool m_dirty_lut = true;
+    
+    std::vector<gl::vec2> m_calibration_points;
+    glm::mat4 m_warp_matrix;
     
     std::array<uint8_t, 256> m_gamma_r, m_gamma_g, m_gamma_b, m_gamma_w;
     
@@ -141,8 +150,6 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
         size_t num_segs = m_impl->m_resolution.y * m_impl->m_connections.size();
         size_t num_leds_per_seg = m_impl->m_resolution.x;
         
-        // WBRG byte-order in debug SK6812-RGBW strip
-        constexpr uint8_t dst_offset_r = 1, dst_offset_g = 0, dst_offset_b = 2, dst_offset_w = 3;
         uint8_t src_offset_r, src_offset_g, src_offset_b;
 
         // get channel offsets
@@ -187,6 +194,57 @@ bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
         send_data(resized_img->data, resized_img->num_bytes());
 
         m_impl->m_buffer_img = resized_img;
+        return true;
+    }
+    return false;
+}
+
+bool LED_Grabber::grab_from_image_calib(const ImagePtr &the_image)
+{
+    if(is_initialized())
+    {
+        // create/update lookup tables, if necessary
+        if(m_impl->m_dirty_lut){ m_impl->create_lut(); }
+        
+        std::vector<uint32_t> led_data(m_impl->m_calibration_points.size());
+        
+        // get channel offsets
+        uint8_t src_offset_r, src_offset_g, src_offset_b;
+        the_image->offsets(&src_offset_r, &src_offset_g, &src_offset_b);
+        
+        // for all calibration points, use matrix to project them.
+        // then sample input image at location
+        // gamma correction etc.
+        auto m = m_impl->m_warp_matrix;
+        const auto points = m_impl->m_calibration_points;
+        
+        for(size_t i = 0; i < points.size(); ++i)
+        {
+            const auto &cp = points[i];
+            gl::vec4 loc_norm = m * gl::vec4(cp.x, 1 - cp.y, 0, 1);
+            loc_norm /= loc_norm.w;
+            int loc_x = std::round((the_image->width - 1) * loc_norm.x);
+            int loc_y = std::round((the_image->height - 1) * (1 - loc_norm.y));
+            
+            if(loc_x > 0 && loc_x < the_image->width &&
+               loc_y > 0 && loc_y < the_image->height)
+            {
+                // sample from image
+                uint32_t c = *(reinterpret_cast<uint32_t*>(the_image->at(loc_x, loc_y)));
+                uint8_t *ch = reinterpret_cast<uint8_t*>(&c);
+                
+                uint8_t *out_ptr = (uint8_t*)(led_data.data() + i);
+                
+                out_ptr[dst_offset_r] = m_impl->m_gamma_r[ch[src_offset_r]];
+                out_ptr[dst_offset_g] = m_impl->m_gamma_g[ch[src_offset_g]];
+                out_ptr[dst_offset_b] = m_impl->m_gamma_b[ch[src_offset_b]];
+                
+                // Y′ = 0.299 R′ + 0.587 G′ + 0.114 B′
+                out_ptr[dst_offset_w] = m_impl->m_gamma_w[(uint8_t)(ch[2] * 0.299f + ch[1] * 0.587f + ch[0] * 0.114f)];
+            }
+        }
+        
+        send_data((uint8_t*)led_data.data(), led_data.size() * sizeof(uint32_t));
         return true;
     }
     return false;
@@ -296,6 +354,16 @@ std::vector<gl::vec2> LED_Grabber::run_calibration()
     }
     cap.release();
     return points;
+}
+    
+void LED_Grabber::set_calibration_points(const std::vector<gl::vec2> &the_points)
+{
+    m_impl->m_calibration_points = the_points;
+}
+    
+void LED_Grabber::set_warp_matrix(const glm::mat4 &the_matrix)
+{
+    m_impl->m_warp_matrix = the_matrix;
 }
 
 }// namespace

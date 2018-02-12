@@ -25,13 +25,16 @@ namespace kinski
     {
     private:
 
-        enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_OUTPUT = 1, TEXTURE_LEDS = 2};
+        enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_CAM_INPUT = 1, TEXTURE_OUTPUT = 2,
+            TEXTURE_LEDS = 3};
         
         std::vector<gl::vec2> m_points;
         LED_GrabberPtr m_led_grabber = LED_Grabber::create();
         ImagePtr m_image_input;
         
         media::MediaControllerPtr m_media = media::MediaController::create();
+        media::CameraControllerPtr m_camera = media::CameraController::create();
+        
         bool m_reload_media = false, m_needs_redraw = true;
         int m_is_syncing = 0;
         Timer m_broadcast_timer, m_sync_timer, m_sync_off_timer, m_scan_media_timer, m_check_ip_timer;
@@ -66,6 +69,9 @@ namespace kinski
         Property_<gl::Color>::Ptr
         m_led_channels = Property_<gl::Color>::create("LED channel brightness",
                                                      gl::Color(0.4f, 0.4f, 0.4f, 0.2f));
+        
+        Property_<std::vector<gl::vec2>>::Ptr
+        m_calibration_points = Property_<std::vector<gl::vec2>>::create("calibration points");
         
         std::string secs_to_time_str(float the_secs) const;
         void setup_rpc_interface();
