@@ -31,6 +31,7 @@ namespace kinski
         std::vector<gl::vec2> m_points;
         LED_GrabberPtr m_led_grabber = LED_Grabber::create();
         ImagePtr m_image_input;
+        gl::Fbo m_fbo_downsample;
         
         media::MediaControllerPtr m_media = media::MediaController::create();
         media::CameraControllerPtr m_camera = media::CameraController::create();
@@ -69,6 +70,9 @@ namespace kinski
         Property_<gl::Color>::Ptr
         m_led_channels = Property_<gl::Color>::create("LED channel brightness",
                                                      gl::Color(0.4f, 0.4f, 0.4f, 0.2f));
+        
+        Property_<gl::vec2>::Ptr
+        m_downsample_res = Property_<gl::vec2>::create("downsample resolution", gl::vec2(320, 240));
         
         Property_<std::vector<gl::vec2>>::Ptr
         m_calibration_points = Property_<std::vector<gl::vec2>>::create("calibration points");

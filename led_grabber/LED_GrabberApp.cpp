@@ -58,8 +58,9 @@ void LED_GrabberApp::setup()
     register_property(m_use_discovery_broadcast);
     register_property(m_broadcast_port);
     register_property(m_led_channels);
-    register_property(m_calibration_points);
     m_calibration_points->set_tweakable(false);
+    register_property(m_calibration_points);
+    register_property(m_downsample_res);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
 
@@ -113,15 +114,21 @@ void LED_GrabberApp::update(float timeDelta)
     if(m_camera){ m_camera->copy_frame_to_texture(textures()[TEXTURE_CAM_INPUT]); }
     if(m_media)
     {
-        bool has_new_image = m_media->copy_frame_to_image(m_image_input);
+//        bool has_new_image = m_media->copy_frame_to_image(m_image_input);
+        bool has_new_image = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
         
         if(has_new_image)
         {
+            gl::render_to_texture(m_fbo_downsample, [this]()
+            {
+                gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension());
+            });
+            m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
+            
             m_led_grabber->set_warp_matrix(m_warp_component->quad_warp(0).inv_transform());
             m_led_grabber->grab_from_image_calib(m_image_input);
-//            m_led_grabber->grab_from_image(m_image_input);
-//            textures()[TEXTURE_LEDS] = m_led_grabber->output_texture();
-            textures()[TEXTURE_INPUT] = gl::create_texture_from_image(m_image_input);
+            
+//            textures()[TEXTURE_INPUT] = gl::create_texture_from_image(m_image_input);
         }
         m_needs_redraw = has_new_image || m_needs_redraw;
     }
@@ -476,6 +483,10 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_calibration_points)
     {
         m_led_grabber->set_calibration_points(m_calibration_points->value());
+    }
+    else if(theProperty == m_downsample_res)
+    {
+        m_fbo_downsample = gl::Fbo(m_downsample_res->value());
     }
 }
 
