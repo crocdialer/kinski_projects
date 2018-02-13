@@ -24,14 +24,14 @@ namespace
     constexpr uint8_t dst_offset_r = 1, dst_offset_g = 0, dst_offset_b = 2, dst_offset_w = 3;
 }
     
-gl::vec2 find_dot(const cv::Mat &the_frame, float the_thresh)
+gl::vec2 find_dot(const cv::Mat &the_frame, float the_thresh, const cv::Mat &the_mask = cv::Mat())
 {
     cv::UMat gray, thresh;
     cv::cvtColor(the_frame, gray, cv::COLOR_RGB2GRAY);
     cv::blur(gray, gray, cv::Size(5, 5));
     
     cv::threshold(gray, thresh, the_thresh, 255, cv::THRESH_TOZERO);
-    auto kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
+    auto kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)).getUMat(cv::ACCESS_READ);
     cv::morphologyEx(thresh, thresh, cv::MORPH_OPEN, kernel);
     
     cv::Moments mom = cv::moments(thresh, false);

@@ -102,7 +102,9 @@ void LED_GrabberApp::setup()
     m_check_ip_timer.set_periodic();
     m_check_ip_timer.expires_from_now(5.f);
     
+    // grabber setup
     m_led_grabber->set_resolution(58, 7);
+    m_led_update_timer = Timer(main_queue().io_service());
 }
 
 /////////////////////////////////////////////////////////////////
@@ -114,21 +116,25 @@ void LED_GrabberApp::update(float timeDelta)
     if(m_camera){ m_camera->copy_frame_to_texture(textures()[TEXTURE_CAM_INPUT]); }
     if(m_media)
     {
-//        bool has_new_image = m_media->copy_frame_to_image(m_image_input);
-        bool has_new_image = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT]);
+        bool has_new_image = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT], true);
         
-        if(has_new_image)
+        if(has_new_image && m_led_update_timer.has_expired())
         {
-            gl::render_to_texture(m_fbo_downsample, [this]()
+            auto tex_size = textures()[TEXTURE_INPUT].size();
+            
+            if(tex_size.x > m_fbo_downsample.size().x || tex_size.y > m_fbo_downsample.size().y)
             {
-                gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension());
-            });
-            m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
+                gl::render_to_texture(m_fbo_downsample, [this]()
+                {
+                    gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension());
+                });
+                m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
+            }
+            else{ m_image_input = gl::create_image_from_texture(textures()[TEXTURE_INPUT]); }
             
             m_led_grabber->set_warp_matrix(m_warp_component->quad_warp(0).inv_transform());
             m_led_grabber->grab_from_image_calib(m_image_input);
-            
-//            textures()[TEXTURE_INPUT] = gl::create_texture_from_image(m_image_input);
+            m_led_update_timer.expires_from_now(0.04);
         }
         m_needs_redraw = has_new_image || m_needs_redraw;
     }
@@ -264,9 +270,6 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                         auto points = m_led_grabber->run_calibration();
                         main_queue().submit([this, points]()
                         {
-                            auto points_tmp = points;
-//                            for(auto &p : points_tmp){ p = p * gl::window_dimension(); }
-//                            m_points = std::move(points_tmp);
                             m_calibration_points->set_value(std::move(points));
                         });
                     });
