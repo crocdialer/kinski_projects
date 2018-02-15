@@ -58,6 +58,7 @@ void LED_GrabberApp::setup()
     register_property(m_use_discovery_broadcast);
     register_property(m_broadcast_port);
     register_property(m_cam_index);
+    register_property(m_calibration_thresh);
     register_property(m_led_calib_color);
     register_property(m_led_channels);
     m_calibration_points->set_tweakable(false);
@@ -158,7 +159,7 @@ void LED_GrabberApp::draw()
     }
     
     // draw camera input, if any
-    if(textures()[TEXTURE_CAM_INPUT])
+    if(m_camera->is_capturing() && textures()[TEXTURE_CAM_INPUT])
     {
         auto mat = gl::Material::create();
         mat->set_blending();
@@ -171,11 +172,6 @@ void LED_GrabberApp::draw()
     
     // draw calibration points
     {
-//        gl::ScopedMatrixPush mv(gl::MODEL_VIEW_MATRIX);
-        
-//        gl::load_matrix(gl::MODEL_VIEW_MATRIX, glm::scale(gl::mat4(),
-//                                                          gl::vec3(gl::window_dimension(), 1.f)));
-        
         auto points_tmp = m_calibration_points->value();
         for(auto &p : points_tmp){ p = p * gl::window_dimension(); }
         
@@ -267,10 +263,13 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
             case Key::_L:
                 {
                     m_camera->stop_capture();
+                    m_led_grabber->set_warp(m_warp_component->quad_warp(0));
                     
                     background_queue().submit([this]()
                     {
-                        auto points = m_led_grabber->run_calibration(*m_cam_index, *m_led_calib_color);
+                        auto points = m_led_grabber->run_calibration(*m_cam_index,
+                                                                     *m_calibration_thresh,
+                                                                     *m_led_calib_color);
                         main_queue().submit([this, points]()
                         {
                             m_calibration_points->set_value(std::move(points));

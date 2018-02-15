@@ -27,35 +27,18 @@ namespace
 gl::vec2 find_dot(const cv::Mat &the_frame, float the_thresh, const cv::Mat &the_mask = cv::Mat())
 {
     cv::UMat gray, thresh;
-    cv::cvtColor(the_frame, gray, cv::COLOR_RGB2GRAY);
+    the_frame.copyTo(gray, the_mask);
+    
+    cv::cvtColor(gray, gray, cv::COLOR_RGB2GRAY);
     cv::blur(gray, gray, cv::Size(5, 5));
     
+//    if(the_mask){ gray}
     cv::threshold(gray, thresh, the_thresh, 255, cv::THRESH_TOZERO);
     auto kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)).getUMat(cv::ACCESS_READ);
     cv::morphologyEx(thresh, thresh, cv::MORPH_OPEN, kernel);
     
     cv::Moments mom = cv::moments(thresh, false);
     return gl::vec2(mom.m10 / mom.m00, mom.m01 / mom.m00);
-    
-//    float weight_sum = 0.0;
-//    gl::vec2 center(0);
-//
-//    for(size_t y = 0; y < gray.rows; ++y)
-//    {
-//        uint8_t* line_ptr = gray.ptr<uint8_t>(y);
-//        uint8_t* thresh_ptr = thresh.ptr<uint8_t>(y);
-//
-//        for(size_t x = 0; x < gray.cols; ++x)
-//        {
-//            if(thresh_ptr[x])
-//            {
-//                float weight = line_ptr[x] / 255.f;
-//                weight_sum += weight;
-//                center += weight * gl::vec2(x, y);
-//            }
-//        }
-//    }
-//    return center / weight_sum;
 }
     
 std::array<uint8_t, 256> create_gamma_lut(float the_brighntess, float the_gamma,
@@ -72,13 +55,12 @@ std::array<uint8_t, 256> create_gamma_lut(float the_brighntess, float the_gamma,
     
 struct LED_GrabberImpl
 {
-//    ConnectionPtr m_connection;
     std::mutex m_connection_mutex;
     std::set<ConnectionPtr> m_connections;
     std::string m_device_name;
     
     gl::vec4 m_brightness;
-    gl::ivec2 m_resolution;
+    gl::ivec2 m_resolution, m_unit_resolution;
     ImagePtr m_buffer_img;
     bool m_dirty_lut = true;
     
@@ -100,7 +82,7 @@ struct LED_GrabberImpl
 LED_Grabber::LED_Grabber():
 m_impl(std::make_unique<LED_GrabberImpl>())
 {
-    set_resolution(58, 6);
+    set_unit_resolution(58, 7);
     set_brightness(gl::vec4(0.4f, 0.4f, 0.4f, 0.2f));
 }
     
@@ -141,62 +123,6 @@ const std::set<ConnectionPtr>& LED_Grabber::connections() const
 bool LED_Grabber::is_initialized() const
 {
     return !m_impl->m_connections.empty();
-}
-
-bool LED_Grabber::grab_from_image(const ImagePtr &the_image)
-{
-    if(is_initialized())
-    {
-        size_t num_segs = m_impl->m_resolution.y * m_impl->m_connections.size();
-        size_t num_leds_per_seg = m_impl->m_resolution.x;
-        
-        uint8_t src_offset_r, src_offset_g, src_offset_b;
-
-        // get channel offsets
-        the_image->offsets(&src_offset_r, &src_offset_g, &src_offset_b);
-
-        auto resized_img = the_image->resize(3 * num_leds_per_seg, 3 * num_segs, 3);
-        resized_img = resized_img->blur();
-        resized_img = resized_img->resize(num_leds_per_seg, num_segs, 4);
-        
-        if(!resized_img->data){ return false; }
-        
-        uint8_t *ptr = resized_img->data;
-        uint8_t *end_ptr = resized_img->data + resized_img->num_bytes();
-        
-        // create/update lookup tables, if necessary
-        if(m_impl->m_dirty_lut){ m_impl->create_lut(); }
-        
-        // swizzle components, apply brightness and gamma
-        for(; ptr < end_ptr; ptr += 4)
-        {
-            uint32_t c = *(reinterpret_cast<uint32_t*>(ptr));
-            uint8_t *ch = reinterpret_cast<uint8_t*>(&c);
-
-            ptr[dst_offset_r] = m_impl->m_gamma_r[ch[src_offset_r]];
-            ptr[dst_offset_g] = m_impl->m_gamma_g[ch[src_offset_g]];
-            ptr[dst_offset_b] = m_impl->m_gamma_b[ch[src_offset_b]];
-
-            // Y′ = 0.299 R′ + 0.587 G′ + 0.114 B′
-            ptr[dst_offset_w] = m_impl->m_gamma_w[(uint8_t)(ch[2] * 0.299f + ch[1] * 0.587f + ch[0] * 0.114f)];
-        }
-        
-        // reverse every second line (using a zigzag wiring-layout)
-        for(uint32_t i = 0; i < resized_img->height; ++i)
-        {
-            if(i % 2)
-            {
-                uint32_t* line_ptr = ((uint32_t*)resized_img->data) + i * resized_img->width;
-                std::reverse(line_ptr, line_ptr + resized_img->width);
-            }
-        }
-
-        send_data(resized_img->data, resized_img->num_bytes());
-
-        m_impl->m_buffer_img = resized_img;
-        return true;
-    }
-    return false;
 }
 
 bool LED_Grabber::grab_from_image_calib(const ImagePtr &the_image)
@@ -279,15 +205,24 @@ gl::ivec2 LED_Grabber::resolution() const
     return m_impl->m_resolution;
 }
 
-
 void LED_Grabber::set_resolution(uint32_t the_width, uint32_t the_height)
 {
     m_impl->m_resolution = gl::ivec2(the_width, the_height);
 }
 
+gl::ivec2 LED_Grabber::unit_resolution() const
+{
+    return m_impl->m_unit_resolution;
+}
+    
+void LED_Grabber::set_unit_resolution(uint32_t the_width, uint32_t the_height)
+{
+    m_impl->m_unit_resolution = gl::ivec2(the_width, the_height);
+}
+    
 void LED_Grabber::send_data(const std::vector<uint8_t> &the_data) const
 {
-
+    send_data(the_data.data(), the_data.size());
 }
 
 void LED_Grabber::send_data(const uint8_t *the_data, size_t the_num_bytes) const
@@ -321,6 +256,7 @@ void LED_Grabber::send_data(const uint8_t *the_data, size_t the_num_bytes) const
 }
     
 std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
+                                                   int the_thresh,
                                                    const gl::Color the_calib_color)
 {
     std::vector<uint32_t> calib_data(m_impl->m_resolution.x * m_impl->m_resolution.y, 0);
@@ -352,11 +288,23 @@ std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
             if(mask.cols != frame.cols || mask.rows != frame.rows)
             {
                 mask = cv::Mat(frame.rows, frame.cols, CV_8UC1);
-//                cv::fillConvexPoly(mask, )
+                
+                auto corners = m_impl->m_warp.corners();
+                
+                for(auto &c : corners)
+                { c = gl::vec2(c.x, 1 - c.y) * gl::vec2(frame.cols - 1, frame.rows - 1); }
+                
+                std::vector<cv::Point> points = {
+                    {(int)corners[0].x, (int)corners[0].y},
+                    {(int)corners[1].x, (int)corners[1].y},
+                    {(int)corners[3].x, (int)corners[3].y},
+                    {(int)corners[2].x, (int)corners[2].y}
+                };
+                cv::fillConvexPoly(mask, points, 255);
             }
             
             //TODO: mask input with quad
-            auto p = find_dot(frame, 245.f);
+            auto p = find_dot(frame, the_thresh, mask);
             if(!std::isnan(p.x) && !std::isnan(p.y))
             {
                 LOG_TRACE << "got frame: " << j << " --> " << glm::to_string(p);

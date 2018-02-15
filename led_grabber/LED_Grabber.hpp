@@ -50,12 +50,21 @@ public:
     
     //!
     void set_resolution(uint32_t the_width, uint32_t the_height);
-
+    
+    //!
+    gl::ivec2 unit_resolution() const;
+    
+    //!
+    void set_unit_resolution(uint32_t the_width, uint32_t the_height);
+    
+    //!
     void send_data(const std::vector<uint8_t> &the_data) const;
-
+    
+    //!
     void send_data(const uint8_t *the_data, size_t the_num_bytes) const;
     
     std::vector<gl::vec2> run_calibration(int the_cam_index = 0,
+                                          int the_thresh = 245,
                                           const gl::Color the_calib_color = gl::COLOR_WHITE);
     
     void set_calibration_points(const std::vector<gl::vec2> &the_points);

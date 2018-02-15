@@ -69,7 +69,8 @@ namespace kinski
         m_broadcast_port = Property_<uint32_t>::create("discovery broadcast port", 55555);
         
         Property_<uint32_t>::Ptr
-        m_cam_index = Property_<uint32_t>::create("camera index", 0);
+        m_cam_index = Property_<uint32_t>::create("camera index", 0),
+        m_calibration_thresh = RangedProperty<uint32_t>::create("calibration thresh", 245, 0, 255);
         
         Property_<gl::Color>::Ptr
         m_led_channels = Property_<gl::Color>::create("LED channel brightness",
