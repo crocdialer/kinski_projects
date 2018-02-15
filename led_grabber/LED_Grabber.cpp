@@ -83,7 +83,7 @@ struct LED_GrabberImpl
     bool m_dirty_lut = true;
     
     std::vector<gl::vec2> m_calibration_points;
-    glm::mat4 m_warp_matrix;
+    gl::Warp m_warp;
     
     std::array<uint8_t, 256> m_gamma_r, m_gamma_g, m_gamma_b, m_gamma_w;
     
@@ -215,7 +215,7 @@ bool LED_Grabber::grab_from_image_calib(const ImagePtr &the_image)
         // for all calibration points, use matrix to project them.
         // then sample input image at location
         // gamma correction etc.
-        auto m = m_impl->m_warp_matrix;
+        auto m = m_impl->m_warp.inv_transform();
         const auto points = m_impl->m_calibration_points;
         
         for(size_t i = 0; i < points.size(); ++i)
@@ -320,18 +320,23 @@ void LED_Grabber::send_data(const uint8_t *the_data, size_t the_num_bytes) const
     }
 }
     
-std::vector<gl::vec2> LED_Grabber::run_calibration()
+std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
+                                                   const gl::Color the_calib_color)
 {
-    std::vector<uint32_t> calib_data(58 * 7, 0);
+    std::vector<uint32_t> calib_data(m_impl->m_resolution.x * m_impl->m_resolution.y, 0);
     
-    cv::Mat frame;
+    cv::Mat frame, mask;
     cv::VideoCapture cap;
-    cap.open(0);
+    cap.open(the_cam_index);
     std::vector<gl::vec2> points(calib_data.size());
+    size_t num_calib_errors = 0;
     
     for(size_t j = 0; j < calib_data.size(); ++j)
     {
-        calib_data[j] = std::numeric_limits<uint32_t >::max();
+        calib_data[j] = static_cast<uint32_t>(0xFF * the_calib_color.r) << (dst_offset_r * 8) |
+                        static_cast<uint32_t>(0xFF * the_calib_color.g) << (dst_offset_g * 8) |
+                        static_cast<uint32_t>(0xFF * the_calib_color.b) << (dst_offset_b * 8) |
+                        static_cast<uint32_t>(0xFF * the_calib_color.a) << (dst_offset_w * 8);
         
         // send data
         send_data((uint8_t*)calib_data.data(), calib_data.size() * sizeof(uint32_t));
@@ -344,12 +349,23 @@ std::vector<gl::vec2> LED_Grabber::run_calibration()
         // grab frame and find location of dot
         if(cap.read(frame) && !frame.empty())
         {
-//            constexpr size_t num_samples = 3;
+            if(mask.cols != frame.cols || mask.rows != frame.rows)
+            {
+                mask = cv::Mat(frame.rows, frame.cols, CV_8UC1);
+//                cv::fillConvexPoly(mask, )
+            }
             
             //TODO: mask input with quad
             auto p = find_dot(frame, 245.f);
-            LOG_DEBUG << "got frame: " << j << " --> " << glm::to_string(p);
-            points[j] = p / gl::vec2(frame.cols, frame.rows);
+            if(!std::isnan(p.x) && !std::isnan(p.y))
+            {
+                LOG_TRACE << "got frame: " << j << " --> " << glm::to_string(p);
+                points[j] = p / gl::vec2(frame.cols, frame.rows);
+            }else
+            {
+                LOG_DEBUG << "invalid calibration point: " << num_calib_errors++;
+                points[j] = gl::vec2(-1);
+            }
         }
     }
     cap.release();
@@ -361,9 +377,9 @@ void LED_Grabber::set_calibration_points(const std::vector<gl::vec2> &the_points
     m_impl->m_calibration_points = the_points;
 }
     
-void LED_Grabber::set_warp_matrix(const glm::mat4 &the_matrix)
+    void LED_Grabber::set_warp(const gl::Warp &the_warp)
 {
-    m_impl->m_warp_matrix = the_matrix;
+    m_impl->m_warp = the_warp;
 }
 
 }// namespace

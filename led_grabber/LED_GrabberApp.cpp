@@ -57,9 +57,12 @@ void LED_GrabberApp::setup()
     register_property(m_is_master);
     register_property(m_use_discovery_broadcast);
     register_property(m_broadcast_port);
+    register_property(m_cam_index);
+    register_property(m_led_calib_color);
     register_property(m_led_channels);
     m_calibration_points->set_tweakable(false);
     register_property(m_calibration_points);
+    register_property(m_led_res);
     register_property(m_downsample_res);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
@@ -103,7 +106,7 @@ void LED_GrabberApp::setup()
     m_check_ip_timer.expires_from_now(5.f);
     
     // grabber setup
-    m_led_grabber->set_resolution(58, 7);
+    m_led_grabber->set_resolution(m_led_res->value().x, m_led_res->value().y);
     m_led_update_timer = Timer(main_queue().io_service());
 }
 
@@ -132,7 +135,7 @@ void LED_GrabberApp::update(float timeDelta)
             }
             else{ m_image_input = gl::create_image_from_texture(textures()[TEXTURE_INPUT]); }
             
-            m_led_grabber->set_warp_matrix(m_warp_component->quad_warp(0).inv_transform());
+            m_led_grabber->set_warp(m_warp_component->quad_warp(0));
             m_led_grabber->grab_from_image_calib(m_image_input);
             m_led_update_timer.expires_from_now(0.04);
         }
@@ -267,7 +270,7 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                     
                     background_queue().submit([this]()
                     {
-                        auto points = m_led_grabber->run_calibration();
+                        auto points = m_led_grabber->run_calibration(*m_cam_index, *m_led_calib_color);
                         main_queue().submit([this, points]()
                         {
                             m_calibration_points->set_value(std::move(points));
@@ -479,6 +482,11 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
             });
         }
     }
+    else if(theProperty == m_cam_index)
+    {
+        m_camera->stop_capture();
+        m_camera = media::CameraController::create(*m_cam_index);
+    }
     else if(theProperty == m_led_channels)
     {
         m_led_grabber->set_brightness(*m_led_channels);
@@ -486,6 +494,10 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_calibration_points)
     {
         m_led_grabber->set_calibration_points(m_calibration_points->value());
+    }
+    else if(theProperty == m_led_res)
+    {
+        m_led_grabber->set_resolution(m_led_res->value().x, m_led_res->value().y);
     }
     else if(theProperty == m_downsample_res)
     {

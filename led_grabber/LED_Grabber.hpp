@@ -9,6 +9,7 @@
 
 #include "core/Connection.hpp"
 #include "gl/Texture.hpp"
+#include "gl/Warp.hpp"
 
 namespace kinski
 {
@@ -54,11 +55,12 @@ public:
 
     void send_data(const uint8_t *the_data, size_t the_num_bytes) const;
     
-    std::vector<gl::vec2> run_calibration();
+    std::vector<gl::vec2> run_calibration(int the_cam_index = 0,
+                                          const gl::Color the_calib_color = gl::COLOR_WHITE);
     
     void set_calibration_points(const std::vector<gl::vec2> &the_points);
     
-    void set_warp_matrix(const glm::mat4 &the_matrix);
+    void set_warp(const gl::Warp &the_warp);
     
 private:
     

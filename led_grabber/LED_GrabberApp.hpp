@@ -68,11 +68,17 @@ namespace kinski
         Property_<uint32_t>::Ptr
         m_broadcast_port = Property_<uint32_t>::create("discovery broadcast port", 55555);
         
+        Property_<uint32_t>::Ptr
+        m_cam_index = Property_<uint32_t>::create("camera index", 0);
+        
         Property_<gl::Color>::Ptr
         m_led_channels = Property_<gl::Color>::create("LED channel brightness",
-                                                     gl::Color(0.4f, 0.4f, 0.4f, 0.2f));
+                                                     gl::Color(0.4f, 0.4f, 0.4f, 0.2f)),
+        m_led_calib_color = Property_<gl::Color>::create("LED calibration color",
+                                                         gl::Color(0.f, 0.f, 0.f, 0.7f));
         
         Property_<gl::vec2>::Ptr
+        m_led_res = Property_<gl::vec2>::create("LED resolution", gl::vec2(58, 7)),
         m_downsample_res = Property_<gl::vec2>::create("downsample resolution", gl::vec2(320, 240));
         
         Property_<std::vector<gl::vec2>>::Ptr
