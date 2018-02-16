@@ -7,6 +7,7 @@
 //
 
 #include "LED_GrabberApp.hpp"
+#include "sensors/sensors.h"
 #include <mutex>
 
 using namespace std;
@@ -36,6 +37,9 @@ namespace
     
     //! force reset of playback speed (secs)
     const double g_sync_duration = 1.0;
+    
+    //!
+    uint16_t g_led_tcp_port = 44444;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -109,6 +113,16 @@ void LED_GrabberApp::setup()
     // grabber setup
     m_led_grabber->set_resolution(m_led_res->value().x, m_led_res->value().y);
     m_led_update_timer = Timer(main_queue().io_service());
+    
+    // connect serial
+    auto query_cb = [this](const std::string &the_id, ConnectionPtr the_device)
+    {
+        if(the_id == "LEDS" && m_led_grabber->connect(the_device))
+        {
+            LOG_DEBUG << "grabber connected: " << the_device->description();
+        }
+    };
+    sensors::scan_for_serials(background_queue().io_service(), query_cb);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -455,7 +469,7 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
                     if(is_new_connection)
                     {
                         auto con = net::tcp_connection::create(background_queue().io_service(),
-                                                               remote_ip, 33333);
+                                                               remote_ip, g_led_tcp_port);
                         con->set_connect_cb([this](ConnectionPtr c)
                         {
                             if(m_led_grabber->connect(c))

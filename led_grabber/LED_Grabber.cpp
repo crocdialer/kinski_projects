@@ -285,6 +285,7 @@ std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
         // grab frame and find location of dot
         if(cap.read(frame) && !frame.empty())
         {
+            // mask input with quadcorners
             if(mask.cols != frame.cols || mask.rows != frame.rows)
             {
                 mask = cv::Mat(frame.rows, frame.cols, CV_8UC1);
@@ -303,7 +304,6 @@ std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
                 cv::fillConvexPoly(mask, points, 255);
             }
             
-            //TODO: mask input with quad
             auto p = find_dot(frame, the_thresh, mask);
             if(!std::isnan(p.x) && !std::isnan(p.y))
             {

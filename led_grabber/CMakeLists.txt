@@ -1,5 +1,5 @@
 set(LIBS ${LIBS})
-set(MODULES media opencv)
+set(MODULES media opencv sensors)
 if(APPLE)
 #link_directories(/usr/local/opt/opencv)
 endif()
