@@ -50,8 +50,11 @@ namespace kinski
         net::tcp_server m_tcp_server;
         Timer m_udp_broadcast_timer, m_device_scan_timer;
         
+        gl::ivec2 m_unit_resolution{58, 14};
+        
         void search_devices();
         void new_connection_cb(net::tcp_connection_ptr the_con);
+        void tcp_data_cb(net::tcp_connection_ptr, const std::vector<uint8_t>&);
     };
 }// namespace kinski
 

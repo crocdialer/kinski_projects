@@ -121,7 +121,7 @@ void LED_Proxy::mouse_move(const MouseEvent &e)
 
 void LED_Proxy::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-
+    if(the_touches.size() == 1){ set_display_tweakbar(!display_tweakbar()); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -177,14 +177,41 @@ void LED_Proxy::update_property(const Property::ConstPtr &theProperty)
 
 void LED_Proxy::new_connection_cb(net::tcp_connection_ptr the_con)
 {
+    LOG_DEBUG << "client connected: " << the_con->description();
+    
     the_con->set_disconnect_cb([this](ConnectionPtr client)
     {
+        LOG_DEBUG << "client disconnected: " << client->description();
         std::lock_guard<std::mutex> lock(g_client_mutex);
         m_devices.erase(client);
     });
     
     std::lock_guard<std::mutex> lock(g_client_mutex);
     m_devices.insert(the_con);
+}
+
+/////////////////////////////////////////////////////////////////
+
+void LED_Proxy::tcp_data_cb(net::tcp_connection_ptr the_con, const std::vector<uint8_t> &the_data)
+{
+    if(the_data.size() < 64)
+    {
+        std::string str(the_data.begin(), the_data.end());
+        LOG_DEBUG << str;
+        
+        auto lines = split(str, '\n');
+        
+        for(auto &l : lines)
+        {
+            auto tokens = split(l, ':');
+            
+            if(tokens.size() == 2)
+            {
+                LOG_DEBUG << "comd: " << tokens[0] << " -> " << tokens[1];
+            }
+        }
+    }
+    else{ LOG_DEBUG << "datablob: " << the_data.size() / 1024 << " kB"; }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -200,6 +227,7 @@ void LED_Proxy::search_devices()
             
             the_device->set_disconnect_cb([this](ConnectionPtr the_device)
             {
+                LOG_DEBUG << "LED unit disconnected: " << the_device->description();
                 std::lock_guard<std::mutex> lock(g_device_mutex);
                 m_devices.erase(the_device);
             });
