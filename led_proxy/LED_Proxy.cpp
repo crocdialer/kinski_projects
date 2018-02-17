@@ -179,6 +179,8 @@ void LED_Proxy::new_connection_cb(net::tcp_connection_ptr the_con)
 {
     LOG_DEBUG << "client connected: " << the_con->description();
     
+    the_con->set_tcp_receive_cb(std::bind(&LED_Proxy::tcp_data_cb, this,
+                                std::placeholders::_1, std::placeholders::_2));
     the_con->set_disconnect_cb([this](ConnectionPtr client)
     {
         LOG_DEBUG << "client disconnected: " << client->description();
@@ -194,24 +196,73 @@ void LED_Proxy::new_connection_cb(net::tcp_connection_ptr the_con)
 
 void LED_Proxy::tcp_data_cb(net::tcp_connection_ptr the_con, const std::vector<uint8_t> &the_data)
 {
-    if(the_data.size() < 64)
+    if(!m_bytes_to_write)
     {
         std::string str(the_data.begin(), the_data.end());
-        LOG_DEBUG << str;
-        
+//        LOG_DEBUG << str;
+
         auto lines = split(str, '\n');
-        
+
         for(auto &l : lines)
         {
             auto tokens = split(l, ':');
-            
+
             if(tokens.size() == 2)
             {
-                LOG_DEBUG << "comd: " << tokens[0] << " -> " << tokens[1];
+                LOG_TRACE_2 << "cmd: " << tokens[0] << " -> " << tokens[1];
+                if(tokens[0] == "DATA"){ m_bytes_to_write = string_to<size_t>(tokens[1]); }
+                else if(tokens[0] == "ID"){ the_con->write(g_id + "\n"); }
             }
         }
     }
-    else{ LOG_DEBUG << "datablob: " << the_data.size() / 1024 << " kB"; }
+    else
+    {
+        LOG_TRACE_2 << "datablob: " << the_data.size() / 1024 << " kB";
+        
+        m_bytes_to_write -= std::min(m_bytes_to_write, the_data.size());
+        m_buffer.insert(m_buffer.end(), the_data.begin(), the_data.end());
+        
+        if(!m_bytes_to_write)
+        {
+            send_data(m_buffer.data(), m_buffer.size());
+            m_buffer.clear();
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////
+
+void LED_Proxy::send_data(const uint8_t *the_data, size_t the_num_bytes) const
+{
+    size_t max_bytes = 4 * m_unit_resolution.x * m_unit_resolution.y;
+    size_t total_bytes_written = 0;
+    
+    std::list<ConnectionPtr> cons;
+    {
+        std::unique_lock<std::mutex> lock(g_device_mutex);
+        cons.insert(cons.end(), m_devices.begin(), m_devices.end());
+        cons.sort([](const ConnectionPtr &lhs, const ConnectionPtr &rhs)
+        {
+            return lhs->description() < rhs->description();
+        });
+    }
+    
+    for(auto &c : cons)
+    {
+        size_t bytes_to_write = std::min(max_bytes, the_num_bytes);
+        if(!bytes_to_write){ return; }
+        the_num_bytes -= bytes_to_write;
+        
+        c->write("DATA:" + to_string(bytes_to_write) + "\n");
+        
+        while(bytes_to_write)
+        {
+            size_t num_bytes_tranferred = c->write_bytes(the_data + total_bytes_written,
+                                                         bytes_to_write);
+            bytes_to_write -= num_bytes_tranferred;
+            total_bytes_written += num_bytes_tranferred;
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////
