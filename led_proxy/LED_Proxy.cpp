@@ -177,6 +177,9 @@ void LED_Proxy::update_property(const Property::ConstPtr &theProperty)
 
 void LED_Proxy::new_connection_cb(net::tcp_connection_ptr the_con)
 {
+    // stop broadcasting
+    m_udp_broadcast_timer.cancel();
+    
     LOG_DEBUG << "client connected: " << the_con->description();
     
     the_con->set_tcp_receive_cb(std::bind(&LED_Proxy::tcp_data_cb, this,
@@ -186,6 +189,7 @@ void LED_Proxy::new_connection_cb(net::tcp_connection_ptr the_con)
         LOG_DEBUG << "client disconnected: " << client->description();
         std::lock_guard<std::mutex> lock(g_client_mutex);
         m_devices.erase(client);
+        m_udp_broadcast_timer.expires_from_now(g_udp_broadcast_interval);
     });
     
     std::lock_guard<std::mutex> lock(g_client_mutex);
@@ -198,34 +202,57 @@ void LED_Proxy::tcp_data_cb(net::tcp_connection_ptr the_con, const std::vector<u
 {
     if(!m_bytes_to_write)
     {
-        std::string str(the_data.begin(), the_data.end());
-//        LOG_DEBUG << str;
-
-        auto lines = split(str, '\n');
-
-        for(auto &l : lines)
+        auto end_it = std::find(the_data.begin(), the_data.end(), '\n');
+        
+        if(end_it != the_data.end())
         {
-            auto tokens = split(l, ':');
-
-            if(tokens.size() == 2)
+            end_it++;
+            auto sub_str = std::string(the_data.begin(), end_it);
+            auto tokens = split(sub_str, ':');
+            
+            if(tokens.size() == 1)
+            {
+                if(tokens[0] == "ID"){ the_con->write(g_id + "\n"); }
+            }
+            else if(tokens.size() >= 2)
             {
                 LOG_TRACE_2 << "cmd: " << tokens[0] << " -> " << tokens[1];
                 if(tokens[0] == "DATA"){ m_bytes_to_write = string_to<size_t>(tokens[1]); }
-                else if(tokens[0] == "ID"){ the_con->write(g_id + "\n"); }
+                else if(tokens[0] == "SEGMENT")
+                {
+                    std::vector<int> segments;
+                    for(size_t i = 1; i < tokens.size(); i++)
+                    {
+                        segments.push_back(string_to<int>(tokens[i]));
+                    }
+                    set_segments(segments);
+                }
+            }
+            if(end_it != the_data.end())
+            {
+//                LOG_DEBUG << str.substr(pos);
+                tcp_data_cb(the_con, std::vector<uint8_t>(end_it, the_data.end()));
             }
         }
     }
     else
     {
         LOG_TRACE_2 << "datablob: " << the_data.size() / 1024 << " kB";
+        size_t num_bytes = std::min(m_bytes_to_write - m_bytes_written, the_data.size());
+        m_bytes_written += num_bytes;
+        m_buffer.insert(m_buffer.end(), the_data.begin(), the_data.begin() + num_bytes);
         
-        m_bytes_to_write -= std::min(m_bytes_to_write, the_data.size());
-        m_buffer.insert(m_buffer.end(), the_data.begin(), the_data.end());
-        
-        if(!m_bytes_to_write)
+        if(m_bytes_written >= m_bytes_to_write)
         {
+            m_bytes_to_write = m_bytes_written = 0;
             send_data(m_buffer.data(), m_buffer.size());
             m_buffer.clear();
+            
+            if(num_bytes < the_data.size())
+            {
+                tcp_data_cb(the_con, std::vector<uint8_t>(the_data.begin() + num_bytes,
+                                                          the_data.end()));
+            }
         }
     }
 }
@@ -262,6 +289,37 @@ void LED_Proxy::send_data(const uint8_t *the_data, size_t the_num_bytes) const
             bytes_to_write -= num_bytes_tranferred;
             total_bytes_written += num_bytes_tranferred;
         }
+    }
+}
+
+/////////////////////////////////////////////////////////////////
+
+void LED_Proxy::set_segments(const std::vector<int> &the_segments) const
+{
+    std::vector<ConnectionPtr> cons;
+    {
+        std::unique_lock<std::mutex> lock(g_device_mutex);
+        cons.insert(cons.end(), m_devices.begin(), m_devices.end());
+        std::sort(cons.begin(), cons.end(), [](const ConnectionPtr &lhs, const ConnectionPtr &rhs)
+        {
+            return lhs->description() < rhs->description();
+        });
+    }
+    std::map<ConnectionPtr, std::list<int>> map;
+    
+    for(auto s : the_segments)
+    {
+        if(s >= 0 && s < (m_unit_resolution.y * cons.size()))
+        {
+            map[cons[s / m_unit_resolution.y]].push_back(s % m_unit_resolution.y);
+        }
+    }
+    
+    for(const auto &p : map)
+    {
+        std::stringstream param_stream;
+        for(auto index : p.second){ param_stream << index << " "; }
+        p.first->write("SEGMENT: " + param_stream.str() + "\n");
     }
 }
 

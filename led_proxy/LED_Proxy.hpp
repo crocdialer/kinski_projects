@@ -53,11 +53,13 @@ namespace kinski
         gl::ivec2 m_unit_resolution{58, 14};
         std::vector<uint8_t> m_buffer;
         
-        size_t m_bytes_to_write = 0;
+        size_t m_bytes_to_write = 0, m_bytes_written = 0;
         void search_devices();
         void new_connection_cb(net::tcp_connection_ptr the_con);
         void tcp_data_cb(net::tcp_connection_ptr, const std::vector<uint8_t>&);
+        
         void send_data(const uint8_t *the_data, size_t the_num_bytes) const;
+        void set_segments(const std::vector<int> &the_segments) const;
     };
 }// namespace kinski
 

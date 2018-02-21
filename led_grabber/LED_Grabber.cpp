@@ -132,7 +132,7 @@ bool LED_Grabber::grab_from_image_calib(const ImagePtr &the_image)
         // create/update lookup tables, if necessary
         if(m_impl->m_dirty_lut){ m_impl->create_lut(); }
         
-        std::vector<uint32_t> led_data(m_impl->m_calibration_points.size());
+        std::vector<uint32_t> led_data(m_impl->m_calibration_points.size(), 0);
         
         // get channel offsets
         uint8_t src_offset_r, src_offset_g, src_offset_b;
