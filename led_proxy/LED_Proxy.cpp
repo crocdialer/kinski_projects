@@ -217,13 +217,15 @@ void LED_Proxy::tcp_data_cb(net::tcp_connection_ptr the_con, const std::vector<u
             else if(tokens.size() >= 2)
             {
                 LOG_TRACE_2 << "cmd: " << tokens[0] << " -> " << tokens[1];
-                if(tokens[0] == "DATA"){ m_bytes_to_write = string_to<size_t>(tokens[1]); }
+                auto args = split(tokens[1]);
+                
+                if(tokens[0] == "DATA"){ m_bytes_to_write = string_to<size_t>(args[0]); }
                 else if(tokens[0] == "SEGMENT")
                 {
                     std::vector<int> segments;
-                    for(size_t i = 1; i < tokens.size(); i++)
+                    for(size_t i = 0; i < args.size(); i++)
                     {
-                        segments.push_back(string_to<int>(tokens[i]));
+                        segments.push_back(string_to<int>(args[i]));
                     }
                     set_segments(segments);
                 }
@@ -306,6 +308,7 @@ void LED_Proxy::set_segments(const std::vector<int> &the_segments) const
         });
     }
     std::map<ConnectionPtr, std::list<int>> map;
+    for(auto c : cons){ map[c] = {}; }
     
     for(auto s : the_segments)
     {
@@ -319,7 +322,9 @@ void LED_Proxy::set_segments(const std::vector<int> &the_segments) const
     {
         std::stringstream param_stream;
         for(auto index : p.second){ param_stream << index << " "; }
-        p.first->write("SEGMENT: " + param_stream.str() + "\n");
+        auto config_str = "SEGMENT: " + param_stream.str() + "\n";
+        LOG_DEBUG << p.first->description() << "-> " << config_str.substr(0, config_str.size() - 2);
+        p.first->write(config_str);
     }
 }
 
