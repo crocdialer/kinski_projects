@@ -23,6 +23,14 @@ namespace
     // WBRG byte-order in debug SK6812-RGBW strip
     constexpr uint8_t dst_offset_r = 1, dst_offset_g = 0, dst_offset_b = 2, dst_offset_w = 3;
 }
+
+uint32_t color_to_uint(const gl::Color &the_color)
+{
+    return  static_cast<uint32_t>(0xFF * the_color.r) << (dst_offset_r * 8) |
+            static_cast<uint32_t>(0xFF * the_color.g) << (dst_offset_g * 8) |
+            static_cast<uint32_t>(0xFF * the_color.b) << (dst_offset_b * 8) |
+            static_cast<uint32_t>(0xFF * the_color.a) << (dst_offset_w * 8);
+}
     
 gl::vec2 find_dot(const cv::Mat &the_frame, float the_thresh, const cv::Mat &the_mask = cv::Mat())
 {
@@ -255,15 +263,11 @@ void LED_Grabber::show_segment(size_t the_segment) const
     gl::Color color_first = gl::COLOR_GREEN, color_last = gl::COLOR_RED;
     color_first.a = color_last.a = 0;
     
-    led_data[first] = static_cast<uint32_t>(0xFF * color_first.r) << (dst_offset_r * 8) |
-                      static_cast<uint32_t>(0xFF * color_first.g) << (dst_offset_g * 8) |
-                      static_cast<uint32_t>(0xFF * color_first.b) << (dst_offset_b * 8) |
-                      static_cast<uint32_t>(0xFF * color_first.a) << (dst_offset_w * 8);
-    
-    led_data[last] = static_cast<uint32_t>(0xFF * color_last.r) << (dst_offset_r * 8) |
-                     static_cast<uint32_t>(0xFF * color_last.g) << (dst_offset_g * 8) |
-                     static_cast<uint32_t>(0xFF * color_last.b) << (dst_offset_b * 8) |
-                     static_cast<uint32_t>(0xFF * color_last.a) << (dst_offset_w * 8);
+    for(size_t w = 0; w < 4; w++)
+    {
+        led_data[first + w] = color_to_uint(color_first);
+        led_data[last - w] = color_to_uint(color_last);
+    }
     
     // send data
     send_data((uint8_t*)led_data.data(), led_data.size() * sizeof(uint32_t));
@@ -271,7 +275,7 @@ void LED_Grabber::show_segment(size_t the_segment) const
     
 std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
                                                    int the_thresh,
-                                                   const gl::Color the_calib_color)
+                                                   const gl::Color &the_calib_color)
 {
     std::vector<uint32_t> calib_data(m_impl->m_resolution.x * m_impl->m_resolution.y, 0);
     
@@ -283,10 +287,7 @@ std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
     
     for(size_t j = 0; j < calib_data.size(); ++j)
     {
-        calib_data[j] = static_cast<uint32_t>(0xFF * the_calib_color.r) << (dst_offset_r * 8) |
-                        static_cast<uint32_t>(0xFF * the_calib_color.g) << (dst_offset_g * 8) |
-                        static_cast<uint32_t>(0xFF * the_calib_color.b) << (dst_offset_b * 8) |
-                        static_cast<uint32_t>(0xFF * the_calib_color.a) << (dst_offset_w * 8);
+        calib_data[j] = color_to_uint(the_calib_color);
         
         // send data
         send_data((uint8_t*)calib_data.data(), calib_data.size() * sizeof(uint32_t));

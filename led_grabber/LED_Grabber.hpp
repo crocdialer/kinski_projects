@@ -65,7 +65,7 @@ public:
     
     std::vector<gl::vec2> run_calibration(int the_cam_index = 0,
                                           int the_thresh = 245,
-                                          const gl::Color the_calib_color = gl::COLOR_WHITE);
+                                          const gl::Color &the_calib_color = gl::COLOR_WHITE);
     
     const std::vector<gl::vec2>& calibration_points() const;
     

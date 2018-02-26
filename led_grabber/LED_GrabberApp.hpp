@@ -32,6 +32,7 @@ namespace kinski
         
         RunMode m_runmode = MODE_DEFAULT;
         size_t m_current_calib_segment = 0;
+        gl::vec2 m_last_calib_click;
         
         std::vector<gl::vec2> m_points;
         LED_GrabberPtr m_led_grabber = LED_Grabber::create();
@@ -101,6 +102,11 @@ namespace kinski
         void send_network_cmd(const std::string &the_cmd);
         void ping_delay(const std::string &the_ip);
         void create_playlist(const std::string &the_base_dir);
+        
+        // led calib
+        void set_runmode(RunMode);
+        
+        void process_calib_click(const gl::vec2 &the_click_pos);
         
     public:
 

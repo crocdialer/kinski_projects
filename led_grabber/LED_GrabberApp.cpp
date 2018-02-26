@@ -40,6 +40,8 @@ namespace
     
     //!
     uint16_t g_led_tcp_port = 44444;
+    
+    double g_led_refresh_interval = 0.04;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -155,7 +157,7 @@ void LED_GrabberApp::update(float timeDelta)
                 
                 m_led_grabber->set_warp(m_warp_component->quad_warp(0));
                 m_led_grabber->grab_from_image_calib(m_image_input);
-                m_led_update_timer.expires_from_now(0.04);
+                m_led_update_timer.expires_from_now(g_led_refresh_interval);
             }
             m_needs_redraw = has_new_image || m_needs_redraw;
         }
@@ -164,15 +166,13 @@ void LED_GrabberApp::update(float timeDelta)
     else if(m_runmode == MODE_MANUAL_CALIBRATION)
     {
         m_needs_redraw = true;
-        size_t num_leds = m_led_res->value().x * m_led_res->value().y;
         
-        if(m_calibration_points->value().size() != num_leds)
+        if(m_led_update_timer.has_expired())
         {
-            m_calibration_points->value().resize(num_leds, gl::vec2(-1));
+            m_led_grabber->set_warp(m_warp_component->quad_warp(0));
+            m_led_grabber->show_segment(m_current_calib_segment);
+            m_led_update_timer.expires_from_now(g_led_refresh_interval);
         }
-        
-        m_led_grabber->set_warp(m_warp_component->quad_warp(0));
-        m_led_grabber->show_segment(m_current_calib_segment);
     }
 }
 
@@ -271,6 +271,7 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                 {
                     m_current_calib_segment = m_current_calib_segment == 0 ?
                         (size_t)(m_led_res->value().y) - 1 : m_current_calib_segment - 1;
+                    m_last_calib_click = gl::vec2(-1);
                 }
                 break;
                 
@@ -283,6 +284,7 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                 else if(m_runmode == MODE_MANUAL_CALIBRATION)
                 {
                     m_current_calib_segment = (m_current_calib_segment + 1) % (size_t)(m_led_res->value().y);
+                    m_last_calib_click = gl::vec2(-1);
                 }
                 break;
             case Key::_UP:
@@ -330,8 +332,11 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                 break;
                 
             case Key::_M:
-                if(m_runmode == MODE_DEFAULT){ m_runmode = MODE_MANUAL_CALIBRATION; }
-                else{ m_runmode = MODE_DEFAULT; }
+                if(m_runmode == MODE_DEFAULT)
+                {
+                    set_runmode(MODE_MANUAL_CALIBRATION);
+                }
+                else{ set_runmode(MODE_DEFAULT); }
                 break;
             default:
                 break;
@@ -365,7 +370,11 @@ void LED_GrabberApp::key_release(const KeyEvent &e)
 
 void LED_GrabberApp::mouse_press(const MouseEvent &e)
 {
-    ViewerApp::mouse_press(e);
+    if(m_runmode == MODE_MANUAL_CALIBRATION)
+    {
+        process_calib_click(e.getPos());
+    }
+    else{ ViewerApp::mouse_press(e); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -972,4 +981,45 @@ void LED_GrabberApp::setup_rpc_interface()
     {
         con->write(to_string(m_media->is_playing()));
     });
+}
+
+void LED_GrabberApp::set_runmode(RunMode the_mode)
+{
+    m_runmode = the_mode;
+    
+    if(the_mode == MODE_MANUAL_CALIBRATION)
+    {
+        m_last_calib_click = gl::vec2(-1);
+        size_t num_leds = m_led_res->value().x * m_led_res->value().y;
+        
+        if(m_calibration_points->value().size() != num_leds)
+        {
+            m_calibration_points->value().resize(num_leds, gl::vec2(-1));
+        }
+    }
+}
+
+void LED_GrabberApp::process_calib_click(const gl::vec2 &the_click_pos)
+{
+    if(m_last_calib_click != gl::vec2(-1))
+    {
+        // generate points via lerp
+        size_t num_points = m_led_res->value().x;
+        auto &calib_points = m_calibration_points->value();
+        auto diff = (the_click_pos / gl::window_dimension()) - m_last_calib_click;
+        
+        for(size_t i = 0; i < num_points; ++i)
+        {
+            float frac = i / (float) num_points;
+            calib_points[m_current_calib_segment * m_led_res->value().x + i] =
+                m_last_calib_click + frac * diff;
+        }
+        m_last_calib_click = gl::vec2(-1);
+        m_calibration_points->notify_observers();
+        m_current_calib_segment = (m_current_calib_segment + 1) % (int) m_led_res->value().y;
+    }
+    else
+    {
+        m_last_calib_click = the_click_pos / gl::window_dimension();
+    }
 }
