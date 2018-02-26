@@ -21,7 +21,7 @@ class LED_Grabber
 public:
     static const std::string id();
     
-    static LED_GrabberPtr create(ConnectionPtr the_uart_device = ConnectionPtr());
+    static LED_GrabberPtr create(ConnectionPtr the_con = ConnectionPtr());
     
     virtual ~LED_Grabber();
     
@@ -31,10 +31,10 @@ public:
     
     bool is_initialized() const;
     
-    bool grab_from_image(const ImagePtr &the_image);
-    bool grab_from_image_calib(const ImagePtr &the_image);
+    void show_segment(size_t the_segment) const;
     
-    gl::Texture output_texture();
+    //!
+    bool grab_from_image_calib(const ImagePtr &the_image);
     
     //!
     gl::vec4 brightness() const;
@@ -66,6 +66,8 @@ public:
     std::vector<gl::vec2> run_calibration(int the_cam_index = 0,
                                           int the_thresh = 245,
                                           const gl::Color the_calib_color = gl::COLOR_WHITE);
+    
+    const std::vector<gl::vec2>& calibration_points() const;
     
     void set_calibration_points(const std::vector<gl::vec2> &the_points);
     

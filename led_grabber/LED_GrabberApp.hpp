@@ -28,6 +28,11 @@ namespace kinski
         enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_CAM_INPUT = 1, TEXTURE_OUTPUT = 2,
             TEXTURE_LEDS = 3};
         
+        enum RunMode{MODE_DEFAULT, MODE_MANUAL_CALIBRATION};
+        
+        RunMode m_runmode = MODE_DEFAULT;
+        size_t m_current_calib_segment = 0;
+        
         std::vector<gl::vec2> m_points;
         LED_GrabberPtr m_led_grabber = LED_Grabber::create();
         ImagePtr m_image_input;
@@ -58,7 +63,8 @@ namespace kinski
         m_auto_play = Property_<bool>::create("autoplay", true),
         m_force_audio_jack = Property_<bool>::create("force 3.5mm audio-jack", false),
         m_use_discovery_broadcast = Property_<bool>::create("use discovery broadcast", true),
-        m_is_master = Property_<bool>::create("is master", false);
+        m_is_master = Property_<bool>::create("is master", false),
+        m_show_cam_overlay = Property_<bool>::create("show camera overlay", false);
         
         Property_<float>::Ptr
         m_playback_speed = Property_<float>::create("playback speed", 1.f),

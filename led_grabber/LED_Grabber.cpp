@@ -91,10 +91,10 @@ LED_Grabber::~LED_Grabber()
     
 }
     
-LED_GrabberPtr LED_Grabber::create(ConnectionPtr the_device)
+LED_GrabberPtr LED_Grabber::create(ConnectionPtr the_con)
 {
     LED_GrabberPtr ret(new LED_Grabber());
-    if(the_device){ ret->connect(the_device); }
+    if(the_con){ ret->connect(the_con); }
     return ret;
 }
     
@@ -156,9 +156,7 @@ bool LED_Grabber::grab_from_image_calib(const ImagePtr &the_image)
                loc_y > 0 && loc_y < the_image->height)
             {
                 // sample from image
-                uint32_t c = *(reinterpret_cast<uint32_t*>(the_image->at(loc_x, loc_y)));
-                uint8_t *ch = reinterpret_cast<uint8_t*>(&c);
-                
+                uint8_t *ch = the_image->at(loc_x, loc_y);
                 uint8_t *out_ptr = (uint8_t*)(led_data.data() + i);
                 
                 out_ptr[dst_offset_r] = m_impl->m_gamma_r[ch[src_offset_r]];
@@ -166,22 +164,15 @@ bool LED_Grabber::grab_from_image_calib(const ImagePtr &the_image)
                 out_ptr[dst_offset_b] = m_impl->m_gamma_b[ch[src_offset_b]];
                 
                 // Y′ = 0.299 R′ + 0.587 G′ + 0.114 B′
-                out_ptr[dst_offset_w] = m_impl->m_gamma_w[(uint8_t)(ch[2] * 0.299f + ch[1] * 0.587f + ch[0] * 0.114f)];
+                out_ptr[dst_offset_w] = m_impl->m_gamma_w[(uint8_t)(ch[src_offset_r] * 0.299f +
+                                                                    ch[src_offset_g] * 0.587f +
+                                                                    ch[src_offset_b] * 0.114f)];
             }
         }
-        
         send_data((uint8_t*)led_data.data(), led_data.size() * sizeof(uint32_t));
         return true;
     }
     return false;
-}
-    
-gl::Texture LED_Grabber::output_texture()
-{
-    auto ret = gl::create_texture_from_image(m_impl->m_buffer_img);
-    ret.set_mag_filter(GL_NEAREST);
-//    ret.set_swizzle()
-    return ret;
 }
     
 gl::vec4 LED_Grabber::brightness() const
@@ -254,6 +245,29 @@ void LED_Grabber::send_data(const uint8_t *the_data, size_t the_num_bytes) const
         }
     }
 }
+
+void LED_Grabber::show_segment(size_t the_segment) const
+{
+    std::vector<uint32_t> led_data(m_impl->m_resolution.x * m_impl->m_resolution.y, 0);
+    
+    // first, last index of segment
+    size_t first = the_segment * m_impl->m_resolution.x, last = first + m_impl->m_resolution.x - 1;
+    gl::Color color_first = gl::COLOR_GREEN, color_last = gl::COLOR_RED;
+    color_first.a = color_last.a = 0;
+    
+    led_data[first] = static_cast<uint32_t>(0xFF * color_first.r) << (dst_offset_r * 8) |
+                      static_cast<uint32_t>(0xFF * color_first.g) << (dst_offset_g * 8) |
+                      static_cast<uint32_t>(0xFF * color_first.b) << (dst_offset_b * 8) |
+                      static_cast<uint32_t>(0xFF * color_first.a) << (dst_offset_w * 8);
+    
+    led_data[last] = static_cast<uint32_t>(0xFF * color_last.r) << (dst_offset_r * 8) |
+                     static_cast<uint32_t>(0xFF * color_last.g) << (dst_offset_g * 8) |
+                     static_cast<uint32_t>(0xFF * color_last.b) << (dst_offset_b * 8) |
+                     static_cast<uint32_t>(0xFF * color_last.a) << (dst_offset_w * 8);
+    
+    // send data
+    send_data((uint8_t*)led_data.data(), led_data.size() * sizeof(uint32_t));
+}
     
 std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
                                                    int the_thresh,
@@ -318,6 +332,11 @@ std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
     }
     cap.release();
     return points;
+}
+
+const std::vector<gl::vec2>& LED_Grabber::calibration_points() const
+{
+    return m_impl->m_calibration_points;
 }
     
 void LED_Grabber::set_calibration_points(const std::vector<gl::vec2> &the_points)

@@ -62,6 +62,7 @@ void LED_GrabberApp::setup()
     register_property(m_use_discovery_broadcast);
     register_property(m_broadcast_port);
     register_property(m_cam_index);
+    register_property(m_show_cam_overlay);
     register_property(m_calibration_thresh);
     register_property(m_led_calib_color);
     register_property(m_led_channels);
@@ -131,33 +132,48 @@ void LED_GrabberApp::update(float timeDelta)
 {
     if(m_reload_media){ reload_media(); }
     
-    if(m_camera){ m_camera->copy_frame_to_texture(textures()[TEXTURE_CAM_INPUT]); }
-    if(m_media)
+    if(m_runmode == MODE_DEFAULT)
     {
-        bool has_new_image = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT], true);
-        
-        if(has_new_image && m_led_update_timer.has_expired())
+        if(m_camera){ m_camera->copy_frame_to_texture(textures()[TEXTURE_CAM_INPUT]); }
+        if(m_media)
         {
-            auto tex_size = textures()[TEXTURE_INPUT].size();
+            bool has_new_image = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT], true);
             
-            if(tex_size.x > m_fbo_downsample.size().x || tex_size.y > m_fbo_downsample.size().y)
+            if(has_new_image && m_led_update_timer.has_expired())
             {
-                gl::render_to_texture(m_fbo_downsample, [this]()
+                auto tex_size = textures()[TEXTURE_INPUT].size();
+                
+                if(tex_size.x > m_fbo_downsample.size().x || tex_size.y > m_fbo_downsample.size().y)
                 {
-                    gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension());
-                });
-                m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
+                    gl::render_to_texture(m_fbo_downsample, [this]()
+                    {
+                        gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension());
+                    });
+                    m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
+                }
+                else{ m_image_input = gl::create_image_from_texture(textures()[TEXTURE_INPUT]); }
+                
+                m_led_grabber->set_warp(m_warp_component->quad_warp(0));
+                m_led_grabber->grab_from_image_calib(m_image_input);
+                m_led_update_timer.expires_from_now(0.04);
             }
-            else{ m_image_input = gl::create_image_from_texture(textures()[TEXTURE_INPUT]); }
-            
-            m_led_grabber->set_warp(m_warp_component->quad_warp(0));
-            m_led_grabber->grab_from_image_calib(m_image_input);
-            m_led_update_timer.expires_from_now(0.04);
+            m_needs_redraw = has_new_image || m_needs_redraw;
         }
-        m_needs_redraw = has_new_image || m_needs_redraw;
+        else{ m_needs_redraw = true; }
     }
-    else
+    else if(m_runmode == MODE_MANUAL_CALIBRATION)
+    {
         m_needs_redraw = true;
+        size_t num_leds = m_led_res->value().x * m_led_res->value().y;
+        
+        if(m_calibration_points->value().size() != num_leds)
+        {
+            m_calibration_points->value().resize(num_leds, gl::vec2(-1));
+        }
+        
+        m_led_grabber->set_warp(m_warp_component->quad_warp(0));
+        m_led_grabber->show_segment(m_current_calib_segment);
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -173,7 +189,7 @@ void LED_GrabberApp::draw()
     }
     
     // draw camera input, if any
-    if(m_camera->is_capturing() && textures()[TEXTURE_CAM_INPUT])
+    if((m_camera->is_capturing() || *m_show_cam_overlay) && textures()[TEXTURE_CAM_INPUT])
     {
         auto mat = gl::Material::create();
         mat->set_blending();
@@ -182,6 +198,12 @@ void LED_GrabberApp::draw()
         mat->set_diffuse(gl::Color(1, 1, 1, 0.8f));
         mat->set_textures({textures()[TEXTURE_CAM_INPUT]});
         gl::draw_quad(gl::window_dimension(), mat);
+    }
+    
+    if(m_runmode == MODE_MANUAL_CALIBRATION)
+    {
+        gl::draw_text_2D("segment: " + to_string(m_current_calib_segment), fonts()[1],
+                         gl::COLOR_WHITE, vec2(50));
     }
     
     // draw calibration points
@@ -240,13 +262,28 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                 break;
                 
             case Key::_LEFT:
-                m_media->seek_to_time(m_media->current_time() - (e.isShiftDown() ? 30 : 5));
-                m_needs_redraw = true;
+                if(m_runmode == MODE_DEFAULT)
+                {
+                    m_media->seek_to_time(m_media->current_time() - (e.isShiftDown() ? 30 : 5));
+                    m_needs_redraw = true;
+                }
+                else if(m_runmode == MODE_MANUAL_CALIBRATION)
+                {
+                    m_current_calib_segment = m_current_calib_segment == 0 ?
+                        (size_t)(m_led_res->value().y) - 1 : m_current_calib_segment - 1;
+                }
                 break;
                 
             case Key::_RIGHT:
-                m_media->seek_to_time(m_media->current_time() + (e.isShiftDown() ? 30 : 5));
-                m_needs_redraw = true;
+                if(m_runmode == MODE_DEFAULT)
+                {
+                    m_media->seek_to_time(m_media->current_time() + (e.isShiftDown() ? 30 : 5));
+                    m_needs_redraw = true;
+                }
+                else if(m_runmode == MODE_MANUAL_CALIBRATION)
+                {
+                    m_current_calib_segment = (m_current_calib_segment + 1) % (size_t)(m_led_res->value().y);
+                }
                 break;
             case Key::_UP:
                 *m_volume += .1f;
@@ -290,6 +327,11 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                         });
                     });
                 }
+                break;
+                
+            case Key::_M:
+                if(m_runmode == MODE_DEFAULT){ m_runmode = MODE_MANUAL_CALIBRATION; }
+                else{ m_runmode = MODE_DEFAULT; }
                 break;
             default:
                 break;
