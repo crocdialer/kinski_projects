@@ -204,6 +204,11 @@ void LED_GrabberApp::draw()
     {
         gl::draw_text_2D("segment: " + to_string(m_current_calib_segment), fonts()[1],
                          gl::COLOR_WHITE, vec2(50));
+        
+        if(m_last_calib_click != gl::vec2(-1))
+        {
+            gl::draw_points_2D({m_last_calib_click * gl::window_dimension()}, gl::COLOR_GREEN, 5.f);
+        }
     }
     
     // draw calibration points
@@ -632,8 +637,8 @@ void LED_GrabberApp::reload_media()
     }
     else if(media_type == fs::FileType::IMAGE)
     {
-        m_media->unload();
-        textures()[TEXTURE_INPUT] = gl::create_texture_from_file(abs_path);
+//        m_media->unload();
+        textures()[TEXTURE_CAM_INPUT] = gl::create_texture_from_file(abs_path);
     }
     else if(media_type == fs::FileType::FONT)
     {
