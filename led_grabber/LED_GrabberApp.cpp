@@ -64,6 +64,7 @@ void LED_GrabberApp::setup()
     register_property(m_use_discovery_broadcast);
     register_property(m_broadcast_port);
     register_property(m_cam_index);
+    register_property(m_calib_image_path);
     register_property(m_show_cam_overlay);
     register_property(m_calibration_thresh);
     register_property(m_led_calib_color);
@@ -152,6 +153,9 @@ void LED_GrabberApp::update(float timeDelta)
                         gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension());
                     });
                     m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
+                    textures()[TEXTURE_DOWNSAMPLE] = m_fbo_downsample.texture();
+//                    textures()[TEXTURE_DOWNSAMPLE].set_mag_filter(GL_NEAREST);
+//                    textures()[TEXTURE_DOWNSAMPLE].set_min_filter(GL_NEAREST);
                 }
                 else{ m_image_input = gl::create_image_from_texture(textures()[TEXTURE_INPUT]); }
                 
@@ -377,7 +381,7 @@ void LED_GrabberApp::mouse_press(const MouseEvent &e)
 {
     if(m_runmode == MODE_MANUAL_CALIBRATION)
     {
-        process_calib_click(e.getPos());
+        if(!display_tweakbar()){ process_calib_click(e.getPos()); }
     }
     else{ ViewerApp::mouse_press(e); }
 }
@@ -435,7 +439,16 @@ void LED_GrabberApp::touch_move(const MouseEvent &e, const std::set<const Touch*
 
 void LED_GrabberApp::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
-    *m_media_path = files.back();
+    auto media_type = fs::get_file_type(files.back());
+    if(media_type == fs::FileType::IMAGE)
+    {
+        *m_calib_image_path = files.back();
+    }
+    else if(media_type == fs::FileType::DIRECTORY)
+    {
+        create_playlist(files.back());
+    }
+    else{ *m_media_path = files.back(); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -454,6 +467,10 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
     if(theProperty == m_media_path)
     {
         m_reload_media = true;
+    }
+    else if(theProperty == m_calib_image_path)
+    {
+        textures()[TEXTURE_CAM_INPUT] = gl::create_texture_from_file(*m_calib_image_path);
     }
 #ifdef KINSKI_ARM
     else if(theProperty == m_use_warping)
@@ -566,11 +583,23 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_led_res)
     {
+        size_t num_leds = m_led_res->value().x * m_led_res->value().y;
+        
+        if(m_calibration_points->value().size() != num_leds)
+        {
+            m_calibration_points->value().resize(num_leds, gl::vec2(-1));
+        }
+        
         m_led_grabber->set_resolution(m_led_res->value().x, m_led_res->value().y);
     }
     else if(theProperty == m_downsample_res)
     {
-        m_fbo_downsample = gl::Fbo(m_downsample_res->value());
+        auto val = gl::ivec2(m_downsample_res->value());
+        
+        if(!m_fbo_downsample || m_fbo_downsample.size() != val)
+        {
+            m_fbo_downsample = gl::Fbo(val);
+        }
     }
 }
 
@@ -635,11 +664,11 @@ void LED_GrabberApp::reload_media()
         });
         m_media->load(abs_path, *m_auto_play, *m_loop, render_target, audio_target);
     }
-    else if(media_type == fs::FileType::IMAGE)
-    {
-//        m_media->unload();
-        textures()[TEXTURE_CAM_INPUT] = gl::create_texture_from_file(abs_path);
-    }
+//    else if(media_type == fs::FileType::IMAGE)
+//    {
+////        m_media->unload();
+//        textures()[TEXTURE_CAM_INPUT] = gl::create_texture_from_file(abs_path);
+//    }
     else if(media_type == fs::FileType::FONT)
     {
         m_media->unload();
@@ -995,12 +1024,6 @@ void LED_GrabberApp::set_runmode(RunMode the_mode)
     if(the_mode == MODE_MANUAL_CALIBRATION)
     {
         m_last_calib_click = gl::vec2(-1);
-        size_t num_leds = m_led_res->value().x * m_led_res->value().y;
-        
-        if(m_calibration_points->value().size() != num_leds)
-        {
-            m_calibration_points->value().resize(num_leds, gl::vec2(-1));
-        }
     }
 }
 
@@ -1015,7 +1038,7 @@ void LED_GrabberApp::process_calib_click(const gl::vec2 &the_click_pos)
         
         for(size_t i = 0; i < num_points; ++i)
         {
-            float frac = i / (float) num_points;
+            float frac = i / (float) (num_points - 1);
             calib_points[m_current_calib_segment * m_led_res->value().x + i] =
                 m_last_calib_click + frac * diff;
         }

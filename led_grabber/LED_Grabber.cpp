@@ -24,7 +24,7 @@ namespace
     constexpr uint8_t dst_offset_r = 1, dst_offset_g = 0, dst_offset_b = 2, dst_offset_w = 3;
 }
 
-uint32_t color_to_uint(const gl::Color &the_color)
+inline uint32_t color_to_uint(const gl::Color &the_color)
 {
     return  static_cast<uint32_t>(0xFF * the_color.r) << (dst_offset_r * 8) |
             static_cast<uint32_t>(0xFF * the_color.g) << (dst_offset_g * 8) |
@@ -254,7 +254,7 @@ void LED_Grabber::send_data(const uint8_t *the_data, size_t the_num_bytes) const
     }
 }
 
-void LED_Grabber::show_segment(size_t the_segment) const
+void LED_Grabber::show_segment(size_t the_segment, int the_mark_width) const
 {
     std::vector<uint32_t> led_data(m_impl->m_resolution.x * m_impl->m_resolution.y, 0);
     
@@ -263,7 +263,9 @@ void LED_Grabber::show_segment(size_t the_segment) const
     gl::Color color_first = gl::COLOR_GREEN, color_last = gl::COLOR_RED;
     color_first.a = color_last.a = 0;
     
-    for(size_t w = 0; w < 4; w++)
+    int width = std::min(the_mark_width, m_impl->m_resolution.x);
+    
+    for(size_t w = 0; w < width; w++)
     {
         led_data[first + w] = color_to_uint(color_first);
         led_data[last - w] = color_to_uint(color_last);

@@ -31,7 +31,7 @@ public:
     
     bool is_initialized() const;
     
-    void show_segment(size_t the_segment) const;
+    void show_segment(size_t the_segment, int the_mark_width = 4) const;
     
     //!
     bool grab_from_image_calib(const ImagePtr &the_image);

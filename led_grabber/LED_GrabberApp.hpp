@@ -26,7 +26,7 @@ namespace kinski
     private:
 
         enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_CAM_INPUT = 1, TEXTURE_OUTPUT = 2,
-            TEXTURE_LEDS = 3};
+            TEXTURE_DOWNSAMPLE = 3};
         
         enum RunMode{MODE_DEFAULT, MODE_MANUAL_CALIBRATION};
         
@@ -57,7 +57,10 @@ namespace kinski
         std::string m_ip_adress;
         
         // properties
-        Property_<string>::Ptr m_media_path = Property_<string>::create("media path", "");
+        Property_<string>::Ptr
+        m_media_path = Property_<string>::create("media path", ""),
+        m_calib_image_path = Property_<string>::create("calib image path", "");
+        
         Property_<bool>::Ptr
         m_scale_to_fit = Property_<bool>::create("scale_to_fit", false),
         m_loop = Property_<bool>::create("loop", false),

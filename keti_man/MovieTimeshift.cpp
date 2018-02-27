@@ -232,7 +232,7 @@ void MovieTimeshift::set_fullscreen(bool b, int monitor_index)
     main_queue().submit([this]()
     {
         m_noise = gl::Noise(gl::vec2(m_noise_scale_x->value(), m_noise_scale_y->value()),
-                            *m_noise_map_size);
+                            gl::ivec2(m_noise_map_size->value()));
         m_offscreen_size->notify_observers();
     });
 }
@@ -420,7 +420,7 @@ void MovieTimeshift::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_noise_map_size || theProperty == m_noise_scale_x ||
             theProperty == m_noise_scale_y)
     {
-        m_noise.set_tex_size(*m_noise_map_size);
+        m_noise.set_tex_size(gl::ivec2(m_noise_map_size->value()));
         m_noise.set_scale(vec2(m_noise_scale_x->value(), m_noise_scale_y->value()));
     }
     else if(theProperty == m_offscreen_size)
