@@ -432,7 +432,7 @@ void LED_GrabberApp::touch_end(const MouseEvent &e, const std::set<const Touch*>
 
 void LED_GrabberApp::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-
+    
 }
 
 /////////////////////////////////////////////////////////////////
@@ -440,14 +440,8 @@ void LED_GrabberApp::touch_move(const MouseEvent &e, const std::set<const Touch*
 void LED_GrabberApp::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
     auto media_type = fs::get_file_type(files.back());
-    if(media_type == fs::FileType::IMAGE)
-    {
-        *m_calib_image_path = files.back();
-    }
-    else if(media_type == fs::FileType::DIRECTORY)
-    {
-        create_playlist(files.back());
-    }
+    if(media_type == fs::FileType::IMAGE){ *m_calib_image_path = files.back(); }
+    else if(media_type == fs::FileType::DIRECTORY){ create_playlist(files.back()); }
     else{ *m_media_path = files.back(); }
 }
 
@@ -852,6 +846,7 @@ void LED_GrabberApp::create_playlist(const std::string &the_base_dir)
         files[fs::get_file_type(p)].push_back(p);
     }
     auto file_list = concat_containers<fs::path>(files[fs::FileType::MOVIE], files[fs::FileType::AUDIO]);
+    std::sort(file_list.begin(), file_list.end());
     
     if(file_list.size() != m_playlist.size())
     {
