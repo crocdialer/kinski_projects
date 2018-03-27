@@ -78,8 +78,8 @@ namespace kinski
         };
         
         Property_<int>::Ptr
-        m_score_min = Property_<int>::create("score min", 999),
-        m_score_max = Property_<int>::create("score max", 0);
+        m_score_min = Property_<int>::create("score min", 0),
+        m_score_max = Property_<int>::create("score max", 999);
         
         float m_current_value;
         float m_display_value;

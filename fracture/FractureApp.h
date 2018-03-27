@@ -99,6 +99,8 @@ namespace kinski
         
         void reset_scene();
         
+        void handle_joystick_input(float the_time_delta);
+        
     public:
         FractureApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;

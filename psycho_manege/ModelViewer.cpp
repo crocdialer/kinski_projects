@@ -464,18 +464,10 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_cube_map_folder)
     {
-        if(fs::is_directory(*m_cube_map_folder))
+        async_load_texture(*m_cube_map_folder, [this](const gl::Texture &t)
         {
-          vector<gl::Texture> cube_planes;
-          for(auto &f : fs::get_directory_entries(*m_cube_map_folder))
-          {
-              if(fs::get_file_type(f) == fs::FileType::IMAGE)
-              {
-                  cube_planes.push_back(gl::create_texture_from_file(f));
-              }   
-          }
-          m_cube_map = gl::create_cube_texture(cube_planes);
-        }
+            m_cube_map = t;
+        }, false, true);
     }
     else if(theProperty == m_use_syphon)
     {

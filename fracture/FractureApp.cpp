@@ -49,13 +49,13 @@ void FractureApp::setup()
     m_physics.init();
     
     // box shooting stuff
+    float sphere_radius = .5f;
     m_box_shape = std::make_shared<btBoxShape>(btVector3(.5f, .5f, .5f));
-    m_sphere_shape = std::make_shared<btSphereShape>(.5f);
     m_box_geom = gl::Geometry::create_box(vec3(.5f));
-    m_shoot_mesh = gl::Mesh::create(gl::Geometry::create_sphere(.5f, 24),
+    m_sphere_shape = std::make_shared<btSphereShape>(sphere_radius);
+    m_shoot_mesh = gl::Mesh::create(gl::Geometry::create_sphere(sphere_radius, 24),
                                     gl::Material::create(gl::ShaderType::PHONG));
 //    m_shoot_mesh->material()->queue_texture_load("~/Downloads/tennisball.jpg");
-    m_shoot_mesh->material()->set_specular(gl::COLOR_BLACK);
     
     m_gui_cam = gl::OrthoCamera::create(0, gl::window_dimension().x, gl::window_dimension().y,
                                                0, 0, 1);
@@ -64,7 +64,7 @@ void FractureApp::setup()
     m_crosshair_pos.resize(get_joystick_states().size());
     for(auto &p : m_crosshair_pos){ p = gl::window_dimension() / 2.f; }
 
-//    scene()->set_renderer(gl::DeferredRenderer::create());
+    scene()->set_renderer(gl::DeferredRenderer::create());
 
     load_settings();
 }
@@ -80,32 +80,7 @@ void FractureApp::update(float timeDelta)
     if(m_needs_refracture){ fracture_test(*m_num_fracture_shards); }
     if(*m_physics_running){ m_physics.step_simulation(timeDelta); }
     
-    // update joystick positions
-    auto joystick_states = get_joystick_states();
-    
-    int i = 0;
-    
-    for(auto &joystick : joystick_states)
-    {
-        float min_val = .38f, multiplier = 400.f;
-        float x_axis = abs(joystick.axis()[0]) > min_val ? joystick.axis()[0] : 0.f;
-        float y_axis = abs(joystick.axis()[1]) > min_val ? joystick.axis()[1] : 0.f;
-        m_crosshair_pos[i] += vec2(x_axis, y_axis) * multiplier * timeDelta;
-        
-        if(m_fbos[0])
-        m_crosshair_pos[i] = glm::clamp(m_crosshair_pos[i], vec2(0), m_fbos[0].size());
-        
-        if(joystick.buttons()[11] && m_fbo_cam && m_time_since_last_shot > 1.f / *m_shots_per_sec)
-        {
-            auto ray = gl::calculate_ray(m_fbo_cam, m_crosshair_pos[i], m_fbos[0].size());
-            shoot_box(ray, *m_shoot_velocity);
-            m_time_since_last_shot = 0.f;
-        }
-        
-        if(joystick.buttons()[8]){ *m_physics_debug_draw = !*m_physics_debug_draw; }
-        if(joystick.buttons()[9]){ fracture_test(*m_num_fracture_shards); break; }
-        i++;
-    }
+    handle_joystick_input(timeDelta);
     
     // movie updates
     if(m_movie && m_movie->copy_frame_to_texture(textures()[TEXTURE_INNER], true)){}
@@ -175,7 +150,6 @@ void FractureApp::draw()
 void FractureApp::resize(int w ,int h)
 {
     ViewerApp::resize(w, h);
-    
     m_gui_cam = gl::OrthoCamera::create(0, w, h, 0, 0, 1);
 }
 
@@ -220,7 +194,7 @@ void FractureApp::mouse_press(const MouseEvent &e)
         gl::CameraPtr cam = *m_view_type == VIEW_OUTPUT ? m_fbo_cam : camera();
         auto ray = gl::calculate_ray(cam, vec2(e.getX(), e.getY()));
 //        shoot_box(ray, *m_shoot_velocity);
-        shoot_ball(ray, *m_shoot_velocity, .1f);
+        shoot_ball(ray, *m_shoot_velocity, .8f);
     }
 }
 
@@ -343,7 +317,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
         {
             if(fs::get_file_type(f) == fs::FileType::IMAGE)
             {
-                try{ tex_array.push_back(gl::create_texture_from_file(f, true, true, 8.f)); }
+                try{ tex_array.push_back(gl::create_texture_from_file(f, true, true, 16.f)); }
                 catch (Exception &e) { LOG_WARNING << e.what(); }
             }else if(fs::get_file_type(f) == fs::FileType::MOVIE)
             {
@@ -460,14 +434,14 @@ void FractureApp::fracture_test(uint32_t num_shards)
     auto phong = gl::create_shader(gl::ShaderType::PHONG);
     auto phong_shadow = gl::create_shader(gl::ShaderType::PHONG_SHADOWS);
     
-//    m_physics.set_world_boundaries(vec3(100), vec3(0, 100, 100 - .3f));
+    m_physics.set_world_boundaries(vec3(100), vec3(0));
+    
 //    btRigidBody *wall;
     {
         // ground plane
         auto ground_mat = gl::Material::create(phong_shadow);
-//        ground_mat->setDiffuse(gl::COLOR_BLACK);
         auto ground = gl::Mesh::create(gl::Geometry::create_box(vec3(.5f)), ground_mat);
-        ground->geometry()->colors().clear();
+        for(auto &c : ground->geometry()->colors()){ c = gl::COLOR_WHITE; }
         
         ground->set_scale(vec3(100, 1, 100));
         auto ground_aabb = ground->aabb();
@@ -543,19 +517,19 @@ void FractureApp::fracture_test(uint32_t num_shards)
         m_needs_refracture = false;
     }
     
-// original object without fracturing
+    // original object without fracturing
 //    m->position() += vec3(5, 0, 0);
-//    scene().addObject(m);
+//    scene()->add_object(m);
 //    m_physics.add_mesh_to_simulation(m);
     
     float density = 1.8;
-    float convex_margin = 0.00;
+    float convex_margin = 0.f;
     
     gl::MaterialPtr inner_mat(gl::Material::create()),
     outer_mat(gl::Material::create(phong_shadow));
     
-//    inner_mat->setDiffuse(gl::COLOR_RED);
-    inner_mat->set_specular(gl::COLOR_BLACK);
+//    inner_mat->set_diffuse(gl::COLOR_RED);
+//    inner_mat->set_emission(gl::COLOR_RED);
     
     outer_mat->set_textures({ textures()[TEXTURE_OUTER] });
     inner_mat->set_textures({ textures()[TEXTURE_INNER] });
@@ -595,4 +569,34 @@ void FractureApp::fracture_test(uint32_t num_shards)
     m_physics.attach_constraints(*m_breaking_thresh);
     
     LOG_DEBUG << "fracturing took " << t.time_elapsed() << " secs";
+}
+
+void FractureApp::handle_joystick_input(float the_time_delta)
+{
+    // update joystick positions
+    auto joystick_states = get_joystick_states();
+    
+    int i = 0;
+    
+    for(auto &joystick : joystick_states)
+    {
+        float min_val = .38f, multiplier = 400.f;
+        float x_axis = abs(joystick.axis()[0]) > min_val ? joystick.axis()[0] : 0.f;
+        float y_axis = abs(joystick.axis()[1]) > min_val ? joystick.axis()[1] : 0.f;
+        m_crosshair_pos[i] += vec2(x_axis, y_axis) * multiplier * the_time_delta;
+        
+        if(m_fbos[0])
+            m_crosshair_pos[i] = glm::clamp(m_crosshair_pos[i], vec2(0), vec2(m_fbos[0].size()));
+        
+        if(joystick.buttons()[11] && m_fbo_cam && m_time_since_last_shot > 1.f / *m_shots_per_sec)
+        {
+            auto ray = gl::calculate_ray(m_fbo_cam, m_crosshair_pos[i], m_fbos[0].size());
+            shoot_box(ray, *m_shoot_velocity);
+            m_time_since_last_shot = 0.f;
+        }
+        
+        if(joystick.buttons()[8]){ *m_physics_debug_draw = !*m_physics_debug_draw; }
+        if(joystick.buttons()[9]){ fracture_test(*m_num_fracture_shards); break; }
+        i++;
+    }
 }

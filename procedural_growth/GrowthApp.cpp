@@ -359,6 +359,7 @@ void GrowthApp::refresh_lsystem()
             //TODO: remove this when submaterials are tested well enough
             m->set_diffuse(glm::linearRand(vec4(0,0,.3,.8), vec4(.3,1,1,.9)));
             m->set_point_attenuation(0.1, .0002, 0);
+            m->set_roughness(.4);
         }
         
         uint32_t min = 0, max = m_entries.front().num_indices - 1;

@@ -112,13 +112,13 @@ void MovieTimeshift::update(float timeDelta)
         if(m_camera->copy_frame_to_image(m_camera_img))
         {
             textures()[TEXTURE_INPUT] = gl::create_texture_from_image(m_camera_img);
+            KINSKI_CHECK_GL_ERRORS();
             
             if(m_needs_array_refresh)
             {
                 m_needs_array_refresh = false;
                 gl::Texture::Format fmt;
                 fmt.set_target(GL_TEXTURE_3D);
-//                fmt.setInternalFormat(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT);
                 m_array_tex = gl::Texture(m_camera_img->width, m_camera_img->height, *m_num_buffer_frames, fmt);
                 m_array_tex.set_flipped(true);
                 
@@ -128,6 +128,7 @@ void MovieTimeshift::update(float timeDelta)
             
             // insert camera raw data into array texture
             insert_image_into_array_texture(m_camera_img, m_array_tex, m_current_index);
+            KINSKI_CHECK_GL_ERRORS();
             advance_index = true;
         }
     }
@@ -174,6 +175,8 @@ void MovieTimeshift::update(float timeDelta)
         m_custom_mat->uniform("u_current_index", m_current_index);
     }
     
+    KINSKI_CHECK_GL_ERRORS();
+    
     // update procedural noise texture
     textures()[TEXTURE_NOISE] = m_noise.simplex(get_application_time() * *m_noise_velocity + *m_noise_seed);
     m_custom_mat->set_textures({m_array_tex, textures()[TEXTURE_NOISE]});
@@ -215,6 +218,7 @@ void MovieTimeshift::draw()
     else
     {
         gl::draw_quad(gl::window_dimension(), m_custom_mat);
+        KINSKI_CHECK_GL_ERRORS();
     }
     
     if(display_tweakbar())

@@ -263,7 +263,7 @@ void LED_Grabber::show_segment(size_t the_segment, int the_mark_width) const
     gl::Color color_first = gl::COLOR_GREEN, color_last = gl::COLOR_RED;
     color_first.a = color_last.a = 0;
     
-    int width = std::min(the_mark_width, m_impl->m_resolution.x);
+    int width = std::min(the_mark_width, m_impl->m_resolution.x - 1);
     
     for(size_t w = 0; w < width; w++)
     {

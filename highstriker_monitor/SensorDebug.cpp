@@ -154,7 +154,8 @@ void SensorDebug::draw()
     gl::draw_text_2D("score: " + to_string(final_score(m_display_value)), fonts()[FONT_LARGE], gl::COLOR_RED,
                      vec2(310, 45));
 
-    if(final_score(m_current_value) != *m_score_min){}
+//    if(final_score(m_current_value) != *m_score_min){}
+    if(m_current_gamestate != IDLE){}
     else
     {
         auto color_ready = gl::COLOR_GREEN; color_ready.a = .3f;
@@ -187,6 +188,7 @@ void SensorDebug::key_release(const KeyEvent &e)
         case Key::_X:
         {
             float rnd_val = random(m_range_min_max->value().x, m_range_min_max->value().y);
+            m_sensor_last_max = rnd_val;
             process_impact(rnd_val);
         }
             break;

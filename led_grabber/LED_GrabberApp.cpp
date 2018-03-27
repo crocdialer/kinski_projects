@@ -154,8 +154,8 @@ void LED_GrabberApp::update(float timeDelta)
                     });
                     m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
                     textures()[TEXTURE_DOWNSAMPLE] = m_fbo_downsample.texture();
-//                    textures()[TEXTURE_DOWNSAMPLE].set_mag_filter(GL_NEAREST);
-//                    textures()[TEXTURE_DOWNSAMPLE].set_min_filter(GL_NEAREST);
+                    textures()[TEXTURE_DOWNSAMPLE].set_mag_filter(GL_NEAREST);
+                    textures()[TEXTURE_DOWNSAMPLE].set_min_filter(GL_NEAREST);
                 }
                 else{ m_image_input = gl::create_image_from_texture(textures()[TEXTURE_INPUT]); }
                 
