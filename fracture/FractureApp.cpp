@@ -278,7 +278,7 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
         
         if(m)
         {
-            for(auto &t : m->material()->textures()){ textures().push_back(t); }
+//            for(auto &t : m->material()->textures()){ textures().push_back(t); }
             
             scene()->remove_object(m_mesh);
             m_physics.remove_mesh_from_simulation(m_mesh);
@@ -528,11 +528,11 @@ void FractureApp::fracture_test(uint32_t num_shards)
     gl::MaterialPtr inner_mat(gl::Material::create()),
     outer_mat(gl::Material::create(phong_shadow));
     
-//    inner_mat->set_diffuse(gl::COLOR_RED);
-//    inner_mat->set_emission(gl::COLOR_RED);
+    inner_mat->set_diffuse(gl::COLOR_BLACK);
+    inner_mat->set_emission(gl::COLOR_WHITE);
     
-    outer_mat->set_textures({ textures()[TEXTURE_OUTER] });
-    inner_mat->set_textures({ textures()[TEXTURE_INNER] });
+    outer_mat->add_texture(textures()[TEXTURE_OUTER]);
+    inner_mat->add_texture(textures()[TEXTURE_INNER]);
     
     for(auto &s : m_voronoi_shards)
     {

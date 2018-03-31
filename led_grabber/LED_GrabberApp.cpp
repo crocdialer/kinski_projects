@@ -200,7 +200,7 @@ void LED_GrabberApp::draw()
         mat->set_depth_test(false);
         mat->set_depth_write(false);
         mat->set_diffuse(gl::Color(1, 1, 1, 0.8f));
-        mat->set_textures({textures()[TEXTURE_CAM_INPUT]});
+        mat->add_texture(textures()[TEXTURE_CAM_INPUT]);
         gl::draw_quad(gl::window_dimension(), mat);
     }
     

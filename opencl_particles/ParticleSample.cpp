@@ -54,7 +54,7 @@ void ParticleSample::init_particles(uint32_t the_num)
     m_particle_mesh->material()->set_diffuse(*m_point_color);
 
     auto t = textures()[TEXTURE_PARTICLE];
-    if(t){ m_particle_mesh->material()->set_textures({t}); }
+    if(t){ m_particle_mesh->material()->add_texture(t); }
     m_particle_mesh->material()->set_shader(gl::create_shader(gl::ShaderType::POINTS_SPHERE));
     m_particle_mesh->add_tag(gl::SceneRenderer::TAG_NO_CULL);
     m_particle_system->set_gravity(*m_gravity);
@@ -290,7 +290,7 @@ void ParticleSample::update_property(const Property::ConstPtr &theProperty)
         {
             textures()[TEXTURE_PARTICLE] = t;
 
-            if(m_particle_mesh){ m_particle_mesh->material()->set_textures({t}); }
+            if(m_particle_mesh){ m_particle_mesh->material()->add_texture(t); }
         });
     }
 }

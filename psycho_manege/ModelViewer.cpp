@@ -754,7 +754,7 @@ void ModelViewer::reset_lvl(size_t the_lvl)
             if(!*m_obj_texturing)
             {
                 m->materials()[j]->clear_textures();
-                m->materials()[j]->texture_paths().clear();
+                m->materials()[j]->queued_textures().clear();
             }
         }
         

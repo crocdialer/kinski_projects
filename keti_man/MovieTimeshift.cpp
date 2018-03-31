@@ -99,7 +99,7 @@ void MovieTimeshift::update(float timeDelta)
             LOG_DEBUG << "copying frames to Arraytexture took: " << t.time_elapsed() << " secs";
             
             m_custom_mat->uniform("u_num_frames", m_array_tex.depth());
-            m_custom_mat->set_textures({m_array_tex});
+            m_custom_mat->add_texture(m_array_tex);
         }
     }
 
@@ -122,7 +122,7 @@ void MovieTimeshift::update(float timeDelta)
                 m_array_tex = gl::Texture(m_camera_img->width, m_camera_img->height, *m_num_buffer_frames, fmt);
                 m_array_tex.set_flipped(true);
                 
-                m_custom_mat->set_textures({m_array_tex});
+                m_custom_mat->add_texture(m_array_tex);
                 m_custom_mat->uniform("u_num_frames", m_array_tex.depth());
             }
             
@@ -160,7 +160,7 @@ void MovieTimeshift::update(float timeDelta)
             m_array_tex = gl::Texture(w, h, *m_num_buffer_frames, fmt);
 //            m_array_tex.set_flipped(!*m_flip_image);
             
-            m_custom_mat->set_textures({m_array_tex});
+            m_custom_mat->add_texture(m_array_tex);
             m_custom_mat->uniform("u_num_frames", m_array_tex.depth());
         }
         
@@ -179,7 +179,8 @@ void MovieTimeshift::update(float timeDelta)
     
     // update procedural noise texture
     textures()[TEXTURE_NOISE] = m_noise.simplex(get_application_time() * *m_noise_velocity + *m_noise_seed);
-    m_custom_mat->set_textures({m_array_tex, textures()[TEXTURE_NOISE]});
+    m_custom_mat->add_texture(m_array_tex);
+    m_custom_mat->add_texture(textures()[TEXTURE_NOISE], gl::Material::TextureType::NOISE);
 }
 
 /////////////////////////////////////////////////////////////////

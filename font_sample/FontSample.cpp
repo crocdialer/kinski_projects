@@ -168,12 +168,12 @@ void FontSample::update_property(const Property::ConstPtr &theProperty)
             if(*m_use_sdf)
             {
                 m->material()->set_shader(gl::create_shader(gl::ShaderType::SDF_FONT));
-                m->material()->set_textures({fonts()[1].sdf_texture()});
+                m->material()->add_texture(fonts()[1].sdf_texture());
             }
             else
             {
                 m->material()->set_shader(gl::create_shader(gl::ShaderType::UNLIT));
-                m->material()->set_textures({fonts()[1].glyph_texture()});
+                m->material()->add_texture(fonts()[1].glyph_texture());
             }
         }
     }
