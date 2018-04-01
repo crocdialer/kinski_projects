@@ -125,12 +125,10 @@ void FractureApp::draw()
     {
         case VIEW_DEBUG:
             gl::set_matrices(camera());
-            if(draw_grid()){ gl::draw_grid(50, 50); }
-            
-            m_light_component->draw_light_dummies();
-            
             if(*m_physics_debug_draw){ m_physics.debug_render(camera()); }
-            else{ scene()->render(camera()); }
+            else{ scene()->render(camera()); gl::reset_state(); }
+            if(draw_grid()){ gl::draw_grid(50, 50); }
+            m_light_component->draw_light_dummies();
             break;
             
         case VIEW_OUTPUT:
