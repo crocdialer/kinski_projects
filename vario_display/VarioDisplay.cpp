@@ -18,36 +18,21 @@ using namespace glm;
 void VarioDisplay::setup()
 {
     ViewerApp::setup();
+    register_property(m_num_digits);
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     
     float scale = 10.f;
     m_proto_lines = create_proto();
     m_proto_lines->set_scale(scale);
-    
-//    m_proto_triangles = create_proto_triangles(.07f);
-//    m_proto_triangles->set_scale(10.f);
     setup_vario_map();
     
     auto aabb = m_proto_lines->aabb();
-    
-    for(int i = -2; i < 3; ++i)
-    {
-        auto m_line = m_proto_lines->copy();
-        m_line->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
-        scene()->add_object(m_line);
-        m_digits_lines.push_back(m_line);
-        
-//        auto m_triangle = m_proto_triangles->copy();
-//        m_triangle->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
-//        scene()->add_object(m_triangle);
-//        m_digits_triangles.push_back(m_triangle);
-    }
     m_cursor_mesh = create_cursor();
     m_cursor_mesh->set_scale(scale);
     m_cursor_mesh->set_position(gl::vec3(0, aabb.min.y * 1.1f, 0));
-    scene()->add_object(m_cursor_mesh);
-    
+    set_num_digits(*m_num_digits);
+
     load_settings();
 }
 
@@ -57,7 +42,7 @@ void VarioDisplay::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
     
-    m_cursor_mesh->position().x = m_digits_lines[std::min(m_current_index, 4)]->position().x;
+    m_cursor_mesh->position().x = m_digits_lines[std::min<int>(m_current_index, *m_num_digits)]->position().x;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -108,12 +93,12 @@ void VarioDisplay::key_release(const KeyEvent &e)
             break;
             
         case Key::_RIGHT:
-            m_current_index = std::min(m_current_index + 1, 4);
+            m_current_index = std::min<int>(m_current_index + 1, *m_num_digits - 1);
             break;
             
         default:
-            if((m_current_index < 5) && set_display(m_digits_lines[m_current_index], e.getChar()))
-            { m_current_index = std::min(m_current_index + 1, 5); }
+            if((m_current_index < (int)*m_num_digits) && set_display(m_digits_lines[m_current_index], e.getChar()))
+            { m_current_index = std::min<int>(m_current_index + 1, *m_num_digits); }
             break;
     }
 }
@@ -193,6 +178,11 @@ void VarioDisplay::teardown()
 void VarioDisplay::update_property(const Property::ConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
+
+    if(theProperty == m_num_digits)
+    {
+        set_num_digits(*m_num_digits);
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -397,4 +387,21 @@ void VarioDisplay::setup_vario_map()
     for(const auto &p : m_vario_map){ sum += p.second.size(); }
     sum /= m_vario_map.size();
     LOG_INFO << "average num_elements: " << to_string(sum, 2);
+}
+
+void VarioDisplay::set_num_digits(int the_num_digits)
+{
+    m_digits_lines.clear();
+    scene()->clear();
+
+    scene()->add_object(m_cursor_mesh);
+    auto aabb = m_proto_lines->aabb();
+
+    for(int i = -the_num_digits / 2; i <= the_num_digits / 2; ++i)
+    {
+        auto m_line = m_proto_lines->copy();
+        m_line->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
+        scene()->add_object(m_line);
+        m_digits_lines.push_back(m_line);
+    }
 }

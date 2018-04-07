@@ -20,6 +20,9 @@ namespace kinski
     class VarioDisplay : public ViewerApp
     {
     private:
+
+        Property_<uint32_t>::Ptr m_num_digits = Property_<uint32_t>::create("num digits", 5);
+
         gl::MeshPtr m_proto_lines, m_proto_triangles, m_cursor_mesh;
         std::vector<gl::MeshPtr> m_digits_lines, m_digits_triangles;
         int m_current_index = 0;
@@ -53,6 +56,8 @@ namespace kinski
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
         void update_property(const Property::ConstPtr &theProperty) override;
+
+        void set_num_digits(int i);
     };
 }// namespace kinski
 
