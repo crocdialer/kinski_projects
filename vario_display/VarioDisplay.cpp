@@ -393,14 +393,18 @@ void VarioDisplay::set_num_digits(int the_num_digits)
     m_digits_lines.clear();
     scene()->clear();
 
-    scene()->add_object(m_cursor_mesh);
     auto aabb = m_proto_lines->aabb();
-
-    for(int i = -the_num_digits / 2; i < the_num_digits / 2; ++i)
+    float step = 1.5f * aabb.width();
+    auto parent_obj = gl::Object3D::create();
+    parent_obj->add_child(m_cursor_mesh);
+    
+    for(int i = 0; i < the_num_digits; ++i)
     {
-        auto m_line = m_proto_lines->copy();
-        m_line->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
-        scene()->add_object(m_line);
-        m_digits_lines.push_back(m_line);
+        auto digit_mesh = m_proto_lines->copy();
+        digit_mesh->set_position(gl::vec3(i * step, 0, 0));
+        parent_obj->add_child(digit_mesh);
+        m_digits_lines.push_back(digit_mesh);
     }
+    parent_obj->set_position(-parent_obj->aabb().center());
+    scene()->add_object(parent_obj);
 }
