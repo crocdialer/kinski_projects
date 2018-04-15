@@ -42,7 +42,7 @@ void VarioDisplay::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
     
-    m_cursor_mesh->position().x = m_digits_lines[std::min<int>(m_current_index, *m_num_digits)]->position().x;
+    m_cursor_mesh->position().x = m_digits_lines[std::min<int>(m_current_index, *m_num_digits - 1)]->position().x;
 }
 
 /////////////////////////////////////////////////////////////////
