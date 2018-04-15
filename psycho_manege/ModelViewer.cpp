@@ -85,9 +85,9 @@ void ModelViewer::setup()
     observe_properties();
     add_tweakbar_for_component(shared_from_this());
     
-    m_light_component = std::make_shared<LightComponent>();
+//    m_light_component = std::make_shared<LightComponent>();
     m_light_component->set_lights(lights());
-    add_tweakbar_for_component(m_light_component);
+//    add_tweakbar_for_component(m_light_component);
     
     // add lights to scene
     for (auto l : lights()){ scene()->add_object(l ); }

@@ -41,8 +41,7 @@ void VarioDisplay::setup()
 void VarioDisplay::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    
-    m_cursor_mesh->position().x = m_digits_lines[std::min<int>(m_current_index, *m_num_digits - 1)]->position().x;
+    m_cursor_mesh->position().x = m_digits_lines[std::min<int>(m_current_index, m_digits_lines.size() - 1)]->position().x;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -397,7 +396,7 @@ void VarioDisplay::set_num_digits(int the_num_digits)
     scene()->add_object(m_cursor_mesh);
     auto aabb = m_proto_lines->aabb();
 
-    for(int i = -the_num_digits / 2; i <= the_num_digits / 2; ++i)
+    for(int i = -the_num_digits / 2; i < the_num_digits / 2; ++i)
     {
         auto m_line = m_proto_lines->copy();
         m_line->set_position(gl::vec3(i * 1.5f * aabb.width(), 0, 0));
