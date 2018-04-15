@@ -206,8 +206,6 @@ public:
         
         m_pointMaterial->set_diffuse(vec4(1, 1, 1, .7f));
         m_pointMaterial->set_blending();
-//        m_pointMaterial->setDepthWrite(false);
-//        m_pointMaterial->add_texture(gl::createTextureFromFile("~/Desktop/harp_icon.png"));
         
         m_opencl.init();
         m_opencl.set_sources("kernels.cl");
@@ -216,21 +214,8 @@ public:
         
         initParticles(*m_num_particles);
         
-        m_light_component = std::make_shared<LightComponent>();
-        m_light_component->set_lights(lights());
-        add_tweakbar_for_component(m_light_component);
-        
         load_settings();
-        m_light_component->refresh();
-        
-        // load state from config file
-//        try
-//        {
-//            Serializer::loadComponentState(shared_from_this(), "config.json", PropertyIO_GL());
-//        }catch(Exception &e)
-//        {
-//            LOG_WARNING << e.what();
-//        }
+//        m_light_component->refresh();
     }
     
     void teardown()
