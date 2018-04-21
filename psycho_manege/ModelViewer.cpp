@@ -83,11 +83,8 @@ void ModelViewer::setup()
     m_asset_paths->set_tweakable(false);
     register_property(m_cube_map_folder);
     observe_properties();
-    add_tweakbar_for_component(shared_from_this());
-    
-//    m_light_component = std::make_shared<LightComponent>();
-    m_light_component->set_lights(lights());
-//    add_tweakbar_for_component(m_light_component);
+
+//    m_light_component->set_lights(lights());
     
     // add lights to scene
     for (auto l : lights()){ scene()->add_object(l ); }
@@ -140,7 +137,13 @@ void ModelViewer::setup()
 void ModelViewer::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+    }
+
     // everything kosher with our cams?
     if(m_needs_cam_refresh)
     {
@@ -360,13 +363,6 @@ void ModelViewer::mouse_drag(const MouseEvent &e)
 void ModelViewer::mouse_wheel(const MouseEvent &e)
 {
     ViewerApp::mouse_wheel(e);
-}
-
-/////////////////////////////////////////////////////////////////
-
-void ModelViewer::got_message(const std::vector<uint8_t> &the_message)
-{
-    LOG_INFO<<string(the_message.begin(), the_message.end());
 }
 
 /////////////////////////////////////////////////////////////////

@@ -20,7 +20,6 @@ void VarioDisplay::setup()
     ViewerApp::setup();
     register_property(m_num_digits);
     observe_properties();
-    add_tweakbar_for_component(shared_from_this());
     
     float scale = 10.f;
     m_proto_lines = create_proto();
@@ -41,7 +40,13 @@ void VarioDisplay::setup()
 void VarioDisplay::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+    }
+
     m_cursor_mesh->position().x = m_digits_lines[std::min<int>(m_current_index, m_digits_lines.size() - 1)]->position().x;
 }
 

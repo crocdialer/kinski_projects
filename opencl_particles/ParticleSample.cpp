@@ -34,8 +34,6 @@ void ParticleSample::setup()
     register_property(m_use_contraints);
     register_property(m_debug_life);
     observe_properties();
-    add_tweakbar_for_component(shared_from_this());
-    add_tweakbar_for_component(m_light_component);
     load_settings();
 }
 
@@ -82,6 +80,14 @@ void ParticleSample::init_particles(uint32_t the_num)
 void ParticleSample::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+        gl::draw_component_ui(m_light_component);
+//        if(*m_use_warping){ gl::draw_component_ui(m_warp_component); }
+    }
 
     if(m_needs_init){ init_particles(*m_num_particles); }
 }

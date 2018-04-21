@@ -74,7 +74,6 @@ void LED_GrabberApp::setup()
     register_property(m_led_res);
     register_property(m_downsample_res);
     observe_properties();
-    add_tweakbar_for_component(shared_from_this());
 
     remote_control().set_components({ shared_from_this(), m_warp_component });
 //    set_default_config_path("~/");
@@ -133,6 +132,13 @@ void LED_GrabberApp::setup()
 
 void LED_GrabberApp::update(float timeDelta)
 {
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+        if(*m_use_warping){ gl::draw_component_ui(m_warp_component); }
+    }
+
     if(m_reload_media){ reload_media(); }
     
     if(m_runmode == MODE_DEFAULT)

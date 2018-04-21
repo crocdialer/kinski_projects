@@ -43,10 +43,6 @@ void GrowthApp::setup()
     
     observe_properties();
     
-    // create our UI
-    add_tweakbar_for_component(shared_from_this());
-    add_tweakbar_for_component(m_light_component);
-    
     try
     {
         m_bounding_mesh = gl::Mesh::create(gl::Geometry::create_box(vec3(50)),
@@ -77,7 +73,14 @@ void GrowthApp::setup()
 void GrowthApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+        gl::draw_component_ui(m_light_component);
+    }
+
     if(m_dirty_lsystem && !is_loading()) refresh_lsystem();
 }
 

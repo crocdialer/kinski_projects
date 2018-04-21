@@ -32,9 +32,6 @@ void AsteroidField::setup()
     register_property(m_mode);
     observe_properties();
     
-    add_tweakbar_for_component(shared_from_this());
-    add_tweakbar_for_component(m_light_component);
-    
     // finally load state from file
     load_settings();
 }
@@ -44,7 +41,15 @@ void AsteroidField::setup()
 void AsteroidField::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+        gl::draw_component_ui(m_light_component);
+        if(*m_use_warping){ gl::draw_component_ui(m_warp_component); }
+    }
+
     if(m_dirty_flag){ create_scene(*m_num_objects); }
     
     switch (*m_mode)

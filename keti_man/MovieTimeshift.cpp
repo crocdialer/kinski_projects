@@ -79,6 +79,13 @@ void MovieTimeshift::setup()
 
 void MovieTimeshift::update(float timeDelta)
 {
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+        if(*m_use_warping){ gl::draw_component_ui(m_warp_component); }
+    }
+
     // check if we need to adapt the input source
     if(m_input_source_changed)
     {

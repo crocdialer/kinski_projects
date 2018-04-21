@@ -33,7 +33,6 @@ void LED_Proxy::setup()
     fonts()[FONT_MEDIUM].load(fonts()[FONT_SMALL].path(), 34);
     fonts()[FONT_LARGE].load(fonts()[FONT_SMALL].path(), 54);
     observe_properties();
-    add_tweakbar_for_component(shared_from_this());
     load_settings();
     
     // periodic device scan
@@ -65,6 +64,12 @@ void LED_Proxy::setup()
 void LED_Proxy::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -312,7 +317,7 @@ void LED_Proxy::set_segments(const std::vector<int> &the_segments) const
     
     for(auto s : the_segments)
     {
-        if(s >= 0 && s < (m_unit_resolution.y * cons.size()))
+        if(s >= 0 && s < (int)(m_unit_resolution.y * cons.size()))
         {
             map[cons[s / m_unit_resolution.y]].push_back(s % m_unit_resolution.y);
         }

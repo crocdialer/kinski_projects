@@ -156,8 +156,8 @@ bool LED_Grabber::grab_from_image_calib(const ImagePtr &the_image)
             int loc_x = std::round((the_image->width - 1) * loc_norm.x);
             int loc_y = std::round((the_image->height - 1) * (1 - loc_norm.y));
             
-            if(loc_x > 0 && loc_x < the_image->width &&
-               loc_y > 0 && loc_y < the_image->height)
+            if(loc_x > 0 && loc_x < (int)the_image->width &&
+               loc_y > 0 && loc_y < (int)the_image->height)
             {
                 // sample from image
                 uint8_t *ch = the_image->at(loc_x, loc_y);
@@ -261,7 +261,7 @@ void LED_Grabber::show_segment(size_t the_segment, int the_mark_width) const
     
     int width = std::min(the_mark_width, m_impl->m_resolution.x - 1);
     
-    for(size_t w = 0; w < width; w++)
+    for(int w = 0; w < width; w++)
     {
         led_data[first + w] = color_to_uint(color_first);
         led_data[last - w] = color_to_uint(color_last);

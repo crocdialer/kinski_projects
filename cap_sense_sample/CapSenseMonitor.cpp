@@ -34,7 +34,6 @@ void CapSenseMonitor::setup()
     register_property(m_img_url);
     observe_properties();
 
-    add_tweakbar_for_component(shared_from_this());
     remote_control().set_components({shared_from_this()});
 
     m_broadcast_timer = Timer(main_queue().io_service(),
@@ -54,6 +53,12 @@ void CapSenseMonitor::setup()
 void CapSenseMonitor::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+    }
 }
 
 /////////////////////////////////////////////////////////////////

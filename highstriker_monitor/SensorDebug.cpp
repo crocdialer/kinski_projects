@@ -40,7 +40,6 @@ void SensorDebug::setup()
     register_property(m_sensor_refresh_rate);
 
     observe_properties();
-    add_tweakbar_for_component(shared_from_this());
 
     // buffer incoming bytes from serial connection
     m_serial_read_buf.resize(2048);
@@ -50,7 +49,6 @@ void SensorDebug::setup()
                                    gl::Material::create(gl::create_shader(gl::ShaderType::LINES_2D)));
     m_line_mesh->geometry()->set_primitive_type(GL_LINES);
     m_line_mesh->material()->set_depth_test(false);
-//    m_line_mesh->material()->setTwoSided();
     
     // setup a recurring timer for sensor-refresh-rate measurement
     m_timer_sensor_refresh = Timer(main_queue().io_service(), [this]()
@@ -81,6 +79,12 @@ void SensorDebug::setup()
 void SensorDebug::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+    }
 
     // fetch new measurements
     update_sensor_values(timeDelta);

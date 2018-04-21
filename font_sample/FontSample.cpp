@@ -24,7 +24,6 @@ void FontSample::setup()
     register_property(m_gamma);
     register_property(m_buffer);
     observe_properties();
-    add_tweakbar_for_component(shared_from_this());
     
     fonts()[1].load(fonts()[0].path(), 100, true);
     m_text_root = fonts()[1].create_text_object("Hallo der Onkel,\nwerd schnell gesund.\npupuu.",
@@ -43,6 +42,12 @@ void FontSample::setup()
 void FontSample::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gl::draw_component_ui(shared_from_this());
+    }
 }
 
 /////////////////////////////////////////////////////////////////
