@@ -331,11 +331,11 @@ void GrowthApp::update_property(const Property::ConstPtr &theProperty)
 
 void GrowthApp::refresh_lsystem()
 {
-    inc_task();
+    auto task = Task::create(this);
     m_dirty_lsystem = false;
     m_lsystem.cancel();
 
-    auto finish_cb = [this](gl::MeshPtr new_mesh)
+    auto finish_cb = [this, task](gl::MeshPtr new_mesh)
     {
         if(!new_mesh){ return; }
 
@@ -368,9 +368,6 @@ void GrowthApp::refresh_lsystem()
         uint32_t min = 0, max = m_entries.front().num_indices - 1;
         m_max_index->set_range(min, max);
         LOG_DEBUG << "radius: " << glm::length(m_mesh->aabb().halfExtents());
-
-        // task done
-        dec_task();
     };
     
     background_queue().submit([this, finish_cb]()
