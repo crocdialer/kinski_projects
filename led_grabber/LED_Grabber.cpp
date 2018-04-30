@@ -131,7 +131,9 @@ bool LED_Grabber::is_initialized() const
 
 bool LED_Grabber::grab_from_image_calib(const ImagePtr &the_image)
 {
-    if(is_initialized())
+    auto cast_img = std::dynamic_pointer_cast<Image_<uint8_t >>(the_image);
+
+    if(is_initialized() && cast_img)
     {
         // create/update lookup tables, if necessary
         if(m_impl->m_dirty_lut){ m_impl->create_lut(); }
@@ -147,20 +149,23 @@ bool LED_Grabber::grab_from_image_calib(const ImagePtr &the_image)
         // gamma correction etc.
         auto m = m_impl->m_warp.inv_transform();
         const auto points = m_impl->m_calibration_points;
-        
+
+        int w = the_image->width();
+        int h = the_image->height();
+
         for(size_t i = 0; i < points.size(); ++i)
         {
             const auto &cp = points[i];
             gl::vec4 loc_norm = m * gl::vec4(cp.x, 1 - cp.y, 0, 1);
             loc_norm /= loc_norm.w;
-            int loc_x = std::round((the_image->width - 1) * loc_norm.x);
-            int loc_y = std::round((the_image->height - 1) * (1 - loc_norm.y));
+            int loc_x = std::round((w - 1) * loc_norm.x);
+            int loc_y = std::round((h - 1) * (1 - loc_norm.y));
             
-            if(loc_x > 0 && loc_x < (int)the_image->width &&
-               loc_y > 0 && loc_y < (int)the_image->height)
+            if(loc_x > 0 && loc_x < w &&
+               loc_y > 0 && loc_y < h)
             {
                 // sample from image
-                uint8_t *ch = the_image->at(loc_x, loc_y);
+                uint8_t *ch = cast_img->at(loc_x, loc_y);
                 uint8_t *out_ptr = (uint8_t*)(led_data.data() + i);
                 
                 out_ptr[dst_offset_r] = m_impl->m_gamma_r[ch[src_offset_r]];
@@ -267,7 +272,7 @@ void LED_Grabber::show_segment(size_t the_segment, int the_mark_width) const
         led_data[last - w] = color_to_uint(color_last);
     }
     
-    // send data
+    // send m_data
     send_data((uint8_t*)led_data.data(), led_data.size() * sizeof(uint32_t));
 }
     
@@ -287,8 +292,8 @@ std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
 //    {
 //        calib_data[j] = color_to_uint(the_calib_color);
 //
-//        // send data
-//        send_data((uint8_t*)calib_data.data(), calib_data.size() * sizeof(uint32_t));
+//        // send m_data
+//        send_data((uint8_t*)calib_data.m_data(), calib_data.size() * sizeof(uint32_t));
 //
 //        calib_data[j] = 0;
 //

@@ -54,9 +54,7 @@ void MeditationRoom::setup()
     register_property(m_bio_sensitivity_accel);
     register_property(m_bio_sensitivity_elong);
     register_property(m_cap_thresh);
-    
     observe_properties();
-    add_tweakbar_for_component(shared_from_this());
     
     set_fbo_state();
     
@@ -122,7 +120,13 @@ void MeditationRoom::setup()
 void MeditationRoom::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gui::draw_component_ui(shared_from_this());
+    }
+
     // update according to current state
     switch (m_current_state)
     {

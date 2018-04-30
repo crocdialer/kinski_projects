@@ -80,8 +80,8 @@ void MovieTimeshift::update(float timeDelta)
     // construct ImGui window for this frame
     if(display_tweakbar())
     {
-        gl::draw_component_ui(shared_from_this());
-        if(*m_use_warping){ gl::draw_component_ui(m_warp_component); }
+        gui::draw_component_ui(shared_from_this());
+        if(*m_use_warping){ gui::draw_component_ui(m_warp_component); }
     }
 
     // check if we need to adapt the input source
@@ -110,7 +110,7 @@ void MovieTimeshift::update(float timeDelta)
 
     bool advance_index = false;
     
-    // fetch data from camera, if available. then upload to array texture
+    // fetch m_data from camera, if available. then upload to array texture
     if(m_camera && m_camera->is_capturing())
     {
         
@@ -124,14 +124,14 @@ void MovieTimeshift::update(float timeDelta)
                 m_needs_array_refresh = false;
                 gl::Texture::Format fmt;
                 fmt.set_target(GL_TEXTURE_3D);
-                m_array_tex = gl::Texture(m_camera_img->width, m_camera_img->height, *m_num_buffer_frames, fmt);
+                m_array_tex = gl::Texture(m_camera_img->width(), m_camera_img->height(), *m_num_buffer_frames, fmt);
                 m_array_tex.set_flipped(true);
                 
                 m_custom_mat->add_texture(m_array_tex);
                 m_custom_mat->uniform("u_num_frames", m_array_tex.depth());
             }
             
-            // insert camera raw data into array texture
+            // insert camera raw m_data into array texture
             insert_image_into_array_texture(m_camera_img, m_array_tex, m_current_index);
             KINSKI_CHECK_GL_ERRORS();
             advance_index = true;
@@ -185,7 +185,7 @@ void MovieTimeshift::update(float timeDelta)
     // update procedural noise texture
     textures()[TEXTURE_NOISE] = m_noise.simplex(get_application_time() * *m_noise_velocity + *m_noise_seed);
     m_custom_mat->add_texture(m_array_tex);
-    m_custom_mat->add_texture(textures()[TEXTURE_NOISE], gl::Material::TextureType::NOISE);
+    m_custom_mat->add_texture(textures()[TEXTURE_NOISE], gl::Texture::Usage::NOISE);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -289,21 +289,21 @@ bool MovieTimeshift::insert_image_into_array_texture(const ImagePtr &the_image,
                                                      uint32_t the_index)
 {
     // sanity check
-    if(!the_array_tex || !the_image || the_image->width != the_array_tex.width() ||
-       the_image->height != the_array_tex.height() || the_index >= the_array_tex.depth())
+    if(!the_array_tex || !the_image || the_image->width() != the_array_tex.width() ||
+       the_image->height() != the_array_tex.height() || the_index >= the_array_tex.depth())
     {
         return false;
     }
     
     // upload to pbo
-    m_pbo.set_data(the_image->data, the_image->num_bytes());
+    m_pbo.set_data(the_image->data(), the_image->num_bytes());
     
     // bind pbo for reading
     m_pbo.bind(GL_PIXEL_UNPACK_BUFFER);
 
     // upload new frame to array texture
     the_array_tex.bind();
-    glTexSubImage3D(the_array_tex.target(), 0, 0, 0, the_index, the_image->width, the_image->height, 1,
+    glTexSubImage3D(the_array_tex.target(), 0, 0, 0, the_index, the_image->width(), the_image->height(), 1,
                     g_px_fmt, GL_UNSIGNED_BYTE, nullptr);
     the_array_tex.unbind();
     m_pbo.unbind(GL_PIXEL_UNPACK_BUFFER);

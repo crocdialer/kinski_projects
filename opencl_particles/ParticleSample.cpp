@@ -84,9 +84,8 @@ void ParticleSample::update(float timeDelta)
     // construct ImGui window for this frame
     if(display_tweakbar())
     {
-        gl::draw_component_ui(shared_from_this());
-        gl::draw_component_ui(m_light_component);
-//        if(*m_use_warping){ gl::draw_component_ui(m_warp_component); }
+        gui::draw_component_ui(shared_from_this());
+        gui::draw_component_ui(m_light_component);
     }
 
     if(m_needs_init){ init_particles(*m_num_particles); }

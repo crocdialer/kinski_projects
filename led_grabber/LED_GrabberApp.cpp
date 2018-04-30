@@ -135,8 +135,8 @@ void LED_GrabberApp::update(float timeDelta)
     // construct ImGui window for this frame
     if(display_tweakbar())
     {
-        gl::draw_component_ui(shared_from_this());
-        if(*m_use_warping){ gl::draw_component_ui(m_warp_component); }
+        gui::draw_component_ui(shared_from_this());
+        if(*m_use_warping){ gui::draw_component_ui(m_warp_component); }
     }
 
     if(m_reload_media){ reload_media(); }
@@ -607,7 +607,7 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
 
 void LED_GrabberApp::reload_media()
 {
-    App::Task t(this);
+    auto task = Task::create("reload media");
 
     textures()[TEXTURE_INPUT].reset();
     m_sync_off_timer.cancel();

@@ -77,8 +77,8 @@ void GrowthApp::update(float timeDelta)
     // construct ImGui window for this frame
     if(display_tweakbar())
     {
-        gl::draw_component_ui(shared_from_this());
-        gl::draw_component_ui(m_light_component);
+        gui::draw_component_ui(shared_from_this());
+        gui::draw_component_ui(m_light_component);
     }
 
     if(m_dirty_lsystem && !is_loading()) refresh_lsystem();
@@ -331,7 +331,7 @@ void GrowthApp::update_property(const Property::ConstPtr &theProperty)
 
 void GrowthApp::refresh_lsystem()
 {
-    auto task = Task::create(this);
+    auto task = Task::create("refresh lsystem mesh");
     m_dirty_lsystem = false;
     m_lsystem.cancel();
 

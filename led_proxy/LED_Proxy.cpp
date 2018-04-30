@@ -68,7 +68,7 @@ void LED_Proxy::update(float timeDelta)
     // construct ImGui window for this frame
     if(display_tweakbar())
     {
-        gl::draw_component_ui(shared_from_this());
+        gui::draw_component_ui(shared_from_this());
     }
 }
 

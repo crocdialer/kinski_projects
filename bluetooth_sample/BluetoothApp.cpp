@@ -21,7 +21,6 @@ void BluetoothApp::setup()
     ViewerApp::setup();
     fonts()[1].load(fonts()[0].path(), 44);
     observe_properties();
-    add_tweakbar_for_component(shared_from_this());
     load_settings();
 
     m_central->set_peripheral_discovered_cb([this](bluetooth::CentralPtr c,
@@ -48,6 +47,11 @@ void BluetoothApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
 
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gui::draw_component_ui(shared_from_this());
+    }
 }
 
 /////////////////////////////////////////////////////////////////

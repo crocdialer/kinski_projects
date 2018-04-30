@@ -42,8 +42,6 @@ void FractureApp::setup()
     register_property(m_use_syphon);
     register_property(m_syphon_server_name);
     observe_properties();
-    add_tweakbar_for_component(shared_from_this());
-    add_tweakbar_for_component(m_light_component);
     
     // init physics
     m_physics.init();
@@ -74,7 +72,14 @@ void FractureApp::setup()
 void FractureApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
-    
+
+    // construct ImGui window for this frame
+    if(display_tweakbar())
+    {
+        gui::draw_component_ui(shared_from_this());
+        gui::draw_component_ui(m_light_component);
+    }
+
     m_time_since_last_shot += timeDelta;
     
     if(m_needs_refracture){ fracture_test(*m_num_fracture_shards); }

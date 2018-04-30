@@ -8,12 +8,15 @@ uniform sampler2D u_sampler_2D[2];
 
 struct Material
 {
-  vec4 diffuse; 
-  vec4 ambient; 
-  vec4 specular; 
-  vec4 emission; 
-  vec4 point_vals;// (size, constant_att, linear_att, quad_att) 
-  float shinyness;
+    vec4 diffuse;
+    vec4 ambient;
+    vec4 emission;
+    vec4 point_vals;// (size, constant_att, linear_att, quad_att)
+    float metalness;
+    float roughness;
+    float occlusion;
+    int shadow_properties;
+    int texture_properties;
 };
 
 layout(std140) uniform MaterialBlock

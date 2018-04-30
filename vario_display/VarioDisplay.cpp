@@ -44,7 +44,7 @@ void VarioDisplay::update(float timeDelta)
     // construct ImGui window for this frame
     if(display_tweakbar())
     {
-        gl::draw_component_ui(shared_from_this());
+        gui::draw_component_ui(shared_from_this());
     }
     m_cursor_mesh->position().x = m_digits_lines[std::min<int>(m_current_index, m_digits_lines.size() - 1)]->position().x;
 }
