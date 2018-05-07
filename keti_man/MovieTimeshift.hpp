@@ -52,7 +52,7 @@ namespace kinski
         gl::MaterialPtr m_custom_mat;
         int m_current_index = 0;
         
-        gl::Fbo m_offscreen_fbo, m_fbo_transfer;
+        gl::FboPtr m_offscreen_fbo, m_fbo_transfer;
         
         Property_<glm::vec2>::Ptr
         m_offscreen_size = Property_<glm::vec2>::create("Offscreen size", glm::vec2(800, 600)),

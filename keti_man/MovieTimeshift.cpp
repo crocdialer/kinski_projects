@@ -141,14 +141,14 @@ void MovieTimeshift::update(float timeDelta)
     // syphon
     if(*m_input_source == INPUT_SYPHON && m_syphon_in.copy_frame(textures()[TEXTURE_INPUT]))
     {
-        if(!m_fbo_transfer || m_fbo_transfer.size() != textures()[TEXTURE_INPUT].size())
+        if(!m_fbo_transfer || m_fbo_transfer->size() != textures()[TEXTURE_INPUT].size())
         {
-            m_fbo_transfer = gl::Fbo(textures()[TEXTURE_INPUT].size());
+            m_fbo_transfer = gl::Fbo::create(textures()[TEXTURE_INPUT].size());
         }
         auto tex = gl::render_to_texture(m_fbo_transfer, [&]()
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            gl::draw_texture(textures()[TEXTURE_INPUT], m_fbo_transfer.size());
+            gl::draw_texture(textures()[TEXTURE_INPUT], m_fbo_transfer->size());
         });
         
         textures()[TEXTURE_INPUT] = tex;
@@ -439,7 +439,7 @@ void MovieTimeshift::update_property(const Property::ConstPtr &theProperty)
         
         if(tmp.x <= 0 || tmp.y <= 0){ tmp = gl::window_dimension(); }
         
-        m_offscreen_fbo = gl::Fbo(tmp);
+        m_offscreen_fbo = gl::Fbo::create(tmp);
     }
     else if(theProperty == m_use_syphon)
     {

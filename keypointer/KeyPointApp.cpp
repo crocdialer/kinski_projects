@@ -44,8 +44,6 @@ void KeyPointApp::setup()
     register_property(m_activator);
     register_property(m_img_path);
     register_property(m_imageIndex);
-    
-    add_tweakbar_for_component(shared_from_this());
     observe_properties();
     
     // CV stuff
@@ -54,17 +52,14 @@ void KeyPointApp::setup()
     
     // trigger observer callbacks
     m_processNode->observe_properties();
-    add_tweakbar_for_component(m_processNode);
     
     m_cvThread->setProcessingNode(m_processNode);
-//    m_cvThread->streamUSBCamera();
     
     m_cvThread->setSourceNode(std::make_shared<CameraSource>());
     m_cvThread->start();
     
     if(m_processNode)
     {
-        add_list_to_tweakbar(m_processNode->get_property_list());
         LOG_INFO<<"CVProcessNode: "<<m_processNode->getDescription();
     }
     
@@ -78,6 +73,13 @@ void KeyPointApp::setup()
 void KeyPointApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
+
+    if(display_tweakbar())
+    {
+        gui::draw_component_ui(shared_from_this());
+        gui::draw_component_ui(m_processNode);
+    }
+
     auto width = gl::window_dimension().x;
     
     if(m_cvThread->hasImage())
