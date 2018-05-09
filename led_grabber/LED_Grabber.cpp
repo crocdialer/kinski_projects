@@ -20,7 +20,7 @@ namespace kinski
 
 namespace
 {
-    // WBRG byte-order in debug SK6812-RGBW strip
+    // GRBW byte-order in debug SK6812-RGBW strip
     constexpr uint8_t dst_offset_r = 1, dst_offset_g = 0, dst_offset_b = 2, dst_offset_w = 3;
 }
 
