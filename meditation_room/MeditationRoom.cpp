@@ -250,7 +250,7 @@ void MeditationRoom::draw()
             gl::draw_circle(gl::window_dimension() / 2.f, m_current_circ_radius, gl::COLOR_WHITE,
                             true, 48);
         });
-        m_mat_rgb_shift->add_texture(m_fbos[0].texture());
+        m_mat_rgb_shift->add_texture(m_fbos[0]->texture());
         
         // apply distortion shader
         textures()[TEXTURE_OUTPUT] = gl::render_to_texture(m_fbos[1], [this]()
@@ -603,25 +603,25 @@ void MeditationRoom::set_fbo_state()
 {
     m_fbos.resize(3);
     
-    if(!m_fbos[0] || gl::vec2(m_fbos[0].size()) != m_output_res->value())
+    if(!m_fbos[0] || gl::vec2(m_fbos[0]->size()) != m_output_res->value())
     {
         gl::Fbo::Format fmt;
 //        fmt.set_num_samples(8);
-        m_fbos[0] = gl::Fbo(*m_output_res, fmt);
+        m_fbos[0] = gl::Fbo::create(*m_output_res, fmt);
     }
-    if(!m_fbos[1] || gl::vec2(m_fbos[1].size()) != m_output_res->value())
+    if(!m_fbos[1] || gl::vec2(m_fbos[1]->size()) != m_output_res->value())
     {
         gl::Fbo::Format fmt;
 //        fmt.set_num_samples(8);
-        m_fbos[1] = gl::Fbo(*m_output_res, fmt);
+        m_fbos[1] = gl::Fbo::create(*m_output_res, fmt);
     }
     
     gl::vec2 info_sz = gl::vec2(460, 300);
     
-    if(!m_fbos[2] || gl::vec2(m_fbos[2].size()) != info_sz)
+    if(!m_fbos[2] || gl::vec2(m_fbos[2]->size()) != info_sz)
     {
         gl::Fbo::Format fmt;
-        m_fbos[2] = gl::Fbo(info_sz, fmt);
+        m_fbos[2] = gl::Fbo::create(info_sz, fmt);
     }
 }
 

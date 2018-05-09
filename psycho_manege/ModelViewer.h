@@ -72,7 +72,7 @@ namespace kinski
         std::vector<gl::Color>
         m_cam_colors = {gl::COLOR_RED, gl::COLOR_GREEN, gl::COLOR_BLUE, gl::COLOR_YELLOW,
         gl::COLOR_ORANGE, gl::COLOR_PURPLE};
-        gl::Fbo m_offscreen_fbo;
+        gl::FboPtr m_offscreen_fbo;
         
         Property_<uint32_t>::Ptr
         m_num_screens = Property_<uint32_t>::create("num beamers", 4);

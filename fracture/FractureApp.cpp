@@ -339,9 +339,9 @@ void FractureApp::update_property(const Property::ConstPtr &theProperty)
     else if(theProperty == m_fbo_resolution)
     {
         gl::Fbo::Format fmt;
-        fmt.set_num_samples(8);
-        m_fbos[0] = gl::Fbo(m_fbo_resolution->value().x, m_fbo_resolution->value().y, fmt);
-        float aspect = m_fbos[0].aspect_ratio();//m_obj_scale->value().x / m_obj_scale->value().y;
+        fmt.num_samples = 8;
+        m_fbos[0] = gl::Fbo::create(m_fbo_resolution->value().x, m_fbo_resolution->value().y, fmt);
+        float aspect = m_fbos[0]->aspect_ratio();//m_obj_scale->value().x / m_obj_scale->value().y;
         m_fbo_cam = gl::PerspectiveCamera::create(aspect, 45.f, .1f, 100.f);
         m_fbo_cam->position() = *m_fbo_cam_pos;
     }
@@ -589,11 +589,11 @@ void FractureApp::handle_joystick_input(float the_time_delta)
         m_crosshair_pos[i] += vec2(x_axis, y_axis) * multiplier * the_time_delta;
         
         if(m_fbos[0])
-            m_crosshair_pos[i] = glm::clamp(m_crosshair_pos[i], vec2(0), vec2(m_fbos[0].size()));
+            m_crosshair_pos[i] = glm::clamp(m_crosshair_pos[i], vec2(0), vec2(m_fbos[0]->size()));
         
         if(joystick.buttons()[11] && m_fbo_cam && m_time_since_last_shot > 1.f / *m_shots_per_sec)
         {
-            auto ray = gl::calculate_ray(m_fbo_cam, m_crosshair_pos[i], m_fbos[0].size());
+            auto ray = gl::calculate_ray(m_fbo_cam, m_crosshair_pos[i], m_fbos[0]->size());
             shoot_box(ray, *m_shoot_velocity);
             m_time_since_last_shot = 0.f;
         }

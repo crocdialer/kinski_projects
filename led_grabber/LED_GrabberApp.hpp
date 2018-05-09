@@ -37,7 +37,7 @@ namespace kinski
         std::vector<gl::vec2> m_points;
         LED_GrabberPtr m_led_grabber = LED_Grabber::create();
         ImagePtr m_image_input;
-        gl::Fbo m_fbo_downsample;
+        gl::FboPtr m_fbo_downsample;
         Timer m_led_update_timer;
         
         media::MediaControllerPtr m_media = media::MediaController::create();

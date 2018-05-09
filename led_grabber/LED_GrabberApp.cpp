@@ -152,14 +152,14 @@ void LED_GrabberApp::update(float timeDelta)
             {
                 auto tex_size = textures()[TEXTURE_INPUT].size();
                 
-                if(tex_size.x > m_fbo_downsample.size().x || tex_size.y > m_fbo_downsample.size().y)
+                if(tex_size.x > m_fbo_downsample->size().x || tex_size.y > m_fbo_downsample->size().y)
                 {
                     gl::render_to_texture(m_fbo_downsample, [this]()
                     {
                         gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension());
                     });
                     m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
-                    textures()[TEXTURE_DOWNSAMPLE] = m_fbo_downsample.texture();
+                    textures()[TEXTURE_DOWNSAMPLE] = m_fbo_downsample->texture();
                     textures()[TEXTURE_DOWNSAMPLE].set_mag_filter(GL_NEAREST);
                     textures()[TEXTURE_DOWNSAMPLE].set_min_filter(GL_NEAREST);
                 }
@@ -596,9 +596,9 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
     {
         auto val = gl::ivec2(m_downsample_res->value());
         
-        if(!m_fbo_downsample || m_fbo_downsample.size() != val)
+        if(!m_fbo_downsample || m_fbo_downsample->size() != val)
         {
-            m_fbo_downsample = gl::Fbo(val);
+            m_fbo_downsample = gl::Fbo::create(val);
         }
     }
 }

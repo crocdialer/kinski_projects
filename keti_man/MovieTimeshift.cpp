@@ -123,7 +123,7 @@ void MovieTimeshift::update(float timeDelta)
             {
                 m_needs_array_refresh = false;
                 gl::Texture::Format fmt;
-                fmt.set_target(GL_TEXTURE_3D);
+                fmt.target = GL_TEXTURE_3D;
                 m_array_tex = gl::Texture(m_camera_img->width(), m_camera_img->height(), *m_num_buffer_frames, fmt);
                 m_array_tex.set_flipped(true);
                 
@@ -161,10 +161,8 @@ void MovieTimeshift::update(float timeDelta)
             m_needs_array_refresh = false;
             
             gl::Texture::Format fmt;
-            fmt.set_target(GL_TEXTURE_3D);
+            fmt.target = GL_TEXTURE_3D;
             m_array_tex = gl::Texture(w, h, *m_num_buffer_frames, fmt);
-//            m_array_tex.set_flipped(!*m_flip_image);
-            
             m_custom_mat->add_texture(m_array_tex);
             m_custom_mat->uniform("u_num_frames", m_array_tex.depth());
         }

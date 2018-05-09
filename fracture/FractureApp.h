@@ -69,7 +69,7 @@ namespace kinski
         float m_time_since_last_shot = 0;
         
         // fbo / syphon stuff
-        std::vector<gl::Fbo> m_fbos{5};
+        std::vector<gl::FboPtr> m_fbos{5};
         gl::CameraPtr m_fbo_cam;
         Property_<glm::vec3>::Ptr
         m_fbo_cam_pos = Property_<glm::vec3>::create("fbo camera position", glm::vec3(0, 0, 5.f));

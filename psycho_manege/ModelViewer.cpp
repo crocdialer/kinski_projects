@@ -570,8 +570,7 @@ void ModelViewer::setup_offscreen_cameras(int num_screens, bool as_circle)
     // create our FBO
     try
     {
-        m_offscreen_fbo = gl::Fbo(m_offscreen_size->value().x * *m_num_screens,
-                                  m_offscreen_size->value().y);
+        m_offscreen_fbo = gl::Fbo::create(m_offscreen_size->value().x * *m_num_screens, m_offscreen_size->value().y);
     }catch(Exception &e){ LOG_ERROR << e.what(); }
 }
 

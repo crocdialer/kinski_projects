@@ -96,7 +96,7 @@ namespace kinski
         m_cap_thresh = Property_<float>::create("cap thresh", 20.f);
         
         gl::MaterialPtr m_mat_rgb_shift;
-        std::vector<gl::Fbo> m_fbos;
+        std::vector<gl::FboPtr> m_fbos;
         
         // current brightness
         float m_brightness = 0.f;
