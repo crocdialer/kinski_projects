@@ -32,18 +32,18 @@ inline uint32_t color_to_uint(const gl::Color &the_color)
             static_cast<uint32_t>(0xFF * the_color.a) << (dst_offset_w * 8);
 }
     
-//gl::vec2 find_dot(const cv::Mat &the_frame, float the_thresh, const cv::Mat &the_mask = cv::Mat())
-//{
-//    cv::UMat gray, thresh;
-//    the_frame.copyTo(gray, the_mask);
-//    cv::cvtColor(gray, gray, cv::COLOR_RGB2GRAY);
-//    cv::blur(gray, gray, cv::Size(5, 5));
-//    cv::threshold(gray, thresh, the_thresh, 255, cv::THRESH_TOZERO);
-//    auto kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)).getUMat(cv::ACCESS_READ);
-//    cv::morphologyEx(thresh, thresh, cv::MORPH_OPEN, kernel);
-//    cv::Moments mom = cv::moments(thresh, false);
-//    return gl::vec2(mom.m10 / mom.m00, mom.m01 / mom.m00);
-//}
+gl::vec2 find_dot(const cv::Mat &the_frame, float the_thresh, const cv::Mat &the_mask = cv::Mat())
+{
+    cv::UMat gray, thresh;
+    the_frame.copyTo(gray, the_mask);
+    cv::cvtColor(gray, gray, cv::COLOR_RGB2GRAY);
+    cv::blur(gray, gray, cv::Size(5, 5));
+    cv::threshold(gray, thresh, the_thresh, 255, cv::THRESH_TOZERO);
+    auto kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)).getUMat(cv::ACCESS_READ);
+    cv::morphologyEx(thresh, thresh, cv::MORPH_OPEN, kernel);
+    cv::Moments mom = cv::moments(thresh, false);
+    return gl::vec2(mom.m10 / mom.m00, mom.m01 / mom.m00);
+}
     
 std::array<uint8_t, 256> create_gamma_lut(float the_brighntess, float the_gamma,
                                           uint8_t the_max_out = 255)
@@ -283,58 +283,58 @@ std::vector<gl::vec2> LED_Grabber::run_calibration(int the_cam_index,
     std::vector<uint32_t> calib_data(m_impl->m_resolution.x * m_impl->m_resolution.y, 0);
     std::vector<gl::vec2> points(calib_data.size());
 
-//    cv::Mat frame, mask;
-//    cv::VideoCapture cap;
-//    cap.open(the_cam_index);
-//    size_t num_calib_errors = 0;
-//
-//    for(size_t j = 0; j < calib_data.size(); ++j)
-//    {
-//        calib_data[j] = color_to_uint(the_calib_color);
-//
-//        // send m_data
-//        send_data((uint8_t*)calib_data.m_data(), calib_data.size() * sizeof(uint32_t));
-//
-//        calib_data[j] = 0;
-//
-//        // wait for LEDs to update
-//        std::this_thread::sleep_for(std::chrono::milliseconds(25));
-//
-//        // grab frame and find location of dot
-//        if(cap.read(frame) && !frame.empty())
-//        {
-//            // mask input with quadcorners
-//            if(mask.cols != frame.cols || mask.rows != frame.rows)
-//            {
-//                mask = cv::Mat(frame.rows, frame.cols, CV_8UC1);
-//
-//                auto corners = m_impl->m_warp.corners();
-//
-//                for(auto &c : corners)
-//                { c = gl::vec2(c.x, 1 - c.y) * gl::vec2(frame.cols - 1, frame.rows - 1); }
-//
-//                std::vector<cv::Point> points = {
-//                    {(int)corners[0].x, (int)corners[0].y},
-//                    {(int)corners[1].x, (int)corners[1].y},
-//                    {(int)corners[3].x, (int)corners[3].y},
-//                    {(int)corners[2].x, (int)corners[2].y}
-//                };
-//                cv::fillConvexPoly(mask, points, 255);
-//            }
-//
-//            auto p = find_dot(frame, the_thresh, mask);
-//            if(!std::isnan(p.x) && !std::isnan(p.y))
-//            {
-//                LOG_TRACE << "got frame: " << j << " --> " << glm::to_string(p);
-//                points[j] = p / gl::vec2(frame.cols, frame.rows);
-//            }else
-//            {
-//                LOG_DEBUG << "invalid calibration point: " << num_calib_errors++;
-//                points[j] = gl::vec2(-1);
-//            }
-//        }
-//    }
-//    cap.release();
+    cv::Mat frame, mask;
+    cv::VideoCapture cap;
+    cap.open(the_cam_index);
+    size_t num_calib_errors = 0;
+
+    for(size_t j = 0; j < calib_data.size(); ++j)
+    {
+        calib_data[j] = color_to_uint(the_calib_color);
+
+        // send m_data
+        send_data((uint8_t*)calib_data.data(), calib_data.size() * sizeof(uint32_t));
+
+        calib_data[j] = 0;
+
+        // wait for LEDs to update
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+
+        // grab frame and find location of dot
+        if(cap.read(frame) && !frame.empty())
+        {
+            // mask input with quadcorners
+            if(mask.cols != frame.cols || mask.rows != frame.rows)
+            {
+                mask = cv::Mat(frame.rows, frame.cols, CV_8UC1);
+
+                auto corners = m_impl->m_warp.corners();
+
+                for(auto &c : corners)
+                { c = gl::vec2(c.x, 1 - c.y) * gl::vec2(frame.cols - 1, frame.rows - 1); }
+
+                std::vector<cv::Point> points = {
+                    {(int)corners[0].x, (int)corners[0].y},
+                    {(int)corners[1].x, (int)corners[1].y},
+                    {(int)corners[3].x, (int)corners[3].y},
+                    {(int)corners[2].x, (int)corners[2].y}
+                };
+                cv::fillConvexPoly(mask, points, 255);
+            }
+
+            auto p = find_dot(frame, the_thresh, mask);
+            if(!std::isnan(p.x) && !std::isnan(p.y))
+            {
+                LOG_TRACE << "got frame: " << j << " --> " << glm::to_string(p);
+                points[j] = p / gl::vec2(frame.cols, frame.rows);
+            }else
+            {
+                LOG_DEBUG << "invalid calibration point: " << num_calib_errors++;
+                points[j] = gl::vec2(-1);
+            }
+        }
+    }
+    cap.release();
     return points;
 }
 
