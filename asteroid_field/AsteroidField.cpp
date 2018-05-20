@@ -222,7 +222,6 @@ void AsteroidField::load_assets()
             for(auto &v : verts){ v -= centroid; }
             mesh->geometry()->compute_aabb();
             mesh->material()->set_shader(shader);
-            mesh->material()->set_ambient(gl::COLOR_WHITE);
             
             auto aabb = mesh->aabb();
             float scale_factor = 50.f / gl::length(aabb.halfExtents());
