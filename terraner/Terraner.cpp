@@ -1,10 +1,6 @@
-//
 //  Terraner.cpp
-//  gl
 //
-//  Created by Fabian on 29/01/14.
-//
-//
+//  created by crocdialer on 21/05/18.
 
 #include "Terraner.hpp"
 
@@ -18,12 +14,20 @@ using namespace glm;
 void Terraner::setup()
 {
     ViewerApp::setup();
-    // register properties here
+    register_property(m_noise_scale);
+    register_property(m_displace_factor);
     observe_properties();
 
-    m_terrain = gl::Mesh::create(gl::Geometry::create_plane(50, 50, 100, 100));
+    // update procedural noise texture
+    auto height_tex = m_noise.simplex(0.f);
+    textures()[TEXTURE_HEIGHT] = height_tex;
+
+    m_terrain = gl::Mesh::create(gl::Geometry::create_plane(50, 50, 100, 100),
+                                 gl::Material::create(gl::ShaderType::UNLIT_DISPLACE));
     m_terrain->set_rotation(-glm::pi<float>() / 2.f, 0.f, 0.f);
     m_terrain->add_tag("terrain");
+    m_terrain->material()->set_culling(gl::Material::CULL_NONE);
+    m_terrain->material()->add_texture(height_tex, gl::Texture::Usage::DISPLACEMENT);
     scene()->add_object(m_terrain);
 
     load_settings();
@@ -147,7 +151,16 @@ void Terraner::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void Terraner::update_property(const Property::ConstPtr &theProperty)
+void Terraner::update_property(const Property::ConstPtr &the_property)
 {
-    ViewerApp::update_property(theProperty);
+    ViewerApp::update_property(the_property);
+
+    if(the_property == m_noise_scale)
+    {
+        m_noise.set_scale(*m_noise_scale);
+    }
+    else if(the_property == m_displace_factor)
+    {
+        m_terrain->material()->uniform("u_displace_factor", *m_displace_factor);
+    }
 }

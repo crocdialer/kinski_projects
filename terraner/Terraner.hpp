@@ -1,19 +1,11 @@
-// __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
-//
-// Copyright (C) 2012-2016, Fabian Schmidt <crocdialer@googlemail.com>
-//
-// It is distributed under the Boost Software License, Version 1.0.
-// (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt
-// __ ___ ____ _____ ______ _______ ________ _______ ______ _____ ____ ___ __
-
 //  Terraner.hpp
 //
-//  Created by Fabian on 29/01/14.
+//  created by crocdialer on 21/05/18.
 
 #pragma once
 
 #include "app/ViewerApp.hpp"
+#include "gl/Noise.hpp"
 
 namespace kinski
 {
@@ -21,7 +13,15 @@ namespace kinski
     {
     private:
 
+        enum TextureEnum{TEXTURE_HEIGHT = 0};
         gl::MeshPtr m_terrain;
+        gl::Noise m_noise;
+
+        Property_<gl::vec2>::Ptr
+        m_noise_scale = Property_<gl::vec2>::create("noise scale", gl::vec2(0.05f));
+
+        Property_<float>::Ptr
+        m_displace_factor = RangedProperty<float>::create("displace factor", 10.f, -25.f, 25.f);
 
     public:
         Terraner(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
@@ -41,7 +41,7 @@ namespace kinski
         void touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &theProperty) override;
+        void update_property(const Property::ConstPtr &the_property) override;
     };
 }// namespace kinski
 
