@@ -31,14 +31,16 @@ namespace kinski
         enum RunMode{MODE_DEFAULT, MODE_MANUAL_CALIBRATION};
         
         RunMode m_runmode = MODE_DEFAULT;
+
         size_t m_current_calib_segment = 0;
+
         gl::vec2 m_last_calib_click;
         
         std::vector<gl::vec2> m_points;
         LED_GrabberPtr m_led_grabber = LED_Grabber::create();
         ImagePtr m_image_input;
         gl::FboPtr m_fbo_downsample;
-        Timer m_led_update_timer;
+        Timer m_led_update_timer, m_device_scan_timer;
         
         media::MediaControllerPtr m_media = media::MediaController::create();
         media::CameraControllerPtr m_camera = media::CameraController::create();
@@ -110,6 +112,8 @@ namespace kinski
         void set_runmode(RunMode);
         
         void process_calib_click(const gl::vec2 &the_click_pos);
+
+        void search_devices();
         
     public:
 

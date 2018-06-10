@@ -118,7 +118,24 @@ bool LED_Grabber::connect(ConnectionPtr the_device)
     }
     return false;
 }
-    
+
+bool LED_Grabber::disconnect(ConnectionPtr the_device)
+{
+    if(the_device && the_device->is_open())
+    {
+        std::unique_lock<std::mutex> lock(m_impl->m_connection_mutex);
+
+        auto device_it = m_impl->m_connections.find(the_device);
+
+        if(device_it != m_impl->m_connections.end())
+        {
+            m_impl->m_connections.erase(device_it);
+            return true;
+        }
+    }
+    return false;
+}
+
 const std::set<ConnectionPtr>& LED_Grabber::connections() const
 {
     return m_impl->m_connections;

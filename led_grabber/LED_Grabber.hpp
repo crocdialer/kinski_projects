@@ -27,6 +27,8 @@ public:
     
     bool connect(ConnectionPtr the_device);
 
+    bool disconnect(ConnectionPtr the_device);
+
     const std::set<ConnectionPtr>& connections() const;
     
     bool is_initialized() const;

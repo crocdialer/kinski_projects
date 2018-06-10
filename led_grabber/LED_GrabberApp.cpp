@@ -37,11 +37,15 @@ namespace
     
     //! force reset of playback speed (secs)
     const double g_sync_duration = 1.0;
-    
+
     //!
     uint16_t g_led_tcp_port = 44444;
     
-    double g_led_refresh_interval = 0.04;
+    constexpr double g_led_refresh_interval = 0.04;
+
+    const std::string g_id = "LEDS";
+
+    constexpr double g_device_scan_interval = 5.f;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -116,16 +120,12 @@ void LED_GrabberApp::setup()
     // grabber setup
     m_led_grabber->set_resolution(m_led_res->value().x, m_led_res->value().y);
     m_led_update_timer = Timer(main_queue().io_service());
-    
-    // connect serial
-    auto query_cb = [this](const std::string &the_id, ConnectionPtr the_device)
-    {
-        if(the_id == "LEDS" && m_led_grabber->connect(the_device))
-        {
-            LOG_DEBUG << "grabber connected: " << the_device->description();
-        }
-    };
-    sensors::scan_for_serials(background_queue().io_service(), query_cb);
+
+    // periodic device scan
+    m_device_scan_timer = Timer(background_queue().io_service(),
+                                std::bind(&LED_GrabberApp::search_devices, this));
+    m_device_scan_timer.set_periodic();
+    m_device_scan_timer.expires_from_now(g_device_scan_interval);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1051,4 +1051,25 @@ void LED_GrabberApp::process_calib_click(const gl::vec2 &the_click_pos)
     {
         m_last_calib_click = the_click_pos / gl::window_dimension();
     }
+}
+
+void LED_GrabberApp::search_devices()
+{
+    // connect serial
+    auto query_cb = [this](const std::string &the_id, ConnectionPtr the_device)
+    {
+        if(the_id == g_id)
+        {
+            LOG_DEBUG << "LED unit connected: " << the_device->description();
+
+            the_device->set_disconnect_cb([this](ConnectionPtr the_device)
+            {
+                LOG_DEBUG << "LED unit disconnected: " << the_device->description();
+                m_led_grabber->disconnect(the_device);
+            });
+            // connect
+            m_led_grabber->connect(the_device);
+        }
+    };
+    sensors::scan_for_serials(background_queue().io_service(), query_cb);
 }
