@@ -86,7 +86,7 @@ struct LED_GrabberImpl
 LED_Grabber::LED_Grabber():
 m_impl(std::make_unique<LED_GrabberImpl>())
 {
-    set_unit_resolution(58, 7);
+    set_unit_resolution(58, 14);
     set_brightness(gl::vec4(0.4f, 0.4f, 0.4f, 0.2f));
 }
     
@@ -244,24 +244,27 @@ void LED_Grabber::send_data(const std::vector<uint8_t> &the_data) const
 
 void LED_Grabber::send_data(const uint8_t *the_data, size_t the_num_bytes) const
 {
-    size_t max_bytes = 4 * m_impl->m_resolution.x * m_impl->m_resolution.y;
-    std::unique_lock<std::mutex> lock(m_impl->m_connection_mutex);
+    size_t max_bytes = 4 * m_impl->m_unit_resolution.x * m_impl->m_unit_resolution.y;
     size_t total_bytes_written = 0;
-
-    std::list<ConnectionPtr> cons(m_impl->m_connections.begin(), m_impl->m_connections.end());
-    cons.sort([](const ConnectionPtr &lhs, const ConnectionPtr &rhs)
+    
+    std::list<ConnectionPtr> cons;
     {
-        return lhs->description() < rhs->description();
-    });
-
+        std::unique_lock<std::mutex> lock(m_impl->m_connection_mutex);
+        cons.insert(cons.end(), m_impl->m_connections.begin(), m_impl->m_connections.end());
+        cons.sort([](const ConnectionPtr &lhs, const ConnectionPtr &rhs)
+        {
+            return lhs->description() < rhs->description();
+        });
+    }
+    
     for(auto &c : cons)
     {
         size_t bytes_to_write = std::min(max_bytes, the_num_bytes);
         if(!bytes_to_write){ return; }
         the_num_bytes -= bytes_to_write;
-
+        
         c->write("DATA:" + to_string(bytes_to_write) + "\n");
-
+        
         while(bytes_to_write)
         {
             size_t num_bytes_tranferred = c->write_bytes(the_data + total_bytes_written,
@@ -289,7 +292,7 @@ void LED_Grabber::show_segment(size_t the_segment, int the_mark_width) const
         led_data[last - w] = color_to_uint(color_last);
     }
     
-    // send m_data
+    // send data
     send_data((uint8_t*)led_data.data(), led_data.size() * sizeof(uint32_t));
 }
     

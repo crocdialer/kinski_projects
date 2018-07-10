@@ -835,7 +835,7 @@ void LED_GrabberApp::ping_delay(const std::string &the_ip)
 //        ptr->close();
         con->set_tcp_receive_cb();
     };
-    con->set_connect_cb([this](ConnectionPtr the_con){ the_con->write("echo ping"); });
+    con->set_connect_cb([](ConnectionPtr the_con){ the_con->write("echo ping"); });
     con->set_tcp_receive_cb(receive_func);
 }
 

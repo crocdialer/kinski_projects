@@ -77,12 +77,12 @@ namespace kinski
         m_volume = RangedProperty<float>::create("volume", 1.f, 0.f , 1.f),
         m_brightness = RangedProperty<float>::create("brightness", 1.f, 0.f , 2.f);
         
-        Property_<uint32_t>::Ptr
-        m_broadcast_port = Property_<uint32_t>::create("discovery broadcast port", 55555);
+        Property_<int>::Ptr
+        m_broadcast_port = RangedProperty<int>::create("discovery broadcast port", 55555, 0, 65535);
         
-        Property_<uint32_t>::Ptr
-        m_cam_index = Property_<uint32_t>::create("camera index", 0),
-        m_calibration_thresh = RangedProperty<uint32_t>::create("calibration thresh", 245, 0, 255);
+        Property_<int>::Ptr
+        m_cam_index = RangedProperty<int>::create("camera index", 0, 0, 9),
+        m_calibration_thresh = RangedProperty<int>::create("calibration thresh", 245, 0, 255);
         
         Property_<gl::Color>::Ptr
         m_led_channels = Property_<gl::Color>::create("LED channel brightness",
