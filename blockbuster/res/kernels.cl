@@ -15,12 +15,11 @@ inline float raw_depth_to_meters(float raw_depth)
     return 0;
 }
 
-// inline float4 gray(float4 color)
-// {
-//     float y_val = dot(color.xyz, (float3)(0.299, 0.587, 0.114));
-//     return (float4)(y_val, y_val, y_val, color.w);
-// }
-//
+inline float4 gray(float4 color)
+{
+    float y_val = dot(color.xyz, (float3)(0.299, 0.587, 0.114));
+    return (float4)(y_val, y_val, y_val, color.w);
+}
 
 __kernel void texture_input(read_only image2d_t the_img,
                             __global float4* pos_gen,
@@ -48,13 +47,13 @@ __kernel void texture_input(read_only image2d_t the_img,
     array_pos.y = img_h - array_pos.y - 1;
     array_pos.x = p->mirror ? (img_w - array_pos.x - 1) : array_pos.x;
 
-    float img_val = read_imagef(the_img, array_pos).x;
+    float4 sample = read_imagef(the_img, array_pos);
     float ratio = 0.f;
 
     if(is_depth_img)
     {
         // depth value in meters here
-        float depth = img_val * 65535.f / 1000.f;
+        float depth = sample.x * 65535.f / 1000.f;
 
         if(depth < p->depth_min || depth > p->depth_max){ depth = 0.f; }
         else
@@ -63,7 +62,12 @@ __kernel void texture_input(read_only image2d_t the_img,
             ratio = 1.f - ratio;
         }
     }
-
+    else
+    {
+        // convert to grayscale
+        float gray_val = gray(sample).x;
+        ratio = max(gray_val, ratio);
+    }
     float outval = ratio * p->multiplier;
     pos_gen[i].z = outval;
 }

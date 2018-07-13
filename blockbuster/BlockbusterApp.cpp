@@ -66,16 +66,21 @@ void BlockbusterApp::setup()
     // init our opencl assets
     setup_cl();
 
-    // depth sensor
+    // depth sensor context
     m_freenect = Freenect::create();
 
-    if(m_freenect->num_devices())
+    if(m_freenect->num_devices() > 0)
     {
         LOG_INFO << "found kinect -> connecting ...";
-        m_kinect_device = m_freenect->create_device(0);
-        m_kinect_device->start_depth();
-        m_kinect_device->set_led(LED_RED);
-    }else{ LOG_WARNING << "no kinect found ... "; }
+
+        try
+        {
+            auto dev = m_freenect->create_device(0);
+            dev->start_depth();
+            dev->set_led(LED_GREEN);
+            m_kinect_device = dev;
+        }catch(std::exception &e){ LOG_ERROR << e.what(); }
+    }else{ LOG_WARNING << "no depth sensor connected ..."; }
 
     load_settings();
 }
@@ -165,7 +170,7 @@ void BlockbusterApp::update_cl(float the_time_delta)
     // Make sure OpenGL is done using our VBOs
     glFinish();
 
-    param_t p;
+    param_t p = {};
     p.mirror = *m_mirror_img;
     p.border = *m_border;
     p.num_cols = *m_num_tiles_x;
@@ -180,47 +185,18 @@ void BlockbusterApp::update_cl(float the_time_delta)
 
     size_t num_vertices = m_mesh->geometry()->vertices().size();
 
-    if(textures()[TEXTURE_DEPTH])
-    {
-        try
-        {
-            // execute image kernel for depth
-            cl_int result;
-            cl::ImageGL img(m_opencl.context(), CL_MEM_READ_ONLY, textures()[TEXTURE_DEPTH].target(), 0,
-                            textures()[TEXTURE_DEPTH].id(), &result);
-
-            if(result == CL_SUCCESS)
-            {
-                vector<cl::Memory> gl_buffers = {img};
-                m_opencl.queue().enqueueAcquireGLObjects(&gl_buffers);
-
-                m_cl_kernel_img.setArg(0, img);
-                m_cl_kernel_img.setArg(1, m_cl_buffer_position);
-                m_cl_kernel_img.setArg(2, m_cl_buffer_params);
-                m_cl_kernel_img.setArg(3, 1);
-
-                // execute the kernel
-                m_opencl.queue().enqueueNDRangeKernel(m_cl_kernel_img,
-                                                      cl::NullRange,
-                                                      cl::NDRange(num_vertices));
-
-                m_opencl.queue().enqueueReleaseGLObjects(&gl_buffers, NULL);
-            }
-            else{ LOG_ERROR << "could not create cl-image ..."; }
-        }
-        catch(cl::Error &error)
-        {
-            LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")";
-        }
-    }
-    // TODO: execute image kernel for video
-
     try
     {
         // upload params to CL buffer
         m_opencl.queue().enqueueWriteBuffer(m_cl_buffer_params, false, 0, sizeof(p), &p, nullptr);
     }
     catch(cl::Error &error){ LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")"; }
+
+    // apply depth texture
+    apply_texture_cl(textures()[TEXTURE_DEPTH], true);
+
+    // apply optional movie texture
+    apply_texture_cl(textures()[TEXTURE_MOVIE], false);
 
     try
     {
@@ -249,6 +225,43 @@ void BlockbusterApp::update_cl(float the_time_delta)
     {
         LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")";
     }
+}
+
+/////////////////////////////////////////////////////////////////
+
+void BlockbusterApp::apply_texture_cl(gl::Texture the_texture, bool is_depth_img)
+{
+    if(!m_mesh || !the_texture){ return; }
+
+    size_t num_vertices = m_mesh->geometry()->vertices().size();
+
+    try
+    {
+        // execute image kernel for depth
+        cl_int result;
+        cl::ImageGL img(m_opencl.context(), CL_MEM_READ_ONLY, the_texture.target(), 0,
+                        the_texture.id(), &result);
+
+        if(result == CL_SUCCESS)
+        {
+            vector<cl::Memory> gl_buffers = {img};
+            m_opencl.queue().enqueueAcquireGLObjects(&gl_buffers);
+
+            m_cl_kernel_img.setArg(0, img);
+            m_cl_kernel_img.setArg(1, m_cl_buffer_position);
+            m_cl_kernel_img.setArg(2, m_cl_buffer_params);
+            m_cl_kernel_img.setArg(3, is_depth_img ? 1 : 0);
+
+            // execute the kernel
+            m_opencl.queue().enqueueNDRangeKernel(m_cl_kernel_img,
+                                                  cl::NullRange,
+                                                  cl::NDRange(num_vertices));
+
+            m_opencl.queue().enqueueReleaseGLObjects(&gl_buffers, NULL);
+        }
+        else{ LOG_ERROR << "could not create cl-image ..."; }
+    }
+    catch(cl::Error &error){ LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")"; }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -389,6 +402,11 @@ void BlockbusterApp::file_drop(const MouseEvent &e, const std::vector<std::strin
 
 void BlockbusterApp::teardown()
 {
+    if(m_kinect_device)
+    {
+        m_kinect_device->stop_depth();
+        m_kinect_device->set_led(LED_RED);
+    }
     LOG_PRINT<<"ciao " << name();
 }
 
@@ -461,7 +479,7 @@ gl::MeshPtr BlockbusterApp::create_mesh()
     geom->set_primitive_type(GL_POINTS);
     geom->vertices().resize(*m_num_tiles_x * *m_num_tiles_y);
     geom->normals().resize(*m_num_tiles_x * *m_num_tiles_y, vec3(0, 0, 1));
-    geom->point_sizes().resize(*m_num_tiles_x * *m_num_tiles_y, 5.f);
+    geom->point_sizes().resize(*m_num_tiles_x * *m_num_tiles_y, 1.f);
     geom->colors().resize(*m_num_tiles_x * *m_num_tiles_y, gl::COLOR_WHITE);
     vec2 step(m_spacing_x->value(), m_spacing_y->value());
     vec2 offset = -vec2(m_num_tiles_x->value(), m_num_tiles_y->value()) * step / 2.f;
@@ -479,11 +497,9 @@ gl::MeshPtr BlockbusterApp::create_mesh()
 
     auto mat = gl::Material::create(*m_use_shadows ? m_block_shader_shadows :
                                     m_block_shader);
-    ret = gl::Mesh::create(geom);
+    mat->set_point_size(3.f);
+    ret = gl::Mesh::create(geom, mat);
     ret->material()->uniform("u_length", *m_block_length);
-//    ret->material()->uniform("u_width", *m_block_width);
-//    ret->material()->setBlending();
-
     return ret;
 }
 
@@ -503,11 +519,13 @@ glm::vec3 BlockbusterApp::click_pos_on_ground(const glm::vec2 click_pos)
 void BlockbusterApp::init_shaders()
 {
     m_block_shader = gl::create_shader(gl::ShaderType::POINTS_COLOR);
-    m_block_shader->load_from_data(fs::read_file("geom_prepass.vert"),
-                                   phong_frag,
-                                   fs::read_file("points_to_cubes.geom"));
+    m_block_shader_shadows = gl::create_shader(gl::ShaderType::POINTS_SPHERE);
 
-    m_block_shader_shadows = gl::create_shader(gl::ShaderType::UNLIT);
+    m_block_shader_shadows->load_from_data(fs::read_file("geom_prepass.vert"),
+                                           phong_frag,
+                                           fs::read_file("points_to_cubes.geom"));
+
+//    m_block_shader_shadows = gl::create_shader(gl::ShaderType::UNLIT);
 //    m_block_shader_shadows->load_from_data(fs::read_file("geom_prepass.vert"),
 //                                           phong_shadows_frag,
 //                                           fs::read_file("points_to_cubes_shadows.geom"));

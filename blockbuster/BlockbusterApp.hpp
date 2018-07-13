@@ -96,8 +96,10 @@ namespace kinski
         m_use_shadows = Property_<bool>::create("use shadows", true);
 
         void setup_cl();
-        void update_cl(float the_time_delta);
         void init_opencl_buffers(gl::MeshPtr the_mesh);
+        void update_cl(float the_time_delta);
+        void apply_texture_cl(gl::Texture the_texture, bool is_depth_img);
+
         void init_shaders();
         gl::MeshPtr create_mesh();
         glm::vec3 click_pos_on_ground(const glm::vec2 click_pos);
