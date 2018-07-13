@@ -13,13 +13,24 @@ using namespace std;
 using namespace kinski;
 using namespace glm;
 
+namespace
+{
+
+struct param_t
+{
+    int num_cols, num_rows, mirror, border;
+    float depth_min, depth_max, multiplier;
+    float smooth_fall, smooth_rise;
+    float min_size, max_size;
+};
+
+}
 
 /////////////////////////////////////////////////////////////////
 
 void BlockbusterApp::setup()
 {
     ViewerApp::setup();
-    set_window_title("blockbuster");
     
     register_property(m_view_type);
     register_property(m_media_path);
@@ -46,16 +57,33 @@ void BlockbusterApp::setup()
     register_property(m_poisson_radius);
     observe_properties();
 
-    
     // init our application specific shaders
-    init_shaders();
-    
-//    m_psystem->opencl().init();
-//    m_psystem->opencl().set_sources("kernels.cl");
-//    m_psystem->add_kernel("texture_input");
-//    m_psystem->add_kernel("texture_input_alt");
-//    m_psystem->add_kernel("updateParticles");
-    
+//    init_shaders();
+
+    // create our remote interface
+    remote_control().set_components({ shared_from_this(), m_light_component, m_warp_component });
+
+    m_opencl.init();
+
+    try
+    {
+        m_opencl.set_sources("kernels.cl");
+        m_cl_kernel_update = cl::Kernel(m_opencl.program(), "update_mesh");
+    }
+    catch(cl::Error &error){ LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")"; }
+
+    // depth sensor
+    m_freenect = Freenect::create();
+
+    if(m_freenect->num_devices())
+    {
+        LOG_INFO << "found kinect -> connecting ...";
+        m_kinect_device = m_freenect->create_device(0);
+        m_kinect_device->start_depth();
+        m_kinect_device->set_led(LED_RED);
+    }else{ LOG_WARNING << "no kinect found ... "; }
+
+//    scene()->set_renderer(gl::SceneRenderer::create());
     load_settings();
 }
 
@@ -77,44 +105,45 @@ void BlockbusterApp::update(float timeDelta)
     {
         scene()->remove_object(m_mesh);
         m_mesh = create_mesh();
-//        m_psystem->set_mesh(m_mesh);
+        init_opencl_buffers(m_mesh);
         scene()->add_object(m_mesh);
         m_dirty = false;
     }
-    
-    struct particle_params
-    {
-        int num_cols, num_rows, mirror, border;
-        float depth_min, depth_max, multiplier;
-        float smooth_fall, smooth_rise;
-        float min_size, max_size;
-    } p;
-    p.mirror = *m_mirror_img;
-    p.border = *m_border;
-    p.num_cols = *m_num_tiles_x;
-    p.num_rows = *m_num_tiles_y;
-    p.depth_min = *m_depth_min;
-    p.depth_max = *m_depth_max;
-    p.multiplier = *m_depth_multiplier;
-    p.smooth_fall = *m_depth_smooth_fall;
-    p.smooth_rise = *m_depth_smooth_rise;
-    p.min_size = *m_block_width;
-    p.max_size = *m_block_width * *m_block_width_multiplier;
-    
-//    m_psystem->set_param_buffer(&p, sizeof(particle_params));
+
+    update_cl(timeDelta);
     
     if(m_movie && m_movie->copy_frame_to_texture(textures()[TEXTURE_MOVIE], true))
     {
         m_has_new_texture = true;
     }
 
-    // TODO: use libfreenect here
-//    if(m_open_ni->has_new_frame())
-//    {
-//        // get the depth+userID texture
-//        textures()[TEXTURE_DEPTH] = m_open_ni->get_depth_texture();
-//        m_has_new_texture = true;
-//    }
+    // grab a depth image
+    if(m_kinect_device && m_kinect_device->copy_frame_depth(m_depth_data))
+    {
+        //tmp: crunch data to float
+        constexpr float factor = 1 / 2047.f;
+        constexpr uint32_t width = 640, height = 480;
+
+//        std::vector<float> float_vals(2 * m_depth_data.size());
+//        float *dst = float_vals.data();
+//        uint16_t *src = reinterpret_cast<uint16_t*>(m_depth_data.data()), *src_end = src + (width * height);
+//
+//        for(; src < src_end; ++src){ *dst++ = *src * factor; }
+//
+//        gl::Texture::Format fmt;
+//        fmt.internal_format = GL_RED;
+//        fmt.datatype = GL_FLOAT;
+//        auto tex = gl::Texture(float_vals.data(), GL_RED, 640, 480, fmt);
+
+        // create depth texture
+        gl::Texture::Format fmt;
+        fmt.internal_format = GL_RED;
+        fmt.datatype = GL_UNSIGNED_SHORT;
+        auto tex = gl::Texture(m_depth_data.data(), GL_RED, width, height, fmt);
+
+        textures()[TEXTURE_DEPTH] = tex;
+        m_has_new_texture = true;
+    }
     
 //    if(m_has_new_texture)
 //    {
@@ -135,6 +164,63 @@ void BlockbusterApp::update(float timeDelta)
 
 /////////////////////////////////////////////////////////////////
 
+void BlockbusterApp::update_cl(float the_time_delta)
+{
+    param_t p;
+    p.mirror = *m_mirror_img;
+    p.border = *m_border;
+    p.num_cols = *m_num_tiles_x;
+    p.num_rows = *m_num_tiles_y;
+    p.depth_min = *m_depth_min;
+    p.depth_max = *m_depth_max;
+    p.multiplier = *m_depth_multiplier;
+    p.smooth_fall = *m_depth_smooth_fall;
+    p.smooth_rise = *m_depth_smooth_rise;
+    p.min_size = *m_block_width;
+    p.max_size = *m_block_width * *m_block_width_multiplier;
+
+    try
+    {
+        vector<cl::Memory> gl_buffers = {m_cl_buffer_vertex, m_cl_buffer_color, m_cl_buffer_pointsize};
+
+        // Make sure OpenGL is done using our VBOs
+        glFinish();
+
+        // map OpenGL buffer object for writing from OpenCL
+        // this passes in the vector of VBO buffer objects (position and color)
+        m_opencl.queue().enqueueAcquireGLObjects(&gl_buffers);
+
+        size_t num_vertices = m_mesh->geometry()->vertices().size();
+
+        // upload params to CL buffer
+        m_opencl.queue().enqueueWriteBuffer(m_cl_buffer_params, false, 0, sizeof(p), &p, nullptr);
+
+        // setup update kernel
+        m_cl_kernel_update.setArg(0, m_cl_buffer_vertex);
+        m_cl_kernel_update.setArg(1, m_cl_buffer_color);
+        m_cl_kernel_update.setArg(2, m_cl_buffer_pointsize);
+        m_cl_kernel_update.setArg(3, m_cl_buffer_position);
+        m_cl_kernel_update.setArg(4, the_time_delta);
+        m_cl_kernel_update.setArg(5, m_cl_buffer_params);
+
+        // execute update kernel
+        m_opencl.queue().enqueueNDRangeKernel(m_cl_kernel_update,
+                                              cl::NullRange,
+                                              cl::NDRange(num_vertices));
+        m_opencl.queue().finish();
+
+        // Release the VBOs again
+        m_opencl.queue().enqueueReleaseGLObjects(&gl_buffers, NULL);
+        m_opencl.queue().finish();
+    }
+    catch(cl::Error &error)
+    {
+        LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")";
+    }
+}
+
+/////////////////////////////////////////////////////////////////
+
 void BlockbusterApp::draw()
 {
     gl::clear();
@@ -151,28 +237,27 @@ void BlockbusterApp::draw()
         m_syphon.publish_texture(tex);
     }
     
-    switch (*m_view_type)
+    switch(*m_view_type)
     {
         case VIEW_DEBUG:
             gl::set_matrices(camera());
             if(draw_grid()){ gl::draw_grid(50, 50); }
             
-            m_light_component->draw_light_dummies();
+//            m_light_component->draw_light_dummies();
 
             
             scene()->render(camera());
             break;
-            
+
         case VIEW_OUTPUT:
             gl::draw_texture(textures()[TEXTURE_SYPHON], gl::window_dimension());
             break;
-            
+
         default:
             break;
     }
 
-    m_light_component->draw_light_dummies();
-    
+//    m_light_component->draw_light_dummies();
     if(display_tweakbar()){ draw_textures(textures());}
 }
 
@@ -321,6 +406,7 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
         float aspect = m_fbos[0]->aspect_ratio();
         m_fbo_cam = gl::PerspectiveCamera::create(aspect, *m_fbo_cam_fov, 5.f, 2000.f);
         m_fbo_cam->position() = *m_fbo_cam_pos;
+
     }
     else if(theProperty == m_use_syphon)
     {
@@ -361,45 +447,16 @@ gl::MeshPtr BlockbusterApp::create_mesh()
             verts[y * *m_num_tiles_x + x] = vec3(offset + vec2(x, y) * step, 0.f);
         }
     }
-   
-    ret = gl::Mesh::create(geom, gl::Material::create(*m_use_shadows ? m_block_shader_shadows :
-                                                      m_block_shader));
+    geom->compute_aabb();
+
+    auto mat = gl::Material::create(*m_use_shadows ? m_block_shader_shadows :
+                                    m_block_shader);
+    ret = gl::Mesh::create(geom);
     ret->material()->uniform("u_length", *m_block_length);
 //    ret->material()->uniform("u_width", *m_block_width);
 //    ret->material()->setBlending();
+
     return ret;
-}
-
-/////////////////////////////////////////////////////////////////
-
-bool BlockbusterApp::save_settings(const std::string &path)
-{
-    bool ret = true;
-
-    //TODO: see how to replace this
-//    try{ Serializer::saveComponentState(m_open_ni, "openni_config.json", PropertyIO_GL()); }
-//    catch(Exception &e)
-//    {
-//        LOG_ERROR<<e.what();
-//        ret = false;
-//    }
-    return ViewerApp::save_settings(path) && ret;
-}
-
-/////////////////////////////////////////////////////////////////
-
-bool BlockbusterApp::load_settings(const std::string &path)
-{
-    bool ret = true;
-
-    //TODO: see how to replace this
-//    try{ Serializer::loadComponentState(m_open_ni, "openni_config.json", PropertyIO_GL()); }
-//    catch(Exception &e)
-//    {
-//        LOG_ERROR<<e.what();
-//        ret = false;
-//    }
-    return ViewerApp::load_settings(path) && ret;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -426,4 +483,36 @@ void BlockbusterApp::init_shaders()
 //    m_block_shader_shadows->load_from_data(fs::read_file("geom_prepass.vert"),
 //                                           phong_shadows_frag,
 //                                           fs::read_file("points_to_cubes_shadows.geom"));
+}
+
+void BlockbusterApp::init_opencl_buffers(gl::MeshPtr the_mesh)
+{
+    if(!the_mesh){ return; }
+    auto geom = the_mesh->geometry();
+    geom->create_gl_buffers();
+
+    m_cl_buffer_params = cl::Buffer(m_opencl.context(), CL_MEM_READ_WRITE,
+                                    sizeof(param_t));
+
+    // spawn positions
+    m_cl_buffer_position = cl::Buffer(m_opencl.context(), CL_MEM_READ_WRITE,
+                                      geom->vertex_buffer().num_bytes());
+
+    // generate spawn positions from original positions
+    const uint8_t *vert_buf = geom->vertex_buffer().map();
+    m_opencl.queue().enqueueWriteBuffer(m_cl_buffer_position, CL_TRUE, 0,
+                                        geom->vertex_buffer().num_bytes(),
+                                        vert_buf);
+    geom->vertex_buffer().unmap();
+
+    // vertices
+    m_cl_buffer_vertex = cl::BufferGL(m_opencl.context(), CL_MEM_READ_WRITE,
+                                      geom->vertex_buffer().id());
+
+    // colors
+    m_cl_buffer_color = cl::BufferGL(m_opencl.context(), CL_MEM_READ_WRITE,
+                                     geom->color_buffer().id());
+    // pointsizes
+    m_cl_buffer_pointsize = cl::BufferGL(m_opencl.context(), CL_MEM_READ_WRITE,
+                                         geom->point_size_buffer().id());
 }

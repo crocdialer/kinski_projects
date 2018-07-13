@@ -14,9 +14,9 @@
 #include "app/LightComponent.hpp"
 
 // module
-#include "opencl/ParticleSystem.hpp"
+#include "opencl/cl_context.h"
 #include "media/media.h"
-#include "openni/OpenNIConnector.h"
+#include "freenect/KinectDevice.h"
 #include "syphon/SyphonConnector.h"
 
 namespace kinski
@@ -27,20 +27,29 @@ namespace kinski
         
         enum ViewType{VIEW_NOTHING = 0, VIEW_DEBUG = 1, VIEW_OUTPUT = 2};
         enum TextureEnum{TEXTURE_DEPTH = 0, TEXTURE_MOVIE = 1, TEXTURE_SYPHON = 2};
-        
+
+        // kinect assets
+        FreenectPtr m_freenect;
+        KinectDevicePtr m_kinect_device;
+        std::vector<uint8_t> m_depth_data;
+
+        // opencl assets
+        cl_context m_opencl;
+        cl::Kernel m_cl_kernel_update, m_cl_kernel_img;
+        cl::BufferGL m_cl_buffer_vertex, m_cl_buffer_color, m_cl_buffer_pointsize;
+        cl::Buffer m_cl_buffer_position, m_cl_buffer_params;
+
+        // movie playback
         media::MediaControllerPtr m_movie = media::MediaController::create();
         
         gl::MeshPtr m_mesh;
-        gl::ParticleSystemPtr m_psystem = gl::ParticleSystem::create();
-        
         gl::Texture m_texture_input;
-        
         gl::ShaderPtr m_block_shader, m_block_shader_shadows;
         
         Property_<std::string>::Ptr
         m_media_path = Property_<std::string>::create("media path", "");
         
-        bool m_dirty = true;
+        bool m_dirty = true, m_dirty_fbo = true;
         bool m_has_new_texture = false;
         
         // fbo / syphon stuff
@@ -85,7 +94,9 @@ namespace kinski
         Property_<bool>::Ptr
         m_mirror_img = Property_<bool>::create("mirror image", false),
         m_use_shadows = Property_<bool>::create("use shadows", true);
-        
+
+        void update_cl(float the_time_delta);
+        void init_opencl_buffers(gl::MeshPtr the_mesh);
         void init_shaders();
         gl::MeshPtr create_mesh();
         glm::vec3 click_pos_on_ground(const glm::vec2 click_pos);
@@ -110,9 +121,6 @@ namespace kinski
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
         void update_property(const Property::ConstPtr &theProperty) override;
-        
-        bool save_settings(const std::string &path = "") override;
-        bool load_settings(const std::string &path = "") override;
     };
 }// namespace kinski
 
