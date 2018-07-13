@@ -49,7 +49,7 @@ namespace kinski
         Property_<std::string>::Ptr
         m_media_path = Property_<std::string>::create("media path", "");
         
-        bool m_dirty = true, m_dirty_fbo = true;
+        bool m_dirty_mesh = true, m_dirty_fbo = true, m_dirty_cl_context = true;
         bool m_has_new_texture = false;
         
         // fbo / syphon stuff
@@ -95,6 +95,7 @@ namespace kinski
         m_mirror_img = Property_<bool>::create("mirror image", false),
         m_use_shadows = Property_<bool>::create("use shadows", true);
 
+        void setup_cl();
         void update_cl(float the_time_delta);
         void init_opencl_buffers(gl::MeshPtr the_mesh);
         void init_shaders();

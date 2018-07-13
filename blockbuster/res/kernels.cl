@@ -6,57 +6,66 @@ typedef struct Params
     float min_size, max_size;
 }Params;
 
+inline float raw_depth_to_meters(float raw_depth)
+{
+    if(raw_depth < 2047.0)
+    {
+        return 1.0 / (raw_depth * -0.0030711016 + 3.3309495161);
+    }
+    return 0;
+}
+
 // inline float4 gray(float4 color)
 // {
 //     float y_val = dot(color.xyz, (float3)(0.299, 0.587, 0.114));
 //     return (float4)(y_val, y_val, y_val, color.w);
 // }
 //
-// inline float3 create_radial_force(float3 pos, float3 pos_particle, float strength)
-// {
-//     float3 dir = pos_particle - pos;
-//     float dist2 = dot(dir, dir);
-//     dir = normalize(dir);
-//     return strength * dir / dist2;
-// }
 
-__kernel void texture_input(read_only image2d_t depth_img, __global float4* pos_gen, __constant struct Params *p)
+__kernel void texture_input(read_only image2d_t the_img,
+                            __global float4* pos_gen,
+                            __constant struct Params *p,
+                            int is_depth_img)
 {
     unsigned int i = get_global_id(0);
-    
+
     //borders
     int row = i / p->num_cols;
     int col = i % p->num_cols;
-    //
-    // if(row >= p->num_rows - p->border || col < p->border || col >= p->num_cols - p->border)
-    // {
-    //     pos_gen[i].z = 0.f;
-    //     return;
-    // }
-    //
-    // // sample depth texture
-    // int depth_img_w = get_image_width(depth_img);
-    // int depth_img_h = get_image_height(depth_img);
-    //
-    // int2 array_pos = {depth_img_w * (col / (float)(p->num_cols)),
-    //                   depth_img_h * (row / (float)(p->num_rows))};
-    // array_pos.y = depth_img_h - array_pos.y - 1;
-    // array_pos.x = p->mirror ? (depth_img_w - array_pos.x - 10) : array_pos.x;
-    //
-    // // depth value in meters here
-    // // float depth = read_imagef(depth_img, CLK_FILTER_NEAREST | CLK_ADDRESS_CLAMP_TO_EDGE, array_pos).x * 65535.f / 1000.f;
-    // float depth = read_imagef(depth_img, array_pos).x * 7.f;
-    //
-    // //
-    // float ratio = 0.f;
-    // if(depth < p->depth_min || depth > p->depth_max){ depth = 0.f; }
-    // else
-    // {
-    //     ratio = (depth - p->depth_min) / (p->depth_max - p->depth_min);
-    //     ratio = 1.f - ratio;//p->multiplier < 0.f ? 1 - ratio : ratio;
-    // }
-    // float outval = ratio * p->multiplier;
-    // pos_gen[i].z = outval;
+
+    if(row <  p->border || row >= p->num_rows - p->border || col < p->border || col >= p->num_cols - p->border)
+    {
+        pos_gen[i].z = 0.f;
+        return;
+    }
+
+    // sample depth texture
+    int img_w = get_image_width(the_img);
+    int img_h = get_image_height(the_img);
+
+    int2 array_pos = {img_w * (col / (float)(p->num_cols)),
+                      img_h * (row / (float)(p->num_rows))};
+    array_pos.y = img_h - array_pos.y - 1;
+    array_pos.x = p->mirror ? (img_w - array_pos.x - 1) : array_pos.x;
+
+    float img_val = read_imagef(the_img, array_pos).x;
+    float ratio = 0.f;
+
+    if(is_depth_img)
+    {
+        // depth value in meters here
+        float depth = img_val * 65535.f / 1000.f;
+
+        if(depth < p->depth_min || depth > p->depth_max){ depth = 0.f; }
+        else
+        {
+            ratio = (depth - p->depth_min) / (p->depth_max - p->depth_min);
+            ratio = 1.f - ratio;
+        }
+    }
+
+    float outval = ratio * p->multiplier;
+    pos_gen[i].z = outval;
 }
 
 // __kernel void texture_input_alt(read_only image2d_t depth_img, read_only image2d_t video_img,

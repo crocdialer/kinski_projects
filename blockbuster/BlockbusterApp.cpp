@@ -63,15 +63,8 @@ void BlockbusterApp::setup()
     // create our remote interface
     remote_control().set_components({ shared_from_this(), m_light_component, m_warp_component });
 
-    m_opencl.init();
-
-    try
-    {
-        m_opencl.set_sources("kernels.cl");
-        m_cl_kernel_update = cl::Kernel(m_opencl.program(), "update_mesh");
-        m_cl_kernel_img = cl::Kernel(m_opencl.program(), "texture_input");
-    }
-    catch(cl::Error &error){ LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")"; }
+    // init our opencl assets
+    setup_cl();
 
     // depth sensor
     m_freenect = Freenect::create();
@@ -89,6 +82,23 @@ void BlockbusterApp::setup()
 
 /////////////////////////////////////////////////////////////////
 
+void BlockbusterApp::setup_cl()
+{
+    m_opencl.init();
+
+    try
+    {
+        m_opencl.set_sources("kernels.cl");
+        m_cl_kernel_update = cl::Kernel(m_opencl.program(), "update_mesh");
+        m_cl_kernel_img = cl::Kernel(m_opencl.program(), "texture_input");
+    }
+    catch(cl::Error &error){ LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")"; }
+
+    m_dirty_cl_context = false;
+}
+
+/////////////////////////////////////////////////////////////////
+
 void BlockbusterApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
@@ -101,13 +111,13 @@ void BlockbusterApp::update(float timeDelta)
         if(*m_use_warping){ gui::draw_component_ui(m_warp_component); }
     }
 
-    if(m_dirty)
+    if(m_dirty_mesh)
     {
         scene()->remove_object(m_mesh);
         m_mesh = create_mesh();
         init_opencl_buffers(m_mesh);
         scene()->add_object(m_mesh);
-        m_dirty = false;
+        m_dirty_mesh = false;
     }
 
     if(m_movie && m_movie->copy_frame_to_texture(textures()[TEXTURE_MOVIE], true))
@@ -152,6 +162,9 @@ void BlockbusterApp::update(float timeDelta)
 
 void BlockbusterApp::update_cl(float the_time_delta)
 {
+    // Make sure OpenGL is done using our VBOs
+    glFinish();
+
     param_t p;
     p.mirror = *m_mirror_img;
     p.border = *m_border;
@@ -172,17 +185,28 @@ void BlockbusterApp::update_cl(float the_time_delta)
         try
         {
             // execute image kernel for depth
+            cl_int result;
             cl::ImageGL img(m_opencl.context(), CL_MEM_READ_ONLY, textures()[TEXTURE_DEPTH].target(), 0,
-                            textures()[TEXTURE_DEPTH].id());
+                            textures()[TEXTURE_DEPTH].id(), &result);
 
-            m_cl_kernel_img.setArg(0, img);
-            m_cl_kernel_img.setArg(1, m_cl_buffer_position);
-            m_cl_kernel_img.setArg(2, m_cl_buffer_params);
+            if(result == CL_SUCCESS)
+            {
+                vector<cl::Memory> gl_buffers = {img};
+                m_opencl.queue().enqueueAcquireGLObjects(&gl_buffers);
 
-            // execute the kernel
-//            m_opencl.queue().enqueueNDRangeKernel(m_cl_kernel_img,
-//                                                  cl::NullRange,
-//                                                  cl::NDRange(num_vertices));
+                m_cl_kernel_img.setArg(0, img);
+                m_cl_kernel_img.setArg(1, m_cl_buffer_position);
+                m_cl_kernel_img.setArg(2, m_cl_buffer_params);
+                m_cl_kernel_img.setArg(3, 1);
+
+                // execute the kernel
+                m_opencl.queue().enqueueNDRangeKernel(m_cl_kernel_img,
+                                                      cl::NullRange,
+                                                      cl::NDRange(num_vertices));
+
+                m_opencl.queue().enqueueReleaseGLObjects(&gl_buffers, NULL);
+            }
+            else{ LOG_ERROR << "could not create cl-image ..."; }
         }
         catch(cl::Error &error)
         {
@@ -207,9 +231,6 @@ void BlockbusterApp::update_cl(float the_time_delta)
         m_cl_kernel_update.setArg(3, m_cl_buffer_position);
         m_cl_kernel_update.setArg(4, the_time_delta);
         m_cl_kernel_update.setArg(5, m_cl_buffer_params);
-
-        // Make sure OpenGL is done using our VBOs
-        glFinish();
 
         // map OpenGL buffer object for writing from OpenCL
         vector<cl::Memory> gl_buffers = {m_cl_buffer_vertex, m_cl_buffer_color, m_cl_buffer_pointsize};
@@ -402,17 +423,16 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
             theProperty == m_spacing_y ||
             theProperty == m_use_shadows)
     {
-        m_dirty = true;
+        m_dirty_mesh = true;
     }
     else if(theProperty == m_fbo_resolution ||
             theProperty == m_fbo_cam_pos ||
             theProperty == m_fbo_cam_fov)
     {
         gl::Fbo::Format fmt;
-//        fmt.num_samples = 4;
+        fmt.num_samples = 4;
         m_fbos[0] = gl::Fbo::create(m_fbo_resolution->value().x, m_fbo_resolution->value().y, fmt);
-        float aspect = m_fbos[0]->aspect_ratio();
-        m_fbo_cam = gl::PerspectiveCamera::create(aspect, *m_fbo_cam_fov, 5.f, 2000.f);
+        m_fbo_cam = gl::PerspectiveCamera::create(m_fbos[0]->aspect_ratio(), *m_fbo_cam_fov, 1.f, 2000.f);
         m_fbo_cam->position() = *m_fbo_cam_pos;
 
     }
@@ -441,7 +461,7 @@ gl::MeshPtr BlockbusterApp::create_mesh()
     geom->set_primitive_type(GL_POINTS);
     geom->vertices().resize(*m_num_tiles_x * *m_num_tiles_y);
     geom->normals().resize(*m_num_tiles_x * *m_num_tiles_y, vec3(0, 0, 1));
-    geom->point_sizes().resize(*m_num_tiles_x * *m_num_tiles_y, 1.f);
+    geom->point_sizes().resize(*m_num_tiles_x * *m_num_tiles_y, 5.f);
     geom->colors().resize(*m_num_tiles_x * *m_num_tiles_y, gl::COLOR_WHITE);
     vec2 step(m_spacing_x->value(), m_spacing_y->value());
     vec2 offset = -vec2(m_num_tiles_x->value(), m_num_tiles_y->value()) * step / 2.f;
@@ -482,10 +502,10 @@ glm::vec3 BlockbusterApp::click_pos_on_ground(const glm::vec2 click_pos)
 
 void BlockbusterApp::init_shaders()
 {
-    m_block_shader = gl::create_shader(gl::ShaderType::UNLIT);
-//    m_block_shader->load_from_data(fs::read_file("geom_prepass.vert"),
-//                                   phong_frag,
-//                                   fs::read_file("points_to_cubes.geom"));
+    m_block_shader = gl::create_shader(gl::ShaderType::POINTS_COLOR);
+    m_block_shader->load_from_data(fs::read_file("geom_prepass.vert"),
+                                   phong_frag,
+                                   fs::read_file("points_to_cubes.geom"));
 
     m_block_shader_shadows = gl::create_shader(gl::ShaderType::UNLIT);
 //    m_block_shader_shadows->load_from_data(fs::read_file("geom_prepass.vert"),
