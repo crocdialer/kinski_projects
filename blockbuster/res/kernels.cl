@@ -20,43 +20,44 @@ typedef struct Params
 //     return strength * dir / dist2;
 // }
 
-// __kernel void texture_input(read_only image2d_t depth_img, __global float4* pos_gen, __constant struct Params *p)
-// {
-//     unsigned int i = get_global_id(0);
-//
-//     //borders
-//     int row = i / p->num_cols;
-//     int col = i % p->num_cols;
-//
-//     if(row >= p->num_rows - p->border || col < p->border || col >= p->num_cols - p->border)
-//     {
-//       pos_gen[i].z = 0.f;
-//       return;
-//     }
-//
-//     // sample depth texture
-//     int depth_img_w = get_image_width(depth_img);
-//     int depth_img_h = get_image_height(depth_img);
-//
-//     int2 array_pos = {depth_img_w * (col / (float)(p->num_cols)),
-//                       depth_img_h * (row / (float)(p->num_rows))};
-//     array_pos.y = depth_img_h - array_pos.y - 1;
-//     array_pos.x = p->mirror ? (depth_img_w - array_pos.x - 10) : array_pos.x;
-//
-//     // depth value in meters here
-//     float depth = read_imagef(depth_img, CLK_FILTER_NEAREST | CLK_ADDRESS_CLAMP_TO_EDGE, array_pos).x * 65535.f / 1000.f;
-//
-//     //
-//     float ratio = 0.f;
-//     if(depth < p->depth_min || depth > p->depth_max){ depth = 0.f; }
-//     else
-//     {
-//         ratio = (depth - p->depth_min) / (p->depth_max - p->depth_min);
-//         ratio = 1.f - ratio;//p->multiplier < 0.f ? 1 - ratio : ratio;
-//     }
-//     float outval = ratio * p->multiplier;
-//     pos_gen[i].z = outval;
-// }
+__kernel void texture_input(read_only image2d_t depth_img, __global float4* pos_gen, __constant struct Params *p)
+{
+    unsigned int i = get_global_id(0);
+    
+    //borders
+    int row = i / p->num_cols;
+    int col = i % p->num_cols;
+    //
+    // if(row >= p->num_rows - p->border || col < p->border || col >= p->num_cols - p->border)
+    // {
+    //     pos_gen[i].z = 0.f;
+    //     return;
+    // }
+    //
+    // // sample depth texture
+    // int depth_img_w = get_image_width(depth_img);
+    // int depth_img_h = get_image_height(depth_img);
+    //
+    // int2 array_pos = {depth_img_w * (col / (float)(p->num_cols)),
+    //                   depth_img_h * (row / (float)(p->num_rows))};
+    // array_pos.y = depth_img_h - array_pos.y - 1;
+    // array_pos.x = p->mirror ? (depth_img_w - array_pos.x - 10) : array_pos.x;
+    //
+    // // depth value in meters here
+    // // float depth = read_imagef(depth_img, CLK_FILTER_NEAREST | CLK_ADDRESS_CLAMP_TO_EDGE, array_pos).x * 65535.f / 1000.f;
+    // float depth = read_imagef(depth_img, array_pos).x * 7.f;
+    //
+    // //
+    // float ratio = 0.f;
+    // if(depth < p->depth_min || depth > p->depth_max){ depth = 0.f; }
+    // else
+    // {
+    //     ratio = (depth - p->depth_min) / (p->depth_max - p->depth_min);
+    //     ratio = 1.f - ratio;//p->multiplier < 0.f ? 1 - ratio : ratio;
+    // }
+    // float outval = ratio * p->multiplier;
+    // pos_gen[i].z = outval;
+}
 
 // __kernel void texture_input_alt(read_only image2d_t depth_img, read_only image2d_t video_img,
 //                                 __global float4* pos_gen, __constant struct Params *p)
@@ -127,10 +128,7 @@ __kernel void update_mesh(__global float4* pos,
     // update array with newly computed values
     pos[i] = p;
 
-    color[i].x = 1;
-    color[i].y = 0;
-    color[i].z = 0;
-    // color[i] = float4(1, 0, 0, 0);//pos[i].z / params->multiplier;
+    color[i] = (float4)(1, 0, 0, 0);//pos[i].z / params->multiplier;
 
     // interpolate point sizes
     point_sizes[i] = mix(params->min_size, params->max_size, pos[i].z / params->multiplier);

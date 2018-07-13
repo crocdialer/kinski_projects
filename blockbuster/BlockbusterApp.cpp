@@ -58,7 +58,7 @@ void BlockbusterApp::setup()
     observe_properties();
 
     // init our application specific shaders
-//    init_shaders();
+    init_shaders();
 
     // create our remote interface
     remote_control().set_components({ shared_from_this(), m_light_component, m_warp_component });
@@ -69,6 +69,7 @@ void BlockbusterApp::setup()
     {
         m_opencl.set_sources("kernels.cl");
         m_cl_kernel_update = cl::Kernel(m_opencl.program(), "update_mesh");
+        m_cl_kernel_img = cl::Kernel(m_opencl.program(), "texture_input");
     }
     catch(cl::Error &error){ LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")"; }
 
@@ -83,7 +84,6 @@ void BlockbusterApp::setup()
         m_kinect_device->set_led(LED_RED);
     }else{ LOG_WARNING << "no kinect found ... "; }
 
-//    scene()->set_renderer(gl::SceneRenderer::create());
     load_settings();
 }
 
@@ -110,8 +110,6 @@ void BlockbusterApp::update(float timeDelta)
         m_dirty = false;
     }
 
-    update_cl(timeDelta);
-    
     if(m_movie && m_movie->copy_frame_to_texture(textures()[TEXTURE_MOVIE], true))
     {
         m_has_new_texture = true;
@@ -120,10 +118,10 @@ void BlockbusterApp::update(float timeDelta)
     // grab a depth image
     if(m_kinect_device && m_kinect_device->copy_frame_depth(m_depth_data))
     {
-        //tmp: crunch data to float
-        constexpr float factor = 1 / 2047.f;
         constexpr uint32_t width = 640, height = 480;
 
+//        //tmp: crunch data to float
+//        constexpr float factor = 1 / 2047.f;
 //        std::vector<float> float_vals(2 * m_depth_data.size());
 //        float *dst = float_vals.data();
 //        uint16_t *src = reinterpret_cast<uint16_t*>(m_depth_data.data()), *src_end = src + (width * height);
@@ -141,25 +139,13 @@ void BlockbusterApp::update(float timeDelta)
         fmt.datatype = GL_UNSIGNED_SHORT;
         auto tex = gl::Texture(m_depth_data.data(), GL_RED, width, height, fmt);
 
+        tex.set_flipped();
         textures()[TEXTURE_DEPTH] = tex;
         m_has_new_texture = true;
     }
-    
-//    if(m_has_new_texture)
-//    {
-//        m_has_new_texture = false;
-//
-//        if(textures()[TEXTURE_MOVIE] && textures()[TEXTURE_DEPTH])
-//        {
-//            m_psystem.texture_input_alt(textures()[TEXTURE_DEPTH], textures()[TEXTURE_MOVIE]);
-//        }
-//        else if(textures()[TEXTURE_DEPTH])
-//        {
-//            m_psystem.texture_input(textures()[TEXTURE_DEPTH]);
-//        }
-//    }
-    
-//    m_psystem->update(timeDelta);
+
+    // execute opencl kernels
+    update_cl(timeDelta);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -179,22 +165,41 @@ void BlockbusterApp::update_cl(float the_time_delta)
     p.min_size = *m_block_width;
     p.max_size = *m_block_width * *m_block_width_multiplier;
 
+    size_t num_vertices = m_mesh->geometry()->vertices().size();
+
+    if(textures()[TEXTURE_DEPTH])
+    {
+        try
+        {
+            // execute image kernel for depth
+            cl::ImageGL img(m_opencl.context(), CL_MEM_READ_ONLY, textures()[TEXTURE_DEPTH].target(), 0,
+                            textures()[TEXTURE_DEPTH].id());
+
+            m_cl_kernel_img.setArg(0, img);
+            m_cl_kernel_img.setArg(1, m_cl_buffer_position);
+            m_cl_kernel_img.setArg(2, m_cl_buffer_params);
+
+            // execute the kernel
+//            m_opencl.queue().enqueueNDRangeKernel(m_cl_kernel_img,
+//                                                  cl::NullRange,
+//                                                  cl::NDRange(num_vertices));
+        }
+        catch(cl::Error &error)
+        {
+            LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")";
+        }
+    }
+    // TODO: execute image kernel for video
+
     try
     {
-        vector<cl::Memory> gl_buffers = {m_cl_buffer_vertex, m_cl_buffer_color, m_cl_buffer_pointsize};
-
-        // Make sure OpenGL is done using our VBOs
-        glFinish();
-
-        // map OpenGL buffer object for writing from OpenCL
-        // this passes in the vector of VBO buffer objects (position and color)
-        m_opencl.queue().enqueueAcquireGLObjects(&gl_buffers);
-
-        size_t num_vertices = m_mesh->geometry()->vertices().size();
-
         // upload params to CL buffer
         m_opencl.queue().enqueueWriteBuffer(m_cl_buffer_params, false, 0, sizeof(p), &p, nullptr);
+    }
+    catch(cl::Error &error){ LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")"; }
 
+    try
+    {
         // setup update kernel
         m_cl_kernel_update.setArg(0, m_cl_buffer_vertex);
         m_cl_kernel_update.setArg(1, m_cl_buffer_color);
@@ -203,11 +208,17 @@ void BlockbusterApp::update_cl(float the_time_delta)
         m_cl_kernel_update.setArg(4, the_time_delta);
         m_cl_kernel_update.setArg(5, m_cl_buffer_params);
 
+        // Make sure OpenGL is done using our VBOs
+        glFinish();
+
+        // map OpenGL buffer object for writing from OpenCL
+        vector<cl::Memory> gl_buffers = {m_cl_buffer_vertex, m_cl_buffer_color, m_cl_buffer_pointsize};
+        m_opencl.queue().enqueueAcquireGLObjects(&gl_buffers);
+
         // execute update kernel
         m_opencl.queue().enqueueNDRangeKernel(m_cl_kernel_update,
                                               cl::NullRange,
                                               cl::NDRange(num_vertices));
-        m_opencl.queue().finish();
 
         // Release the VBOs again
         m_opencl.queue().enqueueReleaseGLObjects(&gl_buffers, NULL);
@@ -242,10 +253,7 @@ void BlockbusterApp::draw()
         case VIEW_DEBUG:
             gl::set_matrices(camera());
             if(draw_grid()){ gl::draw_grid(50, 50); }
-            
-//            m_light_component->draw_light_dummies();
-
-            
+            m_light_component->draw_light_dummies();
             scene()->render(camera());
             break;
 
@@ -401,7 +409,7 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
             theProperty == m_fbo_cam_fov)
     {
         gl::Fbo::Format fmt;
-        fmt.num_samples = 4;
+//        fmt.num_samples = 4;
         m_fbos[0] = gl::Fbo::create(m_fbo_resolution->value().x, m_fbo_resolution->value().y, fmt);
         float aspect = m_fbos[0]->aspect_ratio();
         m_fbo_cam = gl::PerspectiveCamera::create(aspect, *m_fbo_cam_fov, 5.f, 2000.f);
