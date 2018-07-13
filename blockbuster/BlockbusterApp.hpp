@@ -78,17 +78,19 @@ namespace kinski
         m_num_tiles_y = RangedProperty<int>::create("num tiles y", 10, 1, 1000),
         m_spacing_x = RangedProperty<int>::create("spacing x", 10, 0, 100),
         m_spacing_y = RangedProperty<int>::create("spacing y", 10, 0, 100),
-        m_border = Property_<int>::create("border", 1);
+        m_border = RangedProperty<int>::create("border", 1, 0, 10);
         
         Property_<float>::Ptr
         m_block_length = Property_<float>::create("block length", 1.f),
-        m_block_width = Property_<float>::create("block width", 1.f),
-        m_block_width_multiplier = Property_<float>::create("block width multiplier", 1.f),
-        m_depth_min = Property_<float>::create("depth min", 1.f),
-        m_depth_max = Property_<float>::create("depth max", 3.f),
-        m_depth_multiplier = Property_<float>::create("depth mutliplier", 10.f),
-        m_depth_smooth_fall = Property_<float>::create("depth smooth falling", .95f),
-        m_depth_smooth_rise = Property_<float>::create("depth smooth rising", .7f),
+//        m_block_width = Property_<float>::create("block width", 1.f),
+//        m_block_width_multiplier = Property_<float>::create("block width multiplier", 1.f),
+        m_depth_min = RangedProperty<float>::create("depth min", 1.f, 0.f, 10.f),
+        m_depth_max = RangedProperty<float>::create("depth max", 3.f, 0.f, 10.f),
+        m_depth_multiplier = RangedProperty<float>::create("depth mutliplier", 10.f, 0.f, 100.f),
+        m_z_min = RangedProperty<float>::create("min elevation", 0.f, 0.f, 100.f),
+        m_z_max = RangedProperty<float>::create("max elevation", 50.f, 0.f, 100.f),
+        m_depth_smooth_fall = RangedProperty<float>::create("depth smooth falling", .95f, 0.f, 1.f),
+        m_depth_smooth_rise = RangedProperty<float>::create("depth smooth rising", .7f, 0.f, 1.f),
         m_poisson_radius = Property_<float>::create("poisson radius", 3.f);
         
         Property_<bool>::Ptr
@@ -124,6 +126,8 @@ namespace kinski
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
         void update_property(const Property::ConstPtr &theProperty) override;
+
+        void set_fullscreen(bool b, int monitor_index) override;
     };
 }// namespace kinski
 

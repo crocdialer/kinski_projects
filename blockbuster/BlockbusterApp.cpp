@@ -15,15 +15,13 @@ using namespace glm;
 
 namespace
 {
-
-struct param_t
-{
-    int num_cols, num_rows, mirror, border;
-    float depth_min, depth_max, multiplier;
-    float smooth_fall, smooth_rise;
-    float min_size, max_size;
-};
-
+    struct param_t
+    {
+        int num_cols, num_rows, mirror, border;
+        float depth_min, depth_max, depth_multiplier;
+        float smooth_fall, smooth_rise;
+        float z_min, z_max;
+    };
 }
 
 /////////////////////////////////////////////////////////////////
@@ -44,14 +42,14 @@ void BlockbusterApp::setup()
     register_property(m_spacing_x);
     register_property(m_spacing_y);
     register_property(m_block_length);
-    register_property(m_block_width);
-    register_property(m_block_width_multiplier);
     register_property(m_border);
     register_property(m_mirror_img);
     register_property(m_use_shadows);
     register_property(m_depth_min);
     register_property(m_depth_max);
     register_property(m_depth_multiplier);
+    register_property(m_z_min);
+    register_property(m_z_max);
     register_property(m_depth_smooth_fall);
     register_property(m_depth_smooth_rise);
     register_property(m_poisson_radius);
@@ -116,6 +114,13 @@ void BlockbusterApp::update(float timeDelta)
         if(*m_use_warping){ gui::draw_component_ui(m_warp_component); }
     }
 
+    // check if our cl context is still kosher
+    if(m_dirty_cl_context)
+    {
+        setup_cl();
+        init_opencl_buffers(m_mesh);
+    }
+
     if(m_dirty_mesh)
     {
         scene()->remove_object(m_mesh);
@@ -134,19 +139,6 @@ void BlockbusterApp::update(float timeDelta)
     if(m_kinect_device && m_kinect_device->copy_frame_depth(m_depth_data))
     {
         constexpr uint32_t width = 640, height = 480;
-
-//        //tmp: crunch data to float
-//        constexpr float factor = 1 / 2047.f;
-//        std::vector<float> float_vals(2 * m_depth_data.size());
-//        float *dst = float_vals.data();
-//        uint16_t *src = reinterpret_cast<uint16_t*>(m_depth_data.data()), *src_end = src + (width * height);
-//
-//        for(; src < src_end; ++src){ *dst++ = *src * factor; }
-//
-//        gl::Texture::Format fmt;
-//        fmt.internal_format = GL_RED;
-//        fmt.datatype = GL_FLOAT;
-//        auto tex = gl::Texture(float_vals.data(), GL_RED, 640, 480, fmt);
 
         // create depth texture
         gl::Texture::Format fmt;
@@ -177,11 +169,11 @@ void BlockbusterApp::update_cl(float the_time_delta)
     p.num_rows = *m_num_tiles_y;
     p.depth_min = *m_depth_min;
     p.depth_max = *m_depth_max;
-    p.multiplier = *m_depth_multiplier;
+    p.depth_multiplier = *m_depth_multiplier;
     p.smooth_fall = *m_depth_smooth_fall;
     p.smooth_rise = *m_depth_smooth_rise;
-    p.min_size = *m_block_width;
-    p.max_size = *m_block_width * *m_block_width_multiplier;
+    p.z_min = *m_z_min;
+    p.z_max = *m_z_max;
 
     size_t num_vertices = m_mesh->geometry()->vertices().size();
 
@@ -418,7 +410,7 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_media_path)
     {
-        m_movie = media::MediaController::create(*m_media_path, true, true);
+        m_movie->load(*m_media_path, true, true);
         textures()[TEXTURE_MOVIE] = gl::Texture();
     }
     else if(theProperty == m_block_length)
@@ -500,6 +492,9 @@ gl::MeshPtr BlockbusterApp::create_mesh()
     mat->set_point_size(3.f);
     ret = gl::Mesh::create(geom, mat);
     ret->material()->uniform("u_length", *m_block_length);
+
+    // disable culling
+    ret->add_tag(gl::SceneRenderer::TAG_NO_CULL);
     return ret;
 }
 
@@ -561,4 +556,10 @@ void BlockbusterApp::init_opencl_buffers(gl::MeshPtr the_mesh)
     // pointsizes
     m_cl_buffer_pointsize = cl::BufferGL(m_opencl.context(), CL_MEM_READ_WRITE,
                                          geom->point_size_buffer().id());
+}
+
+void BlockbusterApp::set_fullscreen(bool b, int monitor_index)
+{
+    ViewerApp::set_fullscreen(b, monitor_index);
+    m_dirty_cl_context = true;
 }
