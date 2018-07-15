@@ -61,9 +61,6 @@ void BlockbusterApp::setup()
     // create our remote interface
     remote_control().set_components({ shared_from_this(), m_light_component, m_warp_component });
 
-    // init our opencl assets
-    setup_cl();
-
     // depth sensor context
     m_freenect = Freenect::create();
 
@@ -96,8 +93,6 @@ void BlockbusterApp::setup_cl()
         m_cl_kernel_img = cl::Kernel(m_opencl.program(), "texture_input");
     }
     catch(cl::Error &error){ LOG_ERROR << error.what() << "(" << oclErrorString(error.err()) << ")"; }
-
-    m_dirty_cl_context = false;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -119,6 +114,7 @@ void BlockbusterApp::update(float timeDelta)
     {
         setup_cl();
         init_opencl_buffers(m_mesh);
+        m_dirty_cl_context = false;
     }
 
     if(m_dirty_mesh)
@@ -192,6 +188,8 @@ void BlockbusterApp::update_cl(float the_time_delta)
 
     try
     {
+//        std::vector<cl::Event> wait_events = {m_cl_event};
+
         // setup update kernel
         m_cl_kernel_update.setArg(0, m_cl_buffer_vertex);
         m_cl_kernel_update.setArg(1, m_cl_buffer_color);
@@ -207,7 +205,8 @@ void BlockbusterApp::update_cl(float the_time_delta)
         // execute update kernel
         m_opencl.queue().enqueueNDRangeKernel(m_cl_kernel_update,
                                               cl::NullRange,
-                                              cl::NDRange(num_vertices));
+                                              cl::NDRange(num_vertices),
+                                              cl::NullRange);
 
         // Release the VBOs again
         m_opencl.queue().enqueueReleaseGLObjects(&gl_buffers, NULL);
@@ -229,6 +228,9 @@ void BlockbusterApp::apply_texture_cl(gl::Texture the_texture, bool is_depth_img
 
     try
     {
+        std::vector<cl::Event> wait_events;
+//        if(m_cl_event()){ wait_events.push_back(m_cl_event); }
+
         // execute image kernel for depth
         cl_int result;
         cl::ImageGL img(m_opencl.context(), CL_MEM_READ_ONLY, the_texture.target(), 0,
@@ -247,7 +249,10 @@ void BlockbusterApp::apply_texture_cl(gl::Texture the_texture, bool is_depth_img
             // execute the kernel
             m_opencl.queue().enqueueNDRangeKernel(m_cl_kernel_img,
                                                   cl::NullRange,
-                                                  cl::NDRange(num_vertices));
+                                                  cl::NDRange(num_vertices),
+                                                  cl::NullRange,
+                                                  &wait_events,
+                                                  &m_cl_event);
 
             m_opencl.queue().enqueueReleaseGLObjects(&gl_buffers, NULL);
         }
@@ -411,6 +416,10 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
     if(theProperty == m_media_path)
     {
         m_movie->load(*m_media_path, true, true);
+        m_movie->set_on_load_callback([](media::MediaControllerPtr c)
+        {
+            c->set_volume(0.f);
+        });
         textures()[TEXTURE_MOVIE] = gl::Texture();
     }
     else if(theProperty == m_block_length)
@@ -561,5 +570,6 @@ void BlockbusterApp::init_opencl_buffers(gl::MeshPtr the_mesh)
 void BlockbusterApp::set_fullscreen(bool b, int monitor_index)
 {
     ViewerApp::set_fullscreen(b, monitor_index);
+    if(m_cl_event()){ m_cl_event.wait(); }
     m_dirty_cl_context = true;
 }

@@ -38,6 +38,7 @@ namespace kinski
         cl::Kernel m_cl_kernel_update, m_cl_kernel_img;
         cl::BufferGL m_cl_buffer_vertex, m_cl_buffer_color, m_cl_buffer_pointsize;
         cl::Buffer m_cl_buffer_position, m_cl_buffer_params;
+        cl::Event m_cl_event;
 
         // movie playback
         media::MediaControllerPtr m_movie = media::MediaController::create();

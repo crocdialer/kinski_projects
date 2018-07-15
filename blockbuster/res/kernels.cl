@@ -58,15 +58,20 @@ __kernel void texture_input(read_only image2d_t the_img,
     // or 8bit color
     float4 sample = read_imagef(the_img, array_pos);
     float ratio = 0.f;
-    float outval = pos_gen[i].z;
+    float outval;// = pos_gen[i].z;
 
     if(is_depth_img)
     {
         // depth value in meters
         float depth = sample.x * 65535.f / 1000.f;
 
-        if(p->depth_min <= p->depth_max){ depth = clamp(depth, p->depth_min, p->depth_max); }
-        else{ depth = clamp(depth, p->depth_max, p->depth_min); }
+        float depth_min = p->depth_min <= p->depth_max ? p->depth_min : p->depth_max;
+        float depth_max = p->depth_min <= p->depth_max ? p->depth_max : p->depth_min;
+        if(depth == 0.f){ depth = depth_max; }
+        depth = clamp(depth, p->depth_min, p->depth_max);
+
+        // if(p->depth_min <= p->depth_max){ depth = depth == 0.f ? p->depth_max : clamp(depth, p->depth_min, p->depth_max); }
+        // else{ depth = depth == 0.f ? p->depth_min : clamp(depth, p->depth_max, p->depth_min); }
         outval = map_value(depth, p->depth_min, p->depth_max, p->z_min, p->z_max);
     }
     // color image input
@@ -76,8 +81,9 @@ __kernel void texture_input(read_only image2d_t the_img,
         // convert to grayscale and map to elevation
         float val = map_value(gray(sample).x, 0.f, 1.f, p->z_min, p->z_max);
 
-        if(p->z_max >= p->z_min){ outval = max(val, outval); }
-        else{ outval = min(val, outval); }
+        // if(p->z_max >= p->z_min){ outval = max(val, outval); }
+        // else{ outval = min(val, outval); }
+        outval = val;
     }
     pos_gen[i].z = outval;
 }
