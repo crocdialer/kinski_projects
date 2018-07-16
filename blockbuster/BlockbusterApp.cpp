@@ -18,7 +18,7 @@ namespace
     struct param_t
     {
         int num_cols, num_rows, mirror, border;
-        float depth_min, depth_max, depth_multiplier;
+        float depth_min, depth_max, input_depth, input_color;
         float smooth_fall, smooth_rise;
         float z_min, z_max;
     };
@@ -42,16 +42,18 @@ void BlockbusterApp::setup()
     register_property(m_spacing_x);
     register_property(m_spacing_y);
     register_property(m_block_length);
+    register_property(m_block_width);
     register_property(m_border);
     register_property(m_mirror_img);
-    register_property(m_use_shadows);
+    register_property(m_enable_block_shader);
     register_property(m_depth_min);
     register_property(m_depth_max);
-    register_property(m_depth_multiplier);
     register_property(m_z_min);
     register_property(m_z_max);
     register_property(m_depth_smooth_fall);
     register_property(m_depth_smooth_rise);
+    register_property(m_input_depth);
+    register_property(m_input_color);
     register_property(m_poisson_radius);
     observe_properties();
 
@@ -165,7 +167,8 @@ void BlockbusterApp::update_cl(float the_time_delta)
     p.num_rows = *m_num_tiles_y;
     p.depth_min = *m_depth_min;
     p.depth_max = *m_depth_max;
-    p.depth_multiplier = *m_depth_multiplier;
+    p.input_depth = *m_input_depth;
+    p.input_color = *m_input_color;
     p.smooth_fall = *m_depth_smooth_fall;
     p.smooth_rise = *m_depth_smooth_rise;
     p.z_min = *m_z_min;
@@ -415,6 +418,7 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_media_path)
     {
+//        m_movie->unload();
         m_movie->load(*m_media_path, true, true);
         m_movie->set_on_load_callback([](media::MediaControllerPtr c)
         {
@@ -429,18 +433,12 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
             m_mesh->material()->uniform("u_length", *m_block_length);
         }
     }
-//    else if(theProperty == m_block_width)
-//    {
-//        if(m_mesh)
-//        {
-//            m_mesh->material()->uniform("u_width", *m_block_width);
-//        }
-//    }
     else if(theProperty == m_num_tiles_x ||
             theProperty == m_num_tiles_y ||
             theProperty == m_spacing_x ||
             theProperty == m_spacing_y ||
-            theProperty == m_use_shadows)
+            theProperty == m_block_width ||
+            theProperty == m_enable_block_shader)
     {
         m_dirty_mesh = true;
     }
@@ -452,7 +450,7 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
         fmt.num_samples = 4;
         m_fbos[0] = gl::Fbo::create(m_fbo_resolution->value().x, m_fbo_resolution->value().y, fmt);
         m_fbo_cam = gl::PerspectiveCamera::create(m_fbos[0]->aspect_ratio(), *m_fbo_cam_fov, 1.f, 2000.f);
-        m_fbo_cam->position() = *m_fbo_cam_pos;
+        m_fbo_cam->set_position(gl::vec3(0, 0, m_fbo_cam_pos->value()));
 
     }
     else if(theProperty == m_use_syphon)
@@ -480,7 +478,7 @@ gl::MeshPtr BlockbusterApp::create_mesh()
     geom->set_primitive_type(GL_POINTS);
     geom->vertices().resize(*m_num_tiles_x * *m_num_tiles_y);
     geom->normals().resize(*m_num_tiles_x * *m_num_tiles_y, vec3(0, 0, 1));
-    geom->point_sizes().resize(*m_num_tiles_x * *m_num_tiles_y, 1.f);
+    geom->point_sizes().resize(*m_num_tiles_x * *m_num_tiles_y, *m_block_width);
     geom->colors().resize(*m_num_tiles_x * *m_num_tiles_y, gl::COLOR_WHITE);
     vec2 step(m_spacing_x->value(), m_spacing_y->value());
     vec2 offset = -vec2(m_num_tiles_x->value(), m_num_tiles_y->value()) * step / 2.f;
@@ -496,8 +494,7 @@ gl::MeshPtr BlockbusterApp::create_mesh()
     }
     geom->compute_aabb();
 
-    auto mat = gl::Material::create(*m_use_shadows ? m_block_shader_shadows :
-                                    m_block_shader);
+    auto mat = gl::Material::create(*m_enable_block_shader ? m_block_shader : gl::create_shader(gl::ShaderType::POINTS_COLOR));
     mat->set_point_size(3.f);
     ret = gl::Mesh::create(geom, mat);
     ret->material()->uniform("u_length", *m_block_length);
@@ -522,17 +519,9 @@ glm::vec3 BlockbusterApp::click_pos_on_ground(const glm::vec2 click_pos)
 
 void BlockbusterApp::init_shaders()
 {
-    m_block_shader = gl::create_shader(gl::ShaderType::POINTS_COLOR);
-    m_block_shader_shadows = gl::create_shader(gl::ShaderType::POINTS_SPHERE);
-
-    m_block_shader_shadows->load_from_data(fs::read_file("geom_prepass.vert"),
-                                           phong_frag,
-                                           fs::read_file("points_to_cubes.geom"));
-
-//    m_block_shader_shadows = gl::create_shader(gl::ShaderType::UNLIT);
-//    m_block_shader_shadows->load_from_data(fs::read_file("geom_prepass.vert"),
-//                                           phong_shadows_frag,
-//                                           fs::read_file("points_to_cubes_shadows.geom"));
+    m_block_shader = gl::Shader::create(fs::read_file("geom_prepass.vert"),
+                                        phong_frag,
+                                        fs::read_file("points_to_cubes.geom"));
 }
 
 void BlockbusterApp::init_opencl_buffers(gl::MeshPtr the_mesh)

@@ -1,7 +1,7 @@
 typedef struct
 {
     int num_cols, num_rows, mirror, border;
-    float depth_min, depth_max, depth_multiplier;
+    float depth_min, depth_max, input_depth, input_color;
     float smooth_fall, smooth_rise;
     float z_min, z_max;
 }param_t;
@@ -13,6 +13,38 @@ inline float4 jet(float val)
                     min(4.0f * val - 0.5f, -4.0f * val + 3.5f),
                     min(4.0f * val + 0.5f, -4.0f * val + 2.5f),
                     1.0f);
+}
+
+float4 hot_iron(float value)
+{
+    float4 color8  = (float4)( 255.0 / 255.0, 255.0 / 255.0, 204.0 / 255.0, 1.0 );
+    float4 color7  = (float4)( 255.0 / 255.0, 237.0 / 255.0, 160.0 / 255.0, 1.0 );
+    float4 color6  = (float4)( 254.0 / 255.0, 217.0 / 255.0, 118.0 / 255.0, 1.0 );
+    float4 color5  = (float4)( 254.0 / 255.0, 178.0 / 255.0,  76.0 / 255.0, 1.0 );
+    float4 color4  = (float4)( 253.0 / 255.0, 141.0 / 255.0,  60.0 / 255.0, 1.0 );
+    float4 color3  = (float4)( 252.0 / 255.0,  78.0 / 255.0,  42.0 / 255.0, 1.0 );
+    float4 color2  = (float4)( 227.0 / 255.0,  26.0 / 255.0,  28.0 / 255.0, 1.0 );
+    float4 color1  = (float4)( 189.0 / 255.0,   0.0 / 255.0,  38.0 / 255.0, 1.0 );
+    float4 color0  = (float4)( 128.0 / 255.0,   0.0 / 255.0,  38.0 / 255.0, 1.0 );
+
+    float colorValue = value * 8.0f;
+    int sel = (int)( floor( colorValue ) );
+
+    if(sel >= 8){ return color0; }
+    else if(sel < 0){ return color0; }
+    else
+    {
+        colorValue -= (float)(sel);
+        if(sel < 1){ return ( color1 * colorValue + color0 * ( 1.0f - colorValue ) ); }
+        else if(sel < 2){ return ( color2 * colorValue + color1 * ( 1.0f - colorValue ) ); }
+        else if(sel < 3){ return ( color3 * colorValue + color2 * ( 1.0f - colorValue ) ); }
+        else if(sel < 4){ return ( color4 * colorValue + color3 * ( 1.0f - colorValue ) ); }
+        else if(sel < 5){ return ( color5 * colorValue + color4 * ( 1.0f - colorValue ) ); }
+        else if(sel < 6){ return ( color6 * colorValue + color5 * ( 1.0f - colorValue ) ); }
+        else if(sel < 7){ return ( color7 * colorValue + color6 * ( 1.0f - colorValue ) ); }
+        else if(sel < 8){ return ( color8 * colorValue + color7 * ( 1.0f - colorValue ) ); }
+        else{ return color0; }
+    }
 }
 
 inline float4 gray(float4 color)
@@ -58,31 +90,32 @@ __kernel void texture_input(read_only image2d_t the_img,
     // or 8bit color
     float4 sample = read_imagef(the_img, array_pos);
     float ratio = 0.f;
-    float outval;// = pos_gen[i].z;
+    float outval = 0.f;
 
     if(is_depth_img)
     {
         // depth value in meters
         float depth = sample.x * 65535.f / 1000.f;
 
-        float depth_min = p->depth_min <= p->depth_max ? p->depth_min : p->depth_max;
-        float depth_max = p->depth_min <= p->depth_max ? p->depth_max : p->depth_min;
+        float depth_min = min(p->depth_min, p->depth_max);
+        float depth_max = max(p->depth_min, p->depth_max);
         if(depth == 0.f){ depth = depth_max; }
         depth = clamp(depth, p->depth_min, p->depth_max);
-
-        // if(p->depth_min <= p->depth_max){ depth = depth == 0.f ? p->depth_max : clamp(depth, p->depth_min, p->depth_max); }
-        // else{ depth = depth == 0.f ? p->depth_min : clamp(depth, p->depth_max, p->depth_min); }
-        outval = map_value(depth, p->depth_min, p->depth_max, p->z_min, p->z_max);
+        outval = p->input_depth * map_value(depth, depth_min, depth_max, p->z_min, p->z_max);
     }
     // color image input
     // this is optional and depth will always have priority
     else
     {
-        // convert to grayscale and map to elevation
-        float val = map_value(gray(sample).x, 0.f, 1.f, p->z_min, p->z_max);
+        outval = pos_gen[i].z;
 
-        // if(p->z_max >= p->z_min){ outval = max(val, outval); }
-        // else{ outval = min(val, outval); }
+        // convert to grayscale and map to elevation
+        float z_min = min(p->z_min, p->z_max);
+        float z_max = max(p->z_min, p->z_max);
+        float val = p->input_color * map_value(gray(sample).x, 0.f, 1.f, z_min, z_max);
+
+        if(p->z_max >= p->z_min){ val = max(val, outval); }
+        else{ val = min(val, outval); }
         outval = val;
     }
     pos_gen[i].z = outval;
@@ -108,8 +141,10 @@ __kernel void update_mesh(__global float4* pos,
     // update array with newly computed values
     pos[i] = p;
 
-    float min_val = min(params->z_min, params->z_max);
-    float max_val = max(params->z_min, params->z_max);
-    float jet_val = (p.z - min_val) / (max_val - min_val);
-    color[i] = jet(jet_val);
+    // float min_val = min(params->z_min, params->z_max);
+    // float max_val = max(params->z_min, params->z_max);
+    float jet_val = (p.z - params->z_min) / (params->z_max - params->z_min);
+    if(jet_val < 0.f){ jet_val += 1.f; }
+
+    color[i] = hot_iron(jet_val);
 }

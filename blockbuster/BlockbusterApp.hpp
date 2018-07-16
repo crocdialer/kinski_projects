@@ -56,11 +56,11 @@ namespace kinski
         // fbo / syphon stuff
         std::vector<gl::FboPtr> m_fbos{2};
         gl::CameraPtr m_fbo_cam;
-        Property_<glm::vec3>::Ptr
-        m_fbo_cam_pos = Property_<glm::vec3>::create("fbo camera position", glm::vec3(0, 0, 5.f));
+        Property_<float>::Ptr
+        m_fbo_cam_pos = RangedProperty<float>::create("fbo camera z-position", 220, 0.f, 1000.f);
         
         Property_<float>::Ptr
-        m_fbo_cam_fov = Property_<float>::create("fbo camera fov", 45.f);
+        m_fbo_cam_fov = RangedProperty<float>::create("fbo camera fov", 45.f, 0.f, 90.f);
         
         Property_<glm::vec2>::Ptr
         m_fbo_resolution = Property_<glm::vec2>::create("Fbo resolution", glm::vec2(1280, 640));
@@ -75,28 +75,28 @@ namespace kinski
         Property_<std::string>::create("Syphon server name", "blockbuster");
         
         Property_<int>::Ptr
-        m_num_tiles_x = RangedProperty<int>::create("num tiles x", 16, 1, 1000),
-        m_num_tiles_y = RangedProperty<int>::create("num tiles y", 10, 1, 1000),
-        m_spacing_x = RangedProperty<int>::create("spacing x", 10, 0, 100),
-        m_spacing_y = RangedProperty<int>::create("spacing y", 10, 0, 100),
+        m_num_tiles_x = RangedProperty<int>::create("num tiles x", 128, 1, 1000),
+        m_num_tiles_y = RangedProperty<int>::create("num tiles y", 100, 1, 1000),
         m_border = RangedProperty<int>::create("border", 1, 0, 10);
         
         Property_<float>::Ptr
-        m_block_length = Property_<float>::create("block length", 1.f),
-//        m_block_width = Property_<float>::create("block width", 1.f),
-//        m_block_width_multiplier = Property_<float>::create("block width multiplier", 1.f),
+        m_spacing_x = RangedProperty<float>::create("spacing x", 1.f, 0, 100),
+        m_spacing_y = RangedProperty<float>::create("spacing y", 1.f, 0, 100),
+        m_block_length = RangedProperty<float>::create("block length", 25.f, 1.f, 100.f),
+        m_block_width = Property_<float>::create("block width", 1.f),
         m_depth_min = RangedProperty<float>::create("depth min", 1.f, 0.f, 10.f),
         m_depth_max = RangedProperty<float>::create("depth max", 3.f, 0.f, 10.f),
-        m_depth_multiplier = RangedProperty<float>::create("depth mutliplier", 10.f, 0.f, 100.f),
         m_z_min = RangedProperty<float>::create("min elevation", 0.f, 0.f, 100.f),
         m_z_max = RangedProperty<float>::create("max elevation", 50.f, 0.f, 100.f),
         m_depth_smooth_fall = RangedProperty<float>::create("depth smooth falling", .95f, 0.f, 1.f),
         m_depth_smooth_rise = RangedProperty<float>::create("depth smooth rising", .7f, 0.f, 1.f),
+        m_input_depth = RangedProperty<float>::create("depth input", 1.f, 0.f, 1.f),
+        m_input_color = RangedProperty<float>::create("color input", 1.f, 0.f, 1.f),
         m_poisson_radius = Property_<float>::create("poisson radius", 3.f);
         
         Property_<bool>::Ptr
         m_mirror_img = Property_<bool>::create("mirror image", false),
-        m_use_shadows = Property_<bool>::create("use shadows", true);
+        m_enable_block_shader = Property_<bool>::create("enable block shader", true);
 
         void setup_cl();
         void init_opencl_buffers(gl::MeshPtr the_mesh);
