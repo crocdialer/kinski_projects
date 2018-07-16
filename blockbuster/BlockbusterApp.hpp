@@ -28,6 +28,10 @@ namespace kinski
         enum ViewType{VIEW_NOTHING = 0, VIEW_DEBUG = 1, VIEW_OUTPUT = 2};
         enum TextureEnum{TEXTURE_DEPTH = 0, TEXTURE_MOVIE = 1, TEXTURE_SYPHON = 2};
 
+        // kinect (re-)connection timer
+        float m_timeout_kinect = 3.f, m_timeout_license = 1200.f;
+        Timer m_timer_kinect, m_timer_license;
+
         // kinect assets
         FreenectPtr m_freenect;
         KinectDevicePtr m_kinect_device;
@@ -77,7 +81,7 @@ namespace kinski
         Property_<int>::Ptr
         m_num_tiles_x = RangedProperty<int>::create("num tiles x", 128, 1, 1000),
         m_num_tiles_y = RangedProperty<int>::create("num tiles y", 100, 1, 1000),
-        m_border = RangedProperty<int>::create("border", 1, 0, 10);
+        m_border = RangedProperty<int>::create("border", 0, 0, 10);
         
         Property_<float>::Ptr
         m_spacing_x = RangedProperty<float>::create("spacing x", 1.f, 0, 100),
@@ -91,12 +95,18 @@ namespace kinski
         m_depth_smooth_fall = RangedProperty<float>::create("depth smooth falling", .95f, 0.f, 1.f),
         m_depth_smooth_rise = RangedProperty<float>::create("depth smooth rising", .7f, 0.f, 1.f),
         m_input_depth = RangedProperty<float>::create("depth input", 1.f, 0.f, 1.f),
-        m_input_color = RangedProperty<float>::create("color input", 1.f, 0.f, 1.f),
-        m_poisson_radius = Property_<float>::create("poisson radius", 3.f);
-        
+        m_input_color = RangedProperty<float>::create("color input", 1.f, 0.f, 1.f);
+
+        Property_<gl::Color>::Ptr
+        m_color_min = Property_<gl::Color>::create("color min", gl::COLOR_WHITE),
+        m_color_max = Property_<gl::Color>::create("color max", gl::COLOR_WHITE);
+
         Property_<bool>::Ptr
-        m_mirror_img = Property_<bool>::create("mirror image", false),
+        m_mirror_img = Property_<bool>::create("mirror image", true),
         m_enable_block_shader = Property_<bool>::create("enable block shader", true);
+
+        Property_<std::string>::Ptr
+        m_license = Property_<std::string>::create("license");
 
         void setup_cl();
         void init_opencl_buffers(gl::MeshPtr the_mesh);

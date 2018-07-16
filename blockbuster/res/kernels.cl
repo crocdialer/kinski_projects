@@ -4,6 +4,7 @@ typedef struct
     float depth_min, depth_max, input_depth, input_color;
     float smooth_fall, smooth_rise;
     float z_min, z_max;
+    float4 color_min, color_max;
 }param_t;
 
 // debug coloring
@@ -110,13 +111,12 @@ __kernel void texture_input(read_only image2d_t the_img,
         outval = pos_gen[i].z;
 
         // convert to grayscale and map to elevation
-        float z_min = min(p->z_min, p->z_max);
-        float z_max = max(p->z_min, p->z_max);
-        float val = p->input_color * map_value(gray(sample).x, 0.f, 1.f, z_min, z_max);
+        float gray_val = gray(sample).x;
+        gray_val = p->depth_min <= p->depth_max ? 1.f - gray_val : gray_val;
+        float val = p->input_color * map_value(gray_val, 0.f, 1.f, p->z_min, p->z_max);
 
-        if(p->z_max >= p->z_min){ val = max(val, outval); }
-        else{ val = min(val, outval); }
-        outval = val;
+        if(p->z_min <= p->z_max){ outval -= val; }
+        else{ outval += val; }
     }
     pos_gen[i].z = outval;
 }
@@ -141,10 +141,10 @@ __kernel void update_mesh(__global float4* pos,
     // update array with newly computed values
     pos[i] = p;
 
-    // float min_val = min(params->z_min, params->z_max);
-    // float max_val = max(params->z_min, params->z_max);
-    float jet_val = (p.z - params->z_min) / (params->z_max - params->z_min);
-    if(jet_val < 0.f){ jet_val += 1.f; }
+    float mix_val = (p.z - params->z_min) / (params->z_max - params->z_min);
+    if(mix_val < 0.f){ mix_val += 1.f; }
 
-    color[i] = hot_iron(jet_val);
+    color[i] = mix(params->color_min, params->color_max, mix_val);
+    // color[i] = jet(mix_val);
+    // color[i] = hot_iron(mix_val);
 }

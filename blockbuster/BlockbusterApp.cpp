@@ -21,7 +21,10 @@ namespace
         float depth_min, depth_max, input_depth, input_color;
         float smooth_fall, smooth_rise;
         float z_min, z_max;
+        gl::vec4 color_min, color_max;
     };
+
+    std::string g_license = "cafeaulait";
 }
 
 /////////////////////////////////////////////////////////////////
@@ -29,7 +32,8 @@ namespace
 void BlockbusterApp::setup()
 {
     ViewerApp::setup();
-    
+
+    register_property(m_license);
     register_property(m_view_type);
     register_property(m_media_path);
     register_property(m_use_syphon);
@@ -50,11 +54,12 @@ void BlockbusterApp::setup()
     register_property(m_depth_max);
     register_property(m_z_min);
     register_property(m_z_max);
+    register_property(m_color_min);
+    register_property(m_color_max);
     register_property(m_depth_smooth_fall);
     register_property(m_depth_smooth_rise);
     register_property(m_input_depth);
     register_property(m_input_color);
-    register_property(m_poisson_radius);
     observe_properties();
 
     // init our application specific shaders
@@ -66,18 +71,39 @@ void BlockbusterApp::setup()
     // depth sensor context
     m_freenect = Freenect::create();
 
-    if(m_freenect->num_devices() > 0)
+    auto connect_cb = [this]()
     {
-        LOG_INFO << "found kinect -> connecting ...";
-
-        try
+        if(!m_kinect_device && m_freenect->num_devices() > 0)
         {
-            auto dev = m_freenect->create_device(0);
-            dev->start_depth();
-            dev->set_led(LED_GREEN);
-            m_kinect_device = dev;
-        }catch(std::exception &e){ LOG_ERROR << e.what(); }
-    }else{ LOG_WARNING << "no depth sensor connected ..."; }
+            LOG_INFO << "found kinect -> connecting ...";
+
+            try
+            {
+                auto dev = m_freenect->create_device(0);
+                dev->start_depth();
+                dev->set_led(LED_GREEN);
+                m_kinect_device = dev;
+            }catch(std::exception &e){ LOG_ERROR << e.what(); }
+        }
+//        else{ m_kinect_device.reset(); }
+    };
+    m_timer_kinect = Timer(main_queue().io_service(), connect_cb);
+    m_timer_kinect.set_periodic(true);
+    m_timer_kinect.expires_from_now(m_timeout_kinect);
+    connect_cb();
+
+    // create empty depth texture
+    gl::Texture::Format fmt;
+    fmt.internal_format = GL_RED;
+    fmt.datatype = GL_UNSIGNED_SHORT;
+    uint16_t pix_val = 0;
+    textures()[TEXTURE_DEPTH] = gl::Texture(&pix_val, GL_RED, 1, 1, fmt);
+
+    m_timer_license = Timer(main_queue().io_service(), [this]()
+    {
+        if(m_license->value() != g_license){ set_running(false); }
+    });
+    m_timer_license.expires_from_now(m_timeout_license);
 
     load_settings();
 }
@@ -173,6 +199,8 @@ void BlockbusterApp::update_cl(float the_time_delta)
     p.smooth_rise = *m_depth_smooth_rise;
     p.z_min = *m_z_min;
     p.z_max = *m_z_max;
+    p.color_min = *m_color_min;
+    p.color_max = *m_color_max;
 
     size_t num_vertices = m_mesh->geometry()->vertices().size();
 
@@ -191,7 +219,8 @@ void BlockbusterApp::update_cl(float the_time_delta)
 
     try
     {
-//        std::vector<cl::Event> wait_events = {m_cl_event};
+        std::vector<cl::Event> wait_events;
+//        if(m_cl_event()){ wait_events.push_back(m_cl_event); }
 
         // setup update kernel
         m_cl_kernel_update.setArg(0, m_cl_buffer_vertex);
@@ -209,7 +238,8 @@ void BlockbusterApp::update_cl(float the_time_delta)
         m_opencl.queue().enqueueNDRangeKernel(m_cl_kernel_update,
                                               cl::NullRange,
                                               cl::NDRange(num_vertices),
-                                              cl::NullRange);
+                                              cl::NullRange,
+                                              &wait_events);
 
         // Release the VBOs again
         m_opencl.queue().enqueueReleaseGLObjects(&gl_buffers, NULL);
@@ -418,7 +448,7 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
     
     if(theProperty == m_media_path)
     {
-//        m_movie->unload();
+        m_movie->unload();
         m_movie->load(*m_media_path, true, true);
         m_movie->set_on_load_callback([](media::MediaControllerPtr c)
         {
@@ -461,11 +491,6 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
     {
         try{m_syphon.setName(*m_syphon_server_name);}
         catch(syphon::SyphonNotRunningException &e){LOG_WARNING<<e.what();}
-    }
-    else if(theProperty == m_poisson_radius)
-    {
-        if(m_mesh)
-            m_mesh->material()->uniform("u_poisson_radius", *m_poisson_radius);
     }
 }
 
