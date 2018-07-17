@@ -54,7 +54,7 @@ namespace kinski
         Property_<std::string>::Ptr
         m_media_path = Property_<std::string>::create("media path", "");
         
-        bool m_dirty_mesh = true, m_dirty_fbo = true, m_dirty_cl_context = true;
+        bool m_dirty_mesh = true, m_dirty_cl_context = true;
         bool m_has_new_texture = false;
         
         // fbo / syphon stuff
@@ -67,14 +67,14 @@ namespace kinski
         m_fbo_cam_fov = RangedProperty<float>::create("fbo camera fov", 45.f, 0.f, 90.f);
         
         Property_<glm::vec2>::Ptr
-        m_fbo_resolution = Property_<glm::vec2>::create("Fbo resolution", glm::vec2(1280, 640));
+        m_fbo_resolution = Property_<glm::vec2>::create("Fbo resolution", glm::vec2(1920, 1080));
         
         Property_<int>::Ptr
         m_view_type = RangedProperty<int>::create("view type", VIEW_OUTPUT, 0, 2);
         
         // output via Syphon
         syphon::Output m_syphon;
-        Property_<bool>::Ptr m_use_syphon = Property_<bool>::create("Use syphon", false);
+        Property_<bool>::Ptr m_use_syphon = Property_<bool>::create("Use syphon", true);
         Property_<std::string>::Ptr m_syphon_server_name =
         Property_<std::string>::create("Syphon server name", "blockbuster");
         
@@ -88,8 +88,8 @@ namespace kinski
         m_spacing_y = RangedProperty<float>::create("spacing y", 1.f, 0, 100),
         m_block_length = RangedProperty<float>::create("block length", 25.f, 1.f, 100.f),
         m_block_width = Property_<float>::create("block width", 1.f),
-        m_depth_min = RangedProperty<float>::create("depth min", 1.f, 0.f, 10.f),
-        m_depth_max = RangedProperty<float>::create("depth max", 3.f, 0.f, 10.f),
+        m_depth_min = RangedProperty<float>::create("depth min", 1.f, 0.f, 6.f),
+        m_depth_max = RangedProperty<float>::create("depth max", 3.f, 0.f, 6.f),
         m_z_min = RangedProperty<float>::create("min elevation", 0.f, 0.f, 100.f),
         m_z_max = RangedProperty<float>::create("max elevation", 50.f, 0.f, 100.f),
         m_depth_smooth_fall = RangedProperty<float>::create("depth smooth falling", .95f, 0.f, 1.f),
