@@ -144,7 +144,7 @@ __kernel void update_mesh(__global float4* pos,
     float mix_val = (p.z - params->z_min) / (params->z_max - params->z_min);
     if(mix_val < 0.f){ mix_val += 1.f; }
 
-    color[i] = mix(params->color_min, params->color_max, mix_val);
+    // color[i] = mix(params->color_min, params->color_max, mix_val);
     // color[i] = jet(mix_val);
-    // color[i] = hot_iron(mix_val);
+    color[i] = hot_iron(mix_val);
 }

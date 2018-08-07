@@ -50,13 +50,15 @@ namespace kinski
         gl::MeshPtr m_mesh;
         gl::Texture m_texture_input;
         gl::ShaderPtr m_block_shader, m_block_shader_shadows;
-        
-        Property_<std::string>::Ptr
-        m_media_path = Property_<std::string>::create("media path", "");
-        
+
+        gl::DeferredRendererPtr m_def_rend;
+
         bool m_dirty_mesh = true, m_dirty_cl_context = true;
         bool m_has_new_texture = false;
-        
+
+        Property_<std::string>::Ptr
+        m_media_path = Property_<std::string>::create("media path", "");
+
         // fbo / syphon stuff
         std::vector<gl::FboPtr> m_fbos{2};
         gl::CameraPtr m_fbo_cam;
@@ -103,7 +105,8 @@ namespace kinski
 
         Property_<bool>::Ptr
         m_mirror_img = Property_<bool>::create("mirror image", true),
-        m_enable_block_shader = Property_<bool>::create("enable block shader", true);
+        m_enable_block_shader = Property_<bool>::create("enable block shader", true),
+        m_enable_deferred_render = Property_<bool>::create("enable deferred render", false);
 
         Property_<std::string>::Ptr
         m_license = Property_<std::string>::create("license");

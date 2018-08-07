@@ -6,6 +6,7 @@
 //
 //
 
+#include <gl/DeferredRenderer.hpp>
 #include "BlockbusterApp.hpp"
 #include "gl/ShaderLibrary.h"
 
@@ -25,6 +26,14 @@ namespace
     };
 
     std::string g_license = "cafeaulait";
+
+    std::string secs_to_time_str(float the_secs)
+    {
+        char buf[128];
+        sprintf(buf, "%d:%02d:%04.1f", (int) the_secs / 3600, ((int) the_secs / 60) % 60,
+                fmodf(the_secs, 60));
+        return buf;
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -50,6 +59,7 @@ void BlockbusterApp::setup()
     register_property(m_border);
     register_property(m_mirror_img);
     register_property(m_enable_block_shader);
+    register_property(m_enable_deferred_render);
     register_property(m_depth_min);
     register_property(m_depth_max);
     register_property(m_z_min);
@@ -99,11 +109,12 @@ void BlockbusterApp::setup()
     uint16_t pix_val = 0;
     textures()[TEXTURE_DEPTH] = gl::Texture(&pix_val, GL_RED, 1, 1, fmt);
 
-    m_timer_license = Timer(main_queue().io_service(), [this]()
-    {
-        if(m_license->value() != g_license){ set_running(false); }
-    });
+    m_timer_license = Timer(main_queue().io_service(), [this](){ set_running(false); });
     m_timer_license.expires_from_now(m_timeout_license);
+
+    // render settings
+    m_def_rend = gl::DeferredRenderer::create();
+//    m_def_rend->set_g_buffer_resolution(gl::vec2(1280, 720));
 
     load_settings();
 }
@@ -288,6 +299,7 @@ void BlockbusterApp::apply_texture_cl(gl::Texture the_texture, bool is_depth_img
                                                   &m_cl_event);
 
             m_opencl.queue().enqueueReleaseGLObjects(&gl_buffers, NULL);
+            m_opencl.queue().finish();
         }
         else{ LOG_ERROR << "could not create cl-image ..."; }
     }
@@ -328,9 +340,13 @@ void BlockbusterApp::draw()
         default:
             break;
     }
-
-//    m_light_component->draw_light_dummies();
     if(display_tweakbar()){ draw_textures(textures());}
+
+    // license timeout
+    if(!m_timer_license.has_expired())
+    {
+        gl::draw_text_2D(secs_to_time_str(m_timer_license.expires_from_now()), fonts()[0], gl::COLOR_WHITE, gl::vec2(5));
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -492,6 +508,15 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
         try{m_syphon.setName(*m_syphon_server_name);}
         catch(syphon::SyphonNotRunningException &e){LOG_WARNING<<e.what();}
     }
+    else if(theProperty == m_license)
+    {
+        if(m_license->value() == g_license){ m_timer_license.cancel(); }
+    }
+    else if(theProperty == m_enable_deferred_render)
+    {
+        if(*m_enable_deferred_render){ scene()->set_renderer(m_def_rend); }
+        else{ scene()->set_renderer(gl::SceneRenderer::create()); }
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -526,6 +551,17 @@ gl::MeshPtr BlockbusterApp::create_mesh()
 
     // disable culling
     ret->add_tag(gl::SceneRenderer::TAG_NO_CULL);
+
+    // add shader override for renderer
+    auto shader = gl::Shader::create(geom_prepass_vert,
+                                     create_g_buffer_frag,
+                                     fs::read_file("points_to_cubes.geom"));
+    m_def_rend->clear_shader_overrides();
+    m_def_rend->override_geometry_stage(ret, shader);
+
+//    mat->set_shader(shader);
+//    ret->material()->set_roughness(0.2f);
+//    ret->material()->set_metalness(1.f);
     return ret;
 }
 
@@ -544,7 +580,7 @@ glm::vec3 BlockbusterApp::click_pos_on_ground(const glm::vec2 click_pos)
 
 void BlockbusterApp::init_shaders()
 {
-    m_block_shader = gl::Shader::create(fs::read_file("geom_prepass.vert"),
+    m_block_shader = gl::Shader::create(geom_prepass_vert,
                                         phong_frag,
                                         fs::read_file("points_to_cubes.geom"));
 }
