@@ -76,6 +76,7 @@ void LED_GrabberApp::setup()
     m_calibration_points->set_tweakable(false);
     register_property(m_calibration_points);
     register_property(m_led_res);
+    register_property(m_led_unit_res);
     register_property(m_downsample_res);
     observe_properties();
 
@@ -578,8 +579,11 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
         {
             m_calibration_points->value().resize(num_leds, gl::vec2(-1));
         }
-        
         m_led_grabber->set_resolution(m_led_res->value().x, m_led_res->value().y);
+    }
+    else if(theProperty == m_led_unit_res)
+    {
+        m_led_grabber->set_unit_resolution(m_led_unit_res->value().x, m_led_unit_res->value().y);
     }
     else if(theProperty == m_downsample_res)
     {

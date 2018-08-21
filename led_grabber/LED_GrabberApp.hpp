@@ -91,7 +91,8 @@ namespace kinski
                                                          gl::Color(0.f, 0.f, 0.f, 0.7f));
         
         Property_<gl::vec2>::Ptr
-        m_led_res = Property_<gl::vec2>::create("LED resolution", gl::vec2(58, 7)),
+        m_led_res = Property_<gl::vec2>::create("LED resolution", gl::vec2(58, 14)),
+        m_led_unit_res = Property_<gl::vec2>::create("LED unit resolution", gl::vec2(58, 14)),
         m_downsample_res = Property_<gl::vec2>::create("downsample resolution", gl::vec2(320, 240));
         
         Property_<std::vector<gl::vec2>>::Ptr
