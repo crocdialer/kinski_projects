@@ -166,9 +166,9 @@ void ParticleSample::mouse_release(const MouseEvent &e)
 {
     ViewerApp::mouse_release(e);
 
-    if(e.isControlDown())
+    if(e.is_control_down())
     {
-        auto ray = gl::calculate_ray(camera(), e.getPos());
+        auto ray = gl::calculate_ray(camera(), e.position());
         gl::Plane ground(vec3(0), vec3(0, 1, 0));
         auto intersection = ground.intersect(ray);
 

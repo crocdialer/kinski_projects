@@ -192,10 +192,10 @@ void FractureApp::mouse_press(const MouseEvent &e)
 {
     ViewerApp::mouse_press(e);
     
-    if(e.isRight())
+    if(e.is_right())
     {
         gl::CameraPtr cam = *m_view_type == VIEW_OUTPUT ? m_fbo_cam : camera();
-        auto ray = gl::calculate_ray(cam, vec2(e.getX(), e.getY()));
+        auto ray = gl::calculate_ray(cam, vec2(e.get_x(), e.get_y()));
 //        shoot_box(ray, *m_shoot_velocity);
         shoot_ball(ray, *m_shoot_velocity, .8f);
     }

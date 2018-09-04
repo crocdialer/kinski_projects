@@ -377,7 +377,7 @@ void LED_GrabberApp::mouse_press(const MouseEvent &e)
 {
     if(m_runmode == MODE_MANUAL_CALIBRATION)
     {
-        if(!display_tweakbar()){ process_calib_click(e.getPos()); }
+        if(!display_tweakbar()){ process_calib_click(e.position()); }
     }
     else{ ViewerApp::mouse_press(e); }
 }

@@ -373,6 +373,7 @@ bool MovieTimeshift::set_input_source(InputSource the_src)
             
         case INPUT_CAMERA:
             m_camera = media::CameraController::create(*m_cam_id);
+//            m_camera->set_capture_mode({1920, 1080, 30, 1});
             m_camera->start_capture();
             break;
             

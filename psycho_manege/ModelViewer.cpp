@@ -369,7 +369,7 @@ void ModelViewer::mouse_wheel(const MouseEvent &e)
 
 void ModelViewer::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
-    int lvl = m_roots.size() - e.getY() / (gl::window_dimension().y / m_roots.size());
+    int lvl = m_roots.size() - e.get_y() / (gl::window_dimension().y / m_roots.size());
     LOG_DEBUG << "dropped assets on lvl: " << lvl;
     
     for(const string &f : files){ load_asset(f, lvl); }
