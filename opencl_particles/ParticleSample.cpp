@@ -82,7 +82,7 @@ void ParticleSample::update(float timeDelta)
     ViewerApp::update(timeDelta);
 
     // construct ImGui window for this frame
-    if(display_tweakbar())
+    if(display_gui())
     {
         gui::draw_component_ui(shared_from_this());
         gui::draw_component_ui(m_light_component);
@@ -138,7 +138,7 @@ void ParticleSample::key_press(const KeyEvent &e)
 {
     ViewerApp::key_press(e);
     
-    switch(e.getCode())
+    switch(e.code())
     {
         case Key::_E:
             m_particle_system->emit_particles(*m_num_burst_particles);

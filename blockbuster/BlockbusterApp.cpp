@@ -141,7 +141,7 @@ void BlockbusterApp::update(float timeDelta)
     ViewerApp::update(timeDelta);
 
     // construct ImGui window for this frame
-    if(display_tweakbar())
+    if(display_gui())
     {
         gui::draw_component_ui(shared_from_this());
         gui::draw_component_ui(m_light_component);
@@ -340,7 +340,7 @@ void BlockbusterApp::draw()
         default:
             break;
     }
-    if(display_tweakbar()){ draw_textures(textures());}
+    if(display_gui()){ draw_textures(textures());}
 
     // license timeout
     if(!m_timer_license.has_expired())

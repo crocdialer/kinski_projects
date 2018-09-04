@@ -42,7 +42,7 @@ void VarioDisplay::update(float timeDelta)
     ViewerApp::update(timeDelta);
 
     // construct ImGui window for this frame
-    if(display_tweakbar())
+    if(display_gui())
     {
         gui::draw_component_ui(shared_from_this());
     }
@@ -72,16 +72,16 @@ void VarioDisplay::resize(int w ,int h)
 
 void VarioDisplay::key_press(const KeyEvent &e)
 {
-    if(e.isControlDown()){ ViewerApp::key_press(e); }
+    if(e.is_control_down()){ ViewerApp::key_press(e); }
 }
 
 /////////////////////////////////////////////////////////////////
 
 void VarioDisplay::key_release(const KeyEvent &e)
 {
-    if(e.isControlDown()){ ViewerApp::key_release(e); return;}
+    if(e.is_control_down()){ ViewerApp::key_release(e); return;}
     
-    switch(e.getCode())
+    switch(e.code())
     {
         case Key::_BACKSPACE:
             m_current_index = std::max(m_current_index - 1, 0);
@@ -101,7 +101,7 @@ void VarioDisplay::key_release(const KeyEvent &e)
             break;
             
         default:
-            if((m_current_index < (int)*m_num_digits) && set_display(m_digits_lines[m_current_index], e.getChar()))
+            if((m_current_index < (int)*m_num_digits) && set_display(m_digits_lines[m_current_index], e.character()))
             { m_current_index = std::min<int>(m_current_index + 1, *m_num_digits); }
             break;
     }

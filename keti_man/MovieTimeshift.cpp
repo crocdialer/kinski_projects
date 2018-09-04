@@ -78,7 +78,7 @@ void MovieTimeshift::setup()
 void MovieTimeshift::update(float timeDelta)
 {
     // construct ImGui window for this frame
-    if(display_tweakbar())
+    if(display_gui())
     {
         gui::draw_component_ui(shared_from_this());
         if(*m_use_warping){ gui::draw_component_ui(m_warp_component); }
@@ -225,7 +225,7 @@ void MovieTimeshift::draw()
         KINSKI_CHECK_GL_ERRORS();
     }
     
-    if(display_tweakbar())
+    if(display_gui())
     {
         draw_textures(textures());
         gl::draw_text_2D(m_input_source_names[InputSource(m_input_source->value())], fonts()[0]);
@@ -251,7 +251,7 @@ void MovieTimeshift::key_press(const KeyEvent &e)
 {
     ViewerApp::key_press(e);
     
-    switch (e.getCode())
+    switch (e.code())
     {
         default:
             break;

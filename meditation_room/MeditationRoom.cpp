@@ -122,7 +122,7 @@ void MeditationRoom::update(float timeDelta)
     ViewerApp::update(timeDelta);
 
     // construct ImGui window for this frame
-    if(display_tweakbar())
+    if(display_gui())
     {
         gui::draw_component_ui(shared_from_this());
     }
@@ -277,7 +277,7 @@ void MeditationRoom::draw()
         m_warp_component->render_output(1, textures()[TEXTURE_DEBUG]);
     }
     
-    if(display_tweakbar())
+    if(display_gui())
     {
         draw_textures(textures());
     }
@@ -300,16 +300,16 @@ void MeditationRoom::key_press(const KeyEvent &e)
     std::vector<State> states = {State::IDLE, State::WELCOME, State::MANDALA_ILLUMINATED,
         State::DESC_MOVIE, State::MEDITATION};
     
-    if(!display_tweakbar())
+    if(!display_gui())
     {
-        switch (e.getCode())
+        switch (e.code())
         {
             case Key::_1:
             case Key::_2:
             case Key::_3:
             case Key::_4:
             case Key::_5:
-                next_state = e.getCode() - Key::_1;
+                next_state = e.code() - Key::_1;
                 break;
             case Key::_P:
                 if(m_current_state == State::DESC_MOVIE && m_movie)
@@ -322,7 +322,7 @@ void MeditationRoom::key_press(const KeyEvent &e)
         }
     }
     
-    if(next_state >= 0){ change_state(states[next_state], e.isShiftDown()); }
+    if(next_state >= 0){ change_state(states[next_state], e.is_shift_down()); }
 }
 
 /////////////////////////////////////////////////////////////////

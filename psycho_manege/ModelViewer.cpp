@@ -139,7 +139,7 @@ void ModelViewer::update(float timeDelta)
     ViewerApp::update(timeDelta);
 
     // construct ImGui window for this frame
-    if(display_tweakbar())
+    if(display_gui())
     {
         gui::draw_component_ui(shared_from_this());
     }
@@ -258,7 +258,7 @@ void ModelViewer::draw()
     }
     
     // draw texture map(s)
-    if(display_tweakbar())
+    if(display_gui())
     {
         if(selected_mesh() && !selected_mesh()->material()->textures().empty())
         {
@@ -292,7 +292,7 @@ void ModelViewer::key_press(const KeyEvent &e)
 {
     ViewerApp::key_press(e);
     
-    switch (e.getCode())
+    switch (e.code())
     {
         case GLFW_KEY_DELETE:
             {

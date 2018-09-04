@@ -66,7 +66,7 @@ void LED_Proxy::update(float timeDelta)
     ViewerApp::update(timeDelta);
 
     // construct ImGui window for this frame
-    if(display_tweakbar())
+    if(display_gui())
     {
         gui::draw_component_ui(shared_from_this());
     }
@@ -126,7 +126,7 @@ void LED_Proxy::mouse_move(const MouseEvent &e)
 
 void LED_Proxy::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    if(the_touches.size() == 1){ set_display_tweakbar(!display_tweakbar()); }
+    if(the_touches.size() == 1){ set_display_gui(!display_gui()); }
 }
 
 /////////////////////////////////////////////////////////////////

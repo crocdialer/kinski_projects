@@ -81,7 +81,7 @@ void SensorDebug::update(float timeDelta)
     ViewerApp::update(timeDelta);
 
     // construct ImGui window for this frame
-    if(display_tweakbar())
+    if(display_gui())
     {
         gui::draw_component_ui(shared_from_this());
     }
@@ -187,7 +187,7 @@ void SensorDebug::key_release(const KeyEvent &e)
 {
     ViewerApp::key_release(e);
 
-    switch (e.getCode())
+    switch (e.code())
     {
         case Key::_X:
         {
@@ -241,7 +241,7 @@ void SensorDebug::mouse_wheel(const MouseEvent &e)
 
 void SensorDebug::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    set_display_tweakbar(!display_tweakbar());
+    set_display_gui(!display_gui());
 }
 
 /////////////////////////////////////////////////////////////////
