@@ -44,7 +44,12 @@ namespace kinski{namespace gl{
         }
         
         // generate texture
-        m_texture.update(pixel, GL_RED, m_size.x, m_size.y);
+#if defined(KINSKI_GLES)
+        uint32_t format = GL_LUMINANCE;
+#else
+        uint32_t format = GL_RED;
+#endif
+        m_texture.update(pixel, format, m_size.x, m_size.y);
         m_texture.set_mag_filter(GL_NEAREST);
     }
     
