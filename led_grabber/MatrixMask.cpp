@@ -48,7 +48,7 @@ namespace kinski{namespace gl{
         uint32_t color_format = GL_LUMINANCE;
         gl::Texture::Format fmt;
         fmt.internal_format = color_format;
-        m_texture = gl::Texture(pixels, color_format, width, height, fmt);
+        m_texture = gl::Texture(pixels, color_format, m_size.x, m_size.y, fmt);
 #else
         uint32_t color_format = GL_RED;
         m_texture.update(pixels, color_format, m_size.x, m_size.y);

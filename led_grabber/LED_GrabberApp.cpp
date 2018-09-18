@@ -130,7 +130,7 @@ void LED_GrabberApp::setup()
     
     m_matrix_mask.set_size({4, 2});
     m_matrix_mask.set_lifetime(1.f, 2.5f);
-    m_matrix_mask.set_intensity(2.f);
+    m_matrix_mask.set_rate(2.f);
 }
 
 /////////////////////////////////////////////////////////////////

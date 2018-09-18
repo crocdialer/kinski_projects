@@ -30,8 +30,8 @@ public:
     
     const gl::Texture texture() const;
     
-    void set_intensity(float the_intensity){ m_rate = the_intensity; }
-    float intensity() const { return m_rate; };
+    void set_rate(float the_intensity){ m_rate = the_intensity; }
+    float rate() const { return m_rate; };
     
     void set_lifetime(float the_min, float the_max)
     {

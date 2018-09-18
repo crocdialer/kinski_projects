@@ -100,7 +100,10 @@ namespace kinski
         
         Property_<std::vector<gl::vec2>>::Ptr
         m_calibration_points = Property_<std::vector<gl::vec2>>::create("calibration points");
+
+        // mask generation properties
         
+
         std::string secs_to_time_str(float the_secs) const;
         void setup_rpc_interface();
         void reload_media();
