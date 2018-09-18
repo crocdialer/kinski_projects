@@ -180,8 +180,7 @@ void LED_GrabberApp::update(float timeDelta)
                 m_led_grabber->grab_from_image_calib(m_image_input);
                 m_led_update_timer.expires_from_now(g_led_refresh_interval);
             }
-//            m_needs_redraw = has_new_image || m_needs_redraw;
-            m_needs_redraw = true;
+            m_needs_redraw = has_new_image || m_needs_redraw;
         }
         else{ m_needs_redraw = true; }
     }
@@ -196,8 +195,6 @@ void LED_GrabberApp::update(float timeDelta)
             m_led_update_timer.expires_from_now(g_led_refresh_interval);
         }
     }
-    
-    // update matrixmask
 }
 
 /////////////////////////////////////////////////////////////////
@@ -209,7 +206,7 @@ void LED_GrabberApp::draw()
     // draw quad warp
     if(m_warp_component->enabled(0))
     {
-        m_warp_component->render_output(0, textures()[TEXTURE_INPUT]);
+        m_warp_component->render_output(0, textures()[TEXTURE_DOWNSAMPLE]);
     }
     
     // draw camera input, if any

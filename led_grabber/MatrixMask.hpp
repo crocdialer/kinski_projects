@@ -15,10 +15,13 @@ class MatrixMask
 public:
     
     MatrixMask(const glm::ivec2 &the_size = glm::ivec2(3));
-    
-    //! poop dann gehts unten in die hose
+
+    //!
     void update(float the_delta_time);
-    
+
+    //!
+    void draw_overlay();
+
     //!
     const glm::ivec2 size() const;
     
@@ -27,8 +30,8 @@ public:
     
     const gl::Texture texture() const;
     
-    void set_intensity(float the_intensity){ m_intensity = the_intensity; }
-    float intensity() const { return m_intensity; };
+    void set_intensity(float the_intensity){ m_rate = the_intensity; }
+    float intensity() const { return m_rate; };
     
     void set_lifetime(float the_min, float the_max)
     {
@@ -42,11 +45,13 @@ private:
     {
         float life_time;
     };
+
     glm::ivec2 m_size;
     std::vector<gridcell_t> m_grid_cells;
     gl::Texture m_texture;
+    gl::MeshPtr m_overlay_mesh;
     float m_accumulator = 0.f;
-    float m_intensity = 1.f;
+    float m_rate = 1.f;
     float m_lifetime_min = 0.f, m_lifetime_max = 1.f;
 };
     

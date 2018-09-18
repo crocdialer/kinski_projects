@@ -4,9 +4,18 @@
 layout(lines) in;
 layout (triangle_strip, max_vertices = 20) out;
 
-uniform mat4 u_modelViewProjectionMatrix;
-uniform mat4 u_modelViewMatrix;
-uniform mat3 u_normalMatrix;
+struct matrix_struct_t
+{
+    mat4 model_view;
+    mat4 model_view_projection;
+    mat4 texture_matrix;
+    mat3 normal_matrix;
+};
+
+layout(std140) uniform MatrixBlock
+{
+    matrix_struct_t ubo;
+};
 
 uniform float u_cap_bias = 2;
 uniform float u_split_limit = 60.0;
@@ -73,17 +82,17 @@ void create_box(in vec3 p0, in vec3 p1, in vec3 up_vec, in bool draw_caps)
     v[7] = p0 - depth2 * dz + height2 * dy;
 
     // calculate projected coords
-    for(int i = 0; i < 8; i++){ vp[i] = u_modelViewProjectionMatrix * vec4(v[i], 1); }
+    for(int i = 0; i < 8; i++){ vp[i] = ubo.model_view_projection * vec4(v[i], 1); }
 
     // calculate eye coords
-    for(int i = 0; i < 8; i++){ eye_vecs[i] = (u_modelViewMatrix * vec4(v[i], 1)).xyz; }
+    for(int i = 0; i < 8; i++){ eye_vecs[i] = (ubo.model_view * vec4(v[i], 1)).xyz; }
 
     // generate a triangle strip
 
     // transform directions
-    dx = u_normalMatrix * dx;
-    dy = u_normalMatrix * dy;
-    dz = u_normalMatrix * dz;
+    dx = ubo.normal_matrix * dx;
+    dy = ubo.normal_matrix * dy;
+    dz = ubo.normal_matrix * dz;
 
     ///////// mantle faces //////////
 

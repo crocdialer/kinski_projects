@@ -25,7 +25,7 @@ namespace kinski{namespace gl{
         m_grid_cells.resize(m_size.x * m_size.y, {0.f});
         
         // fill accumulator
-        m_accumulator += the_delta_time * m_intensity;
+        m_accumulator += the_delta_time * m_rate;
         uint32_t num_new_cells = m_accumulator;
         m_accumulator -= num_new_cells;
         

@@ -260,9 +260,9 @@ void ModelViewer::draw()
     // draw texture map(s)
     if(display_gui())
     {
-        if(selected_mesh() && !selected_mesh()->material()->textures().empty())
+        if(selected_objects() && !selected_objects()->material()->textures().empty())
         {
-            textures()[TEXTURE_SELECTED] = selected_mesh()->material()->textures()[0];
+            textures()[TEXTURE_SELECTED] = selected_objects()->material()->textures()[0];
         }
         else{ textures()[TEXTURE_SELECTED].reset(); }
 
@@ -394,7 +394,7 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_use_bones)
     {
-        if(auto m = selected_mesh())
+        if(auto m = selected_objects())
         {
             bool use_bones = m->geometry()->has_bones() && *m_use_bones;
             for(auto &mat : m->materials())
@@ -405,21 +405,21 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_animation_index)
     {
-        if(selected_mesh())
+        if(selected_objects())
         {
-            selected_mesh()->set_animation_index(*m_animation_index);
+            selected_objects()->set_animation_index(*m_animation_index);
         }
     }
     else if(theProperty == m_animation_speed)
     {
-        if(const auto &m = selected_mesh())
+        if(const auto &m = selected_objects())
         {
             m->set_animation_speed(*m_animation_speed);
         }
     }
     else if(theProperty == m_displace_factor)
     {
-        if(const auto &m = selected_mesh())
+        if(const auto &m = selected_objects())
         {
             for(auto &mat : m->materials())
             {
@@ -429,15 +429,15 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_obj_scale)
     {
-        if(selected_mesh() && selected_mesh()->parent())
+        if(selected_objects() && selected_objects()->parent())
         {
-            auto p = selected_mesh()->parent();
+            auto p = selected_objects()->parent();
             p->set_scale(*m_obj_scale);
         }
     }
     else if(theProperty == m_obj_audio_auto_rotate)
     {
-        if(auto m = selected_mesh())
+        if(auto m = selected_objects())
         {
             if(m == m_select_indicator){ return; }
             
@@ -453,9 +453,9 @@ void ModelViewer::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_obj_wire_frame)
     {
-        if(selected_mesh())
+        if(selected_objects())
         {
-            for(auto &mat : selected_mesh()->materials()){ mat->set_wireframe(*m_obj_wire_frame); }
+            for(auto &mat : selected_objects()->materials()){ mat->set_wireframe(*m_obj_wire_frame); }
         }
     }
     else if(theProperty == m_cube_map_folder)
@@ -691,7 +691,7 @@ void ModelViewer::update_select_indicator()
 {
     scene()->remove_object(m_select_indicator);
     
-    if(auto m = selected_mesh())
+    if(auto m = selected_objects())
     {
         auto aabb = m->aabb();
         aabb = aabb.transform(m->global_transform());
@@ -785,12 +785,12 @@ void ModelViewer::toggle_selection(int the_inc)
         std::vector<gl::Mesh*> m_vec(mesh_list.begin(), mesh_list.end());
         uint32_t idx = 0;
         
-        for(; idx < m_vec.size(); idx++){ if(m_vec[idx] == selected_mesh().get()){ break; } }
+        for(; idx < m_vec.size(); idx++){ if(m_vec[idx] == selected_objects().get()){ break; } }
         if(!m_vec.empty())
         {
             gl::MeshPtr next_mesh =
             dynamic_pointer_cast<gl::Mesh>(m_vec[(idx + the_inc) % m_vec.size()]->shared_from_this());
-            set_selected_mesh(next_mesh);
+            add_selected_object(next_mesh);
             update_select_indicator();
         }
     }
@@ -800,11 +800,11 @@ void ModelViewer::process_joystick_input(float time_delta)
 {
     for(auto &js : get_joystick_states())
     {
-        if(selected_mesh() && selected_mesh()->parent())
+        if(selected_objects() && selected_objects()->parent())
         {
             // rotate
             
-            auto p = selected_mesh()->parent();
+            auto p = selected_objects()->parent();
             
             const float min_val = 0.2f, multiplier = 120.f;
             float x_axis = abs(js.axis()[0]) > min_val ? js.axis()[0] : 0.f;
@@ -845,7 +845,7 @@ void ModelViewer::process_joystick_input(float time_delta)
             {
                 input = true;
                 int inc = js.buttons()[JOY_CROSS_DOWN] ? -1 : 1;
-                if(auto m = selected_mesh())
+                if(auto m = selected_objects())
                 {
                     m->set_animation_index((m->animation_index() + inc) % m->animations().size());
                 }
@@ -855,7 +855,7 @@ void ModelViewer::process_joystick_input(float time_delta)
             {
                 input = true;
                 
-                if(auto m = selected_mesh())
+                if(auto m = selected_objects())
                 {
                     for(auto &mat : m->materials())
                     {

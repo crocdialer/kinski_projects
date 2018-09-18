@@ -103,14 +103,14 @@ void ModelViewer::midi_callback(double time_stamp, const std::vector<uint8_t> &t
             case 43:
             {
                 uint32_t idx = key - 36;
-                if(auto m = selected_mesh()){ m->set_animation_index(idx); }
+                if(auto m = selected_objects()){ m->set_animation_index(idx); }
             }
                 break;
             
             // wireframe
             case 44:
             {
-                if(auto m = selected_mesh())
+                if(auto m = selected_objects())
                 {
                     for(auto &mat : m->materials())
                     {
