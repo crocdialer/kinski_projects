@@ -60,9 +60,7 @@ namespace kinski{namespace gl{
         }
 
         // create a new texture object for our glyphs
-        gl::Texture::Format fmt;
-        fmt.internal_format = format;
-        m_texture = gl::Texture(luminance_alpha_data.get(), format, m_size.x, m_size.y, fmt);
+        m_texture.update(luminance_alpha_data.get(), format, m_size.x, m_size.y);
 #else
         uint32_t format = GL_RED;
         m_texture.update(pixels, format, m_size.x, m_size.y);
