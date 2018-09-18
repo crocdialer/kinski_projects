@@ -18,6 +18,7 @@
 
 #include "media/media.h"
 #include "LED_Grabber.hpp"
+#include "MatrixMask.hpp"
 
 namespace kinski
 {
@@ -26,7 +27,7 @@ namespace kinski
     private:
 
         enum TextureEnum{TEXTURE_INPUT = 0, TEXTURE_CAM_INPUT = 1, TEXTURE_OUTPUT = 2,
-            TEXTURE_DOWNSAMPLE = 3};
+            TEXTURE_DOWNSAMPLE = 3, TEXTURE_MASK = 4};
         
         enum RunMode{MODE_DEFAULT, MODE_MANUAL_CALIBRATION};
         
@@ -41,6 +42,8 @@ namespace kinski
         ImagePtr m_image_input;
         gl::FboPtr m_fbo_downsample;
         Timer m_led_update_timer, m_device_scan_timer;
+        
+        gl::MatrixMask m_matrix_mask;
         
         media::MediaControllerPtr m_media = media::MediaController::create();
         media::CameraControllerPtr m_camera = media::CameraController::create();

@@ -127,6 +127,10 @@ void LED_GrabberApp::setup()
                                 std::bind(&LED_GrabberApp::search_devices, this));
     m_device_scan_timer.set_periodic();
     m_device_scan_timer.expires_from_now(g_device_scan_interval);
+    
+    m_matrix_mask.set_size({4, 2});
+    m_matrix_mask.set_lifetime(1.f, 2.5f);
+    m_matrix_mask.set_intensity(2.f);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -141,6 +145,9 @@ void LED_GrabberApp::update(float timeDelta)
     }
 
     if(m_reload_media){ reload_media(); }
+    
+    // update our mask generator
+    m_matrix_mask.update(timeDelta);
     
     if(m_runmode == MODE_DEFAULT)
     {
@@ -157,7 +164,10 @@ void LED_GrabberApp::update(float timeDelta)
                 {
                     gl::render_to_texture(m_fbo_downsample, [this]()
                     {
-                        gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension());
+                        gl::clear();
+//                        gl::draw_texture(m_matrix_mask.texture(), gl::window_dimension());
+                        gl::draw_texture_with_mask(textures()[TEXTURE_INPUT],
+                                                   m_matrix_mask.texture(), gl::window_dimension());
                     });
                     m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
                     textures()[TEXTURE_DOWNSAMPLE] = m_fbo_downsample->texture();
@@ -170,7 +180,8 @@ void LED_GrabberApp::update(float timeDelta)
                 m_led_grabber->grab_from_image_calib(m_image_input);
                 m_led_update_timer.expires_from_now(g_led_refresh_interval);
             }
-            m_needs_redraw = has_new_image || m_needs_redraw;
+//            m_needs_redraw = has_new_image || m_needs_redraw;
+            m_needs_redraw = true;
         }
         else{ m_needs_redraw = true; }
     }
@@ -185,6 +196,8 @@ void LED_GrabberApp::update(float timeDelta)
             m_led_update_timer.expires_from_now(g_led_refresh_interval);
         }
     }
+    
+    // update matrixmask
 }
 
 /////////////////////////////////////////////////////////////////
