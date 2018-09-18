@@ -78,6 +78,12 @@ void LED_GrabberApp::setup()
     register_property(m_led_res);
     register_property(m_led_unit_res);
     register_property(m_downsample_res);
+
+    register_property(m_use_masking);
+    register_property(m_mask_grid_size);
+    register_property(m_mask_lifetime);
+    register_property(m_mask_rate);
+
     observe_properties();
 
     remote_control().set_components({ shared_from_this(), m_warp_component });
@@ -127,15 +133,11 @@ void LED_GrabberApp::setup()
                                 std::bind(&LED_GrabberApp::search_devices, this));
     m_device_scan_timer.set_periodic();
     m_device_scan_timer.expires_from_now(g_device_scan_interval);
-    
-    m_matrix_mask.set_size({4, 2});
-    m_matrix_mask.set_lifetime(1.f, 2.5f);
-    m_matrix_mask.set_rate(2.f);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void LED_GrabberApp::update(float timeDelta)
+void LED_GrabberApp::update(float the_delta_time)
 {
     // construct ImGui window for this frame
     if(display_gui())
@@ -147,7 +149,7 @@ void LED_GrabberApp::update(float timeDelta)
     if(m_reload_media){ reload_media(); }
     
     // update our mask generator
-    m_matrix_mask.update(timeDelta);
+    if(*m_use_masking){ m_matrix_mask.update(the_delta_time); }
     
     if(m_runmode == MODE_DEFAULT)
     {
@@ -165,9 +167,13 @@ void LED_GrabberApp::update(float timeDelta)
                     gl::render_to_texture(m_fbo_downsample, [this]()
                     {
                         gl::clear();
-//                        gl::draw_texture(m_matrix_mask.texture(), gl::window_dimension());
-                        gl::draw_texture_with_mask(textures()[TEXTURE_INPUT],
-                                                   m_matrix_mask.texture(), gl::window_dimension());
+                        if(*m_use_masking)
+                        {
+                            gl::draw_texture_with_mask(textures()[TEXTURE_INPUT], m_matrix_mask.texture(),
+                                                       gl::window_dimension());
+                        }
+                        else{ gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension()); }
+
                     });
                     m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
                     textures()[TEXTURE_DOWNSAMPLE] = m_fbo_downsample->texture();
@@ -603,6 +609,18 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
         {
             m_fbo_downsample = gl::Fbo::create(val);
         }
+    }
+    else if(theProperty == m_mask_grid_size)
+    {
+        m_matrix_mask.set_size(*m_mask_grid_size);
+    }
+    else if(theProperty == m_mask_lifetime)
+    {
+        m_matrix_mask.set_lifetime(m_mask_lifetime->value().x, m_mask_lifetime->value().y);
+    }
+    else if(theProperty == m_mask_rate)
+    {
+        m_matrix_mask.set_rate(*m_mask_rate);
     }
 }
 

@@ -102,7 +102,17 @@ namespace kinski
         m_calibration_points = Property_<std::vector<gl::vec2>>::create("calibration points");
 
         // mask generation properties
-        
+        Property_<bool>::Ptr
+        m_use_masking = Property_<bool>::create("use masking", false);
+
+        Property_<glm::ivec2>::Ptr
+        m_mask_grid_size = Property_<glm::ivec2>::create("mask gridsize", {4, 2});
+
+        Property_<glm::vec2>::Ptr
+        m_mask_lifetime = Property_<glm::vec2>::create("mask lifetime", {1.f, 2.5f});
+
+        Property_<float>::Ptr
+        m_mask_rate = Property_<float>::create("mask rate", 2.f);
 
         std::string secs_to_time_str(float the_secs) const;
         void setup_rpc_interface();
@@ -130,7 +140,7 @@ namespace kinski
 
         LED_GrabberApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;
-        void update(float timeDelta) override;
+        void update(float the_delta_time) override;
         void draw() override;
         void resize(int w ,int h) override;
         void key_press(const KeyEvent &e) override;
