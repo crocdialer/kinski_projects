@@ -45,31 +45,26 @@ namespace kinski{namespace gl{
         
         // generate texture
 #if defined(KINSKI_GLES)
-        GLint format = GL_LUMINANCE_ALPHA;
-
-        // create data
-        size_t num_bytes = m_size.x * m_size.y * 2;
-        auto luminance_alpha_data = std::unique_ptr<uint8_t>(new uint8_t[num_bytes]);
-        uint8_t *src_ptr = static_cast<uint8_t*>(pixels);
-        uint8_t *out_ptr = luminance_alpha_data.get(), *data_end = luminance_alpha_data.get() + num_bytes;
-
-        for (; out_ptr < data_end; out_ptr += 2, ++src_ptr)
-        {
-            out_ptr[0] = *src_ptr;
-            out_ptr[1] = 255;
-        }
-
-        // create a new texture object for our glyphs
-        m_texture.update(luminance_alpha_data.get(), format, m_size.x, m_size.y);
+        uint32_t color_format = GL_LUMINANCE;
+        gl::Texture::Format fmt;
+        fmt.internal_format = color_format;
+        m_texture = gl::Texture(pixels, color_format, width, height, fmt);
 #else
-        uint32_t format = GL_RED;
-        m_texture.update(pixels, format, m_size.x, m_size.y);
+        uint32_t color_format = GL_RED;
+        m_texture.update(pixels, color_format, m_size.x, m_size.y);
 #endif
         m_texture.set_mag_filter(GL_NEAREST);
     }
     
     ///////////////////////////////////////////////////////////////////////////////
-    
+
+    void MatrixMask::draw_overlay()
+    {
+
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+
     const glm::ivec2 MatrixMask::size() const
     {
         return m_size;

@@ -46,6 +46,7 @@ private:
         float life_time;
     };
 
+    uint32_t m_dirty_bits = 0;
     glm::ivec2 m_size;
     std::vector<gridcell_t> m_grid_cells;
     gl::Texture m_texture;
