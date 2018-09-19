@@ -79,6 +79,7 @@ void LED_GrabberApp::setup()
     register_property(m_led_unit_res);
     register_property(m_downsample_res);
 
+    register_property(m_overlay_color);
     register_property(m_use_masking);
     register_property(m_mask_grid_size);
     register_property(m_mask_lifetime);
@@ -162,7 +163,7 @@ void LED_GrabberApp::update(float the_delta_time)
             {
                 auto tex_size = textures()[TEXTURE_INPUT].size();
                 
-                if(tex_size.x > m_fbo_downsample->size().x || tex_size.y > m_fbo_downsample->size().y)
+                if(tex_size.x > m_fbo_downsample->size().x || tex_size.y > m_fbo_downsample->size().y || *m_use_masking)
                 {
                     gl::render_to_texture(m_fbo_downsample, [this]()
                     {
@@ -170,9 +171,13 @@ void LED_GrabberApp::update(float the_delta_time)
                         if(*m_use_masking)
                         {
                             gl::draw_texture_with_mask(textures()[TEXTURE_INPUT], m_matrix_mask.texture(),
-                                                       gl::window_dimension());
+                                                       gl::window_dimension(), {0, 0}, m_overlay_color->value().rgb);
                         }
-                        else{ gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension()); }
+                        else
+                        {
+                            gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension(), {0, 0},
+                                             m_overlay_color->value().rgb);
+                        }
 
                     });
                     m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);

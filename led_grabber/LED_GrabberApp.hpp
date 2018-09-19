@@ -101,6 +101,10 @@ namespace kinski
         Property_<std::vector<gl::vec2>>::Ptr
         m_calibration_points = Property_<std::vector<gl::vec2>>::create("calibration points");
 
+        // overlay color
+        Property_<gl::Color>::Ptr
+        m_overlay_color = Property_<gl::Color>::create("overlay color", gl::COLOR_WHITE);
+
         // mask generation properties
         Property_<bool>::Ptr
         m_use_masking = Property_<bool>::create("use masking", false);
