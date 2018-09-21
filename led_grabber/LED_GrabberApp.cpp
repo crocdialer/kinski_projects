@@ -78,7 +78,8 @@ void LED_GrabberApp::setup()
     register_property(m_led_res);
     register_property(m_led_unit_res);
     register_property(m_downsample_res);
-
+    register_property(m_led_proxy_ip);
+    
     register_property(m_overlay_color);
     register_property(m_use_masking);
     register_property(m_mask_grid_size);
@@ -618,6 +619,21 @@ void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
         if(!m_fbo_downsample || m_fbo_downsample->size() != val)
         {
             m_fbo_downsample = gl::Fbo::create(val);
+        }
+    }
+    else if(theProperty == m_led_proxy_ip)
+    {
+        if(!m_led_proxy_ip->value().empty())
+        {
+            auto con = net::tcp_connection::create(background_queue().io_service(),
+                                                   *m_led_proxy_ip, g_led_tcp_port);
+            con->set_connect_cb([this](ConnectionPtr c)
+            {
+                if(m_led_grabber->connect(c))
+                {
+                    LOG_DEBUG << "grabber connected: " << c->description();
+                }
+            });
         }
     }
     else if(theProperty == m_mask_grid_size)

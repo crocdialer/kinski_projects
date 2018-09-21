@@ -100,7 +100,10 @@ namespace kinski
         
         Property_<std::vector<gl::vec2>>::Ptr
         m_calibration_points = Property_<std::vector<gl::vec2>>::create("calibration points");
-
+        
+        Property_<string>::Ptr
+        m_led_proxy_ip = Property_<string>::create("led proxy ip", "");
+        
         // overlay color
         Property_<gl::Color>::Ptr
         m_overlay_color = Property_<gl::Color>::create("overlay color", gl::COLOR_WHITE);
