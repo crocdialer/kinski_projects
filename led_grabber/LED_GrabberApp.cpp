@@ -191,7 +191,7 @@ void LED_GrabberApp::update(float the_delta_time)
                 m_led_grabber->grab_from_image_calib(m_image_input);
                 m_led_update_timer.expires_from_now(g_led_refresh_interval);
             }
-            m_needs_redraw = has_new_image || m_needs_redraw;
+            m_needs_redraw = has_new_image || m_needs_redraw || display_gui() || *m_use_masking;
         }
         else{ m_needs_redraw = true; }
     }
@@ -363,6 +363,11 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                     set_runmode(MODE_MANUAL_CALIBRATION);
                 }
                 else{ set_runmode(MODE_DEFAULT); }
+                break;
+
+            case Key::_DELETE:
+                m_calibration_points->value().clear();
+                m_calibration_points->notify_observers();
                 break;
             default:
                 break;
