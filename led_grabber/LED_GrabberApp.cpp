@@ -168,6 +168,7 @@ void LED_GrabberApp::update(float the_delta_time)
                 {
                     gl::render_to_texture(m_fbo_downsample, [this]()
                     {
+                        gl::reset_state();
                         gl::clear();
                         if(*m_use_masking)
                         {
