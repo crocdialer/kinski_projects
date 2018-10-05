@@ -18,6 +18,10 @@ using namespace glm;
 void BalloonApp::setup()
 {
     ViewerApp::setup();
+
+    // load larger glyphs
+    fonts()[1].load(fonts()[0].path(), 72);
+
     register_property(m_asset_dir);
     register_property(m_max_num_balloons);
     register_property(m_sprite_size);
@@ -59,12 +63,6 @@ void BalloonApp::draw()
 {
     gl::clear();
 
-//    gl::set_matrices(camera());
-//    gl::draw_grid(40, 40);
-
-    // render our 2D scene
-//    scene()->render(gui_camera());
-
     // background textures
     auto rev_it = m_bg_textures.rbegin();
     for(;rev_it != m_bg_textures.rend(); ++rev_it){ gl::draw_texture(*rev_it, gl::window_dimension()); }
@@ -73,7 +71,11 @@ void BalloonApp::draw()
     glm::vec2 pos_offset = glm::vec2(glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().x, 0.f)),
                                      glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().y, 0.2f)));
     pos_offset *= m_balloon_noise_intensity->value();
-    gl::draw_texture(m_balloon_texture, *m_sprite_size, pos_offset + (gl::window_dimension() - m_sprite_size->value()) / 2.f);
+    auto pos = pos_offset + (gl::window_dimension() - m_sprite_size->value()) / 2.f;
+    gl::draw_texture(m_balloon_texture, *m_sprite_size, pos);
+
+    gl::draw_text_2D(to_string(m_current_num_balloons) + " / " + to_string(m_max_num_balloons->value()),
+                     fonts()[1], gl::COLOR_WHITE, pos);
 
 }
 
@@ -89,6 +91,15 @@ void BalloonApp::resize(int w ,int h)
 void BalloonApp::key_press(const KeyEvent &e)
 {
     ViewerApp::key_press(e);
+
+    switch(e.code())
+    {
+        case Key::_X:
+            explode_balloon();
+            break;
+        default:
+            break;
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -205,6 +216,10 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
             }, true, true);
         }
     }
+    else if(the_property == m_max_num_balloons)
+    {
+        m_current_num_balloons = *m_max_num_balloons;
+    }
 }
 
 gl::MeshPtr BalloonApp::create_sprite_mesh(const gl::Texture &t)
@@ -227,5 +242,17 @@ void BalloonApp::create_scene()
         m->set_position(glm::vec3(t.width() / 2.f, t.height() / 2.f, z_val));
         scene()->add_object(m);
         z_val -= .1f;
+    }
+}
+
+void BalloonApp::explode_balloon()
+{
+    LOG_DEBUG << "explode_balloon: " << m_current_num_balloons << " -> " << (m_current_num_balloons - 1);
+    m_current_num_balloons--;
+
+    if(!m_current_num_balloons)
+    {
+        LOG_DEBUG << "crash!";
+        m_current_num_balloons = *m_max_num_balloons;
     }
 }

@@ -98,12 +98,12 @@ void GrowthApp::draw()
     scene()->render(camera());
     
     // our bounding mesh
-    if(wireframe())
-    {
-        gl::ScopedMatrixPush sp(gl::MODEL_VIEW_MATRIX);
-        gl::mult_matrix(gl::MODEL_VIEW_MATRIX, m_bounding_mesh->global_transform());
-        gl::draw_mesh(m_bounding_mesh);
-    }
+//    if(wireframe())
+//    {
+//        gl::ScopedMatrixPush sp(gl::MODEL_VIEW_MATRIX);
+//        gl::mult_matrix(gl::MODEL_VIEW_MATRIX, m_bounding_mesh->global_transform());
+//        gl::draw_mesh(m_bounding_mesh);
+//    }
     
     if(*m_draw_fps)
     {

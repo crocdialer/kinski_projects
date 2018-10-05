@@ -42,9 +42,9 @@ namespace kinski
         m_parallax_factor = RangedProperty<float>::create("parallax factor", 1.618f, 1.f, 10.f);
 
         gl::MeshPtr create_sprite_mesh(const gl::Texture &t);
-        void create_background_mesh();
-
         void create_scene();
+
+        void explode_balloon();
 
     public:
         BalloonApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};

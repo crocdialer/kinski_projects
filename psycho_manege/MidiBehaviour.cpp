@@ -103,18 +103,26 @@ void ModelViewer::midi_callback(double time_stamp, const std::vector<uint8_t> &t
             case 43:
             {
                 uint32_t idx = key - 36;
-                if(auto m = selected_objects()){ m->set_animation_index(idx); }
+                if(!selected_objects().empty())
+                {
+                    auto m = std::dynamic_pointer_cast<gl::Mesh>(*selected_objects().begin());
+                    if(m){ m->set_animation_index(idx); }
+                }
             }
                 break;
             
             // wireframe
             case 44:
             {
-                if(auto m = selected_objects())
+                if(!selected_objects().empty())
                 {
-                    for(auto &mat : m->materials())
+                    auto m = std::dynamic_pointer_cast<gl::Mesh>(*selected_objects().begin());
+                    if(m)
                     {
-                        mat->set_wireframe(!mat->wireframe());
+                        for(auto &mat : m->materials())
+                        {
+                            mat->set_wireframe(!mat->wireframe());
+                        }
                     }
                 }
             }
