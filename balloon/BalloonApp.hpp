@@ -14,15 +14,22 @@
 #pragma once
 
 #include "app/ViewerApp.hpp"
+#include "media/media.h"
+#include "syphon/SyphonConnector.h"
 
 namespace kinski
 {
     class BalloonApp : public ViewerApp
     {
     private:
-        std::vector<gl::Texture> m_bg_textures;
+        syphon::Output m_syphon_out;
 
-        gl::Texture m_balloon_texture;
+        gl::CameraPtr m_2d_cam = gl::OrthoCamera::create(-1.f, 1.f, -1.f, 1.f, -100.f, 100.f);
+
+        std::vector<gl::MeshPtr> m_bg_meshes;
+        gl::MeshPtr m_sprite_mesh;
+
+        gl::FboPtr m_offscreen_fbo;
 
         uint32_t m_current_num_balloons;
 
@@ -41,7 +48,14 @@ namespace kinski
         m_float_speed = RangedProperty<float>::create("float speed", 1.f, -1.f, 1.f),
         m_parallax_factor = RangedProperty<float>::create("parallax factor", 1.618f, 1.f, 10.f);
 
-        gl::MeshPtr create_sprite_mesh(const gl::Texture &t);
+        Property_<glm::ivec2>::Ptr
+        m_offscreen_res = Property_<glm::ivec2>::create("offscreen resolution", glm::ivec2(1920, 1080));
+
+        Property_<bool>::Ptr
+        m_use_syphon = Property_<bool>::create("use syphon", false);
+
+        gl::MeshPtr create_sprite_mesh(const gl::Texture &t = gl::Texture());
+
         void create_scene();
 
         void explode_balloon();

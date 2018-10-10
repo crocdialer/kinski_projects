@@ -13,6 +13,8 @@ using namespace kinski;
 using namespace glm;
 
 
+const std::string g_background_tag = "background";
+
 /////////////////////////////////////////////////////////////////
 
 void BalloonApp::setup()
@@ -29,8 +31,9 @@ void BalloonApp::setup()
     register_property(m_balloon_noise_speed);
     register_property(m_float_speed);
     register_property(m_parallax_factor);
+    register_property(m_offscreen_res);
+    register_property(m_use_syphon);
     observe_properties();
-
 
     load_settings();
 }
@@ -41,42 +44,83 @@ void BalloonApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
 
+    // check for fbo
+    if(!m_offscreen_fbo){ m_offscreen_res->notify_observers(); }
+    
     // construct ImGui window for this frame
     if(display_gui())
     {
         gui::draw_component_ui(shared_from_this());
+        gui::draw_scenegraph_ui(scene(), &selected_objects());
+        auto obj = selected_objects().empty() ? nullptr : *selected_objects().begin();
+        gui::draw_object3D_ui(obj, m_2d_cam);
     }
 
     // animate bg textures
     float factor = *m_float_speed;
 
-    for(auto &t : m_bg_textures)
+    gl::SelectVisitor<gl::Mesh> visitor({g_background_tag}, false);
+    scene()->root()->accept(visitor);
+
+    for(auto m : visitor.get_objects())
     {
-        t.set_uvw_offset(t.uvw_offset() + gl::Y_AXIS * timeDelta * factor);
-        factor /= *m_parallax_factor;
+        auto *tex = m->material()->get_texture_ptr();
+
+        if(tex)
+        {
+            tex->set_uvw_offset(tex->uvw_offset() + gl::Y_AXIS * timeDelta * factor);
+            factor /= *m_parallax_factor;
+        }
+    }
+
+    // balloon sprite scaling / positioning
+    if(m_sprite_mesh)
+    {
+        m_sprite_mesh->set_scale(glm::vec3(m_sprite_size->value() / gl::window_dimension(), 1.f));
+        glm::vec2 pos_offset = glm::vec2(glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().x, 0.f)),
+                                         glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().y, 0.2f)));
+        pos_offset *= m_balloon_noise_intensity->value() / glm::vec2(m_offscreen_fbo->size());
+        m_sprite_mesh->set_position(glm::vec3(pos_offset, 0.f));
     }
 }
+
 
 /////////////////////////////////////////////////////////////////
 
 void BalloonApp::draw()
 {
+    auto offscreen_tex = gl::render_to_texture(m_offscreen_fbo, [this]()
+    {
+        gl::clear();
+        gl::set_matrices(m_2d_cam);
+
+//    gl::draw_text_2D(to_string(m_current_num_balloons) + " / " + to_string(m_max_num_balloons->value()),
+//                     fonts()[1], gl::COLOR_WHITE, pos);
+
+        // render our game scene
+        scene()->render(m_2d_cam);
+
+        // boxes for selected objects
+        for(auto &obj : selected_objects()){ gl::draw_boundingbox(obj->aabb()); }
+    });
+    offscreen_tex.set_mag_filter(GL_LINEAR);
+
     gl::clear();
 
-    // background textures
-    auto rev_it = m_bg_textures.rbegin();
-    for(;rev_it != m_bg_textures.rend(); ++rev_it){ gl::draw_texture(*rev_it, gl::window_dimension()); }
+    if(*m_use_warping)
+    {
+        for(uint32_t i = 0; i < m_warp_component->num_warps(); i++)
+        {
+            if(m_warp_component->enabled(i))
+            {
+                m_warp_component->render_output(i, offscreen_tex);
+            }
+        }
+    }
+    else{ gl::draw_texture(offscreen_tex, gl::window_dimension()); }
 
-    // balloon sprite
-    glm::vec2 pos_offset = glm::vec2(glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().x, 0.f)),
-                                     glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().y, 0.2f)));
-    pos_offset *= m_balloon_noise_intensity->value();
-    auto pos = pos_offset + (gl::window_dimension() - m_sprite_size->value()) / 2.f;
-    gl::draw_texture(m_balloon_texture, *m_sprite_size, pos);
-
-    gl::draw_text_2D(to_string(m_current_num_balloons) + " / " + to_string(m_max_num_balloons->value()),
-                     fonts()[1], gl::COLOR_WHITE, pos);
-
+    // syphon output
+    if(*m_use_syphon){ m_syphon_out.publish_texture(offscreen_tex); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -188,20 +232,25 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
 
     if(the_property == m_asset_dir)
     {
-        m_bg_textures.clear();
+        scene()->clear();
+        m_bg_meshes.clear();
 
         // retrieve background assets
         auto bg_image_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "background"),
                                                         fs::FileType::IMAGE, true);
         auto num_bg_images = bg_image_paths.size();
+        m_bg_meshes.resize(num_bg_images);
+        create_scene();
+
+        uint32_t i = 0;
 
         for(const auto &p : bg_image_paths)
         {
-            async_load_texture(p, [this, num_bg_images](gl::Texture t)
+            async_load_texture(p, [this, num_bg_images, i](gl::Texture t)
             {
-                m_bg_textures.push_back(t);
-                if(m_bg_textures.size() == num_bg_images){ create_scene(); }
+                m_bg_meshes[i]->material()->add_texture(t);
             }, true, true);
+            i++;
         }
 
         // retrieve balloon assets
@@ -212,7 +261,7 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         {
             async_load_texture(balloon_image_paths[0], [this](gl::Texture t)
             {
-                m_balloon_texture = t;
+                m_sprite_mesh->material()->add_texture(t);
             }, true, true);
         }
     }
@@ -220,34 +269,57 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
     {
         m_current_num_balloons = *m_max_num_balloons;
     }
+    else if(the_property == m_offscreen_res)
+    {
+        glm::ivec2 size = *m_offscreen_res;
+
+        if(size.x == 0 || size.y == 0){ size = gl::window_dimension(); }
+
+        gl::Fbo::Format fmt;
+        fmt.num_samples = 8;
+        m_offscreen_fbo = gl::Fbo::create(size, fmt);
+    }
+    else if(the_property == m_use_syphon)
+    {
+        m_syphon_out = *m_use_syphon ? syphon::Output("balloon") : syphon::Output();
+    }
 }
 
 gl::MeshPtr BalloonApp::create_sprite_mesh(const gl::Texture &t)
 {
     auto mat = gl::Material::create();
-    mat->add_texture(t);
+    if(t){ mat->add_texture(t); }
     mat->set_blending();
-    gl::MeshPtr ret = gl::Mesh::create(gl::Geometry::create_plane(t.width(), t.height()), mat);
+//    mat->set_depth_write(false);
+    gl::MeshPtr ret = gl::Mesh::create(gl::Geometry::create_plane(2, 2), mat);
     return ret;
 }
 
 void BalloonApp::create_scene()
 {
     scene()->clear();
-    float z_val = 0.f;
+    float z_val = -10.f;
 
-    for(auto &t : m_bg_textures)
+    for(uint32 i = 0; i < m_bg_meshes.size(); ++i)
     {
-        auto m = create_sprite_mesh(t);
-        m->set_position(glm::vec3(t.width() / 2.f, t.height() / 2.f, z_val));
-        scene()->add_object(m);
+        m_bg_meshes[i] = create_sprite_mesh();
+        m_bg_meshes[i]->set_position(glm::vec3(0.f, 0.f, z_val));
+        scene()->add_object(m_bg_meshes[i]);
         z_val -= .1f;
+        m_bg_meshes[i]->add_tag(g_background_tag);
+        m_bg_meshes[i]->set_name("background_0" + to_string(i));
     }
+
+    m_sprite_mesh = create_sprite_mesh();
+    auto sprite_handle = gl::Object3D::create("balloon_handle");
+    sprite_handle->add_child(m_sprite_mesh);
+    scene()->add_object(sprite_handle);
+    m_sprite_mesh->set_scale(glm::vec3(m_sprite_size->value() / gl::window_dimension(), 1.f));
+    m_sprite_mesh->set_name("balloon");
 }
 
 void BalloonApp::explode_balloon()
 {
-    LOG_DEBUG << "explode_balloon: " << m_current_num_balloons << " -> " << (m_current_num_balloons - 1);
     m_current_num_balloons--;
 
     if(!m_current_num_balloons)
@@ -255,4 +327,5 @@ void BalloonApp::explode_balloon()
         LOG_DEBUG << "crash!";
         m_current_num_balloons = *m_max_num_balloons;
     }
+    else{ LOG_DEBUG << "explode_balloon: " << m_current_num_balloons << " left ..."; }
 }
