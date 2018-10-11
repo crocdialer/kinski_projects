@@ -6,6 +6,7 @@
 //
 //
 
+#include "gl_post_process/Blur.hpp"
 #include "BalloonApp.hpp"
 
 using namespace std;
@@ -44,9 +45,9 @@ void BalloonApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
 
-    // check for fbo
+    // check for offscreen fbo
     if(!m_offscreen_fbo){ m_offscreen_res->notify_observers(); }
-    
+
     // construct ImGui window for this frame
     if(display_gui())
     {
@@ -54,6 +55,8 @@ void BalloonApp::update(float timeDelta)
         gui::draw_scenegraph_ui(scene(), &selected_objects());
         auto obj = selected_objects().empty() ? nullptr : *selected_objects().begin();
         gui::draw_object3D_ui(obj, m_2d_cam);
+
+        if(*m_use_warping){ gui::draw_component_ui(m_warp_component); }
     }
 
     // animate bg textures
@@ -61,10 +64,23 @@ void BalloonApp::update(float timeDelta)
 
     gl::SelectVisitor<gl::Mesh> visitor({g_background_tag}, false);
     scene()->root()->accept(visitor);
+    uint32_t i = 0;
 
     for(auto m : visitor.get_objects())
     {
         auto *tex = m->material()->get_texture_ptr();
+
+        if(m_bg_textures[i])
+        {
+            gl::render_to_texture(m_blur_fbos[i], [this, i, factor]()
+            {
+                gl::Blur blur(glm::vec2(0.f, 100.f * factor * factor * factor));
+                blur.render_output(m_bg_textures[i]);
+            });
+            tex = m_blur_fbos[i]->texture_ptr();
+            m->material()->add_texture(*tex);
+            i++;
+        }
 
         if(tex)
         {
@@ -93,9 +109,6 @@ void BalloonApp::draw()
     {
         gl::clear();
         gl::set_matrices(m_2d_cam);
-
-//    gl::draw_text_2D(to_string(m_current_num_balloons) + " / " + to_string(m_max_num_balloons->value()),
-//                     fonts()[1], gl::COLOR_WHITE, pos);
 
         // render our game scene
         scene()->render(m_2d_cam);
@@ -234,12 +247,17 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
     {
         scene()->clear();
         m_bg_meshes.clear();
+        m_bg_textures.clear();
+        m_blur_fbos.clear();
 
         // retrieve background assets
         auto bg_image_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "background"),
                                                         fs::FileType::IMAGE, true);
         auto num_bg_images = bg_image_paths.size();
         m_bg_meshes.resize(num_bg_images);
+        m_bg_textures.resize(num_bg_images);
+        m_blur_fbos.resize(num_bg_images);
+
         create_scene();
 
         uint32_t i = 0;
@@ -248,6 +266,7 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         {
             async_load_texture(p, [this, num_bg_images, i](gl::Texture t)
             {
+                m_bg_textures[i] = t;
                 m_bg_meshes[i]->material()->add_texture(t);
             }, true, true);
             i++;
@@ -261,6 +280,7 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         {
             async_load_texture(balloon_image_paths[0], [this](gl::Texture t)
             {
+                m_sprite_texture = t;
                 m_sprite_mesh->material()->add_texture(t);
             }, true, true);
         }
@@ -278,6 +298,14 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         gl::Fbo::Format fmt;
         fmt.num_samples = 8;
         m_offscreen_fbo = gl::Fbo::create(size, fmt);
+
+        fmt.num_samples = 0;
+        fmt.depth_buffer = false;
+        for(auto &fbo : m_blur_fbos)
+        {
+            fbo = gl::Fbo::create(size, fmt);
+            fbo->texture_ptr()->set_wrap(GL_REPEAT, GL_REPEAT);
+        }
     }
     else if(the_property == m_use_syphon)
     {
@@ -290,6 +318,9 @@ gl::MeshPtr BalloonApp::create_sprite_mesh(const gl::Texture &t)
     auto mat = gl::Material::create();
     if(t){ mat->add_texture(t); }
     mat->set_blending();
+    auto c = gl::COLOR_WHITE;
+    c.a = .999f;
+    mat->set_diffuse(c);
 //    mat->set_depth_write(false);
     gl::MeshPtr ret = gl::Mesh::create(gl::Geometry::create_plane(2, 2), mat);
     return ret;

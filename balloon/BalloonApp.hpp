@@ -26,6 +26,10 @@ namespace kinski
 
         gl::CameraPtr m_2d_cam = gl::OrthoCamera::create(-1.f, 1.f, -1.f, 1.f, -100.f, 100.f);
 
+        gl::Texture m_sprite_texture;
+        std::vector<gl::FboPtr> m_blur_fbos;
+
+        std::vector<gl::Texture> m_bg_textures;
         std::vector<gl::MeshPtr> m_bg_meshes;
         gl::MeshPtr m_sprite_mesh;
 
