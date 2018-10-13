@@ -125,6 +125,7 @@ void MeditationRoom::update(float timeDelta)
     if(display_gui())
     {
         gui::draw_component_ui(shared_from_this());
+        gui::draw_component_ui(m_warp_component);
     }
 
     // update according to current state
@@ -241,6 +242,8 @@ void MeditationRoom::update_bio_visuals(float accel, float elong)
 
 void MeditationRoom::draw()
 {
+    gl::clear();
+
     if(m_current_state == State::MEDITATION)
     {
         // create undistorted offscreen tex
@@ -371,7 +374,11 @@ void MeditationRoom::mouse_wheel(const MouseEvent &e)
 
 void MeditationRoom::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
-    for(const string &f : files){ LOG_INFO << f; }
+    for(const string &f : files)
+    {
+//        LOG_INFO << f;
+        *m_asset_dir = files.front();
+    }
 }
 
 /////////////////////////////////////////////////////////////////
