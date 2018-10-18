@@ -284,7 +284,7 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
 
         for(const auto &p : bg_image_paths)
         {
-            async_load_texture(p, [this, num_bg_images, i](gl::Texture t)
+            async_load_texture(p, [this, i](gl::Texture t)
             {
                 m_parallax_textures[i] = t;
                 m_parallax_meshes[i]->material()->add_texture(t);
@@ -316,11 +316,13 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         if(size.x == 0 || size.y == 0){ size = gl::window_dimension(); }
 
         gl::Fbo::Format fmt;
+        fmt.color_internal_format = GL_RGB;
         fmt.num_samples = 8;
         m_offscreen_fbo = gl::Fbo::create(size, fmt);
 
-        fmt.num_samples = 0;
+        fmt.color_internal_format = GL_RGBA;
         fmt.depth_buffer = false;
+        fmt.num_samples = 0;
         for(auto &fbo : m_blur_fbos)
         {
             fbo = gl::Fbo::create(size, fmt);
