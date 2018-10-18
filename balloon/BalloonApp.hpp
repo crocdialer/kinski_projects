@@ -29,9 +29,9 @@ namespace kinski
         gl::Texture m_sprite_texture;
         std::vector<gl::FboPtr> m_blur_fbos;
 
-        std::vector<gl::Texture> m_bg_textures;
-        std::vector<gl::MeshPtr> m_bg_meshes;
-        gl::MeshPtr m_sprite_mesh;
+        std::vector<gl::Texture> m_parallax_textures;
+        std::vector<gl::MeshPtr> m_parallax_meshes;
+        gl::MeshPtr m_sprite_mesh, m_bg_mesh;
 
         gl::FboPtr m_offscreen_fbo;
 
@@ -50,7 +50,8 @@ namespace kinski
 
         Property_<float>::Ptr
         m_float_speed = RangedProperty<float>::create("float speed", 1.f, -1.f, 1.f),
-        m_parallax_factor = RangedProperty<float>::create("parallax factor", 1.618f, 1.f, 10.f);
+        m_parallax_factor = RangedProperty<float>::create("parallax factor", 1.618f, 1.f, 10.f),
+        m_motion_blur = RangedProperty<float>::create("motion blur", 0.f, 0.f, 1.f);
 
         Property_<glm::ivec2>::Ptr
         m_offscreen_res = Property_<glm::ivec2>::create("offscreen resolution", glm::ivec2(1920, 1080));

@@ -113,7 +113,7 @@ void BlockbusterApp::setup()
     m_timer_license.expires_from_now(m_timeout_license);
 
     // render settings
-    m_def_rend = gl::DeferredRenderer::create();
+    m_deferred_renderer = gl::DeferredRenderer::create();
 //    m_def_rend->set_g_buffer_resolution(gl::vec2(1280, 720));
 
     load_settings();
@@ -340,7 +340,27 @@ void BlockbusterApp::draw()
         default:
             break;
     }
-    if(display_gui()){ draw_textures(textures());}
+//    if(display_gui()){ draw_textures(textures());}
+
+    // draw texture map(s)
+    if(display_gui())
+    {
+        std::vector<gl::Texture> display_textures;
+
+        if(*m_enable_deferred_render && m_deferred_renderer->g_buffer())
+        {
+            uint32_t  i = 0;
+
+            for(; i < m_deferred_renderer->g_buffer()->format().num_color_buffers; ++i)
+            {
+                textures()[i + 2] = m_deferred_renderer->g_buffer()->texture(i);
+            }
+            textures()[i + 2] = m_deferred_renderer->final_texture();
+
+            display_textures = textures();
+        }
+        draw_textures(display_textures);
+    }
 
     // license timeout
     if(!m_timer_license.has_expired())
@@ -514,7 +534,7 @@ void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
     }
     else if(theProperty == m_enable_deferred_render)
     {
-        if(*m_enable_deferred_render){ scene()->set_renderer(m_def_rend); }
+        if(*m_enable_deferred_render){ scene()->set_renderer(m_deferred_renderer); }
         else{ scene()->set_renderer(gl::SceneRenderer::create()); }
     }
 }
@@ -556,8 +576,9 @@ gl::MeshPtr BlockbusterApp::create_mesh()
     auto shader = gl::Shader::create(geom_prepass_vert,
                                      create_g_buffer_frag,
                                      fs::read_file("points_to_cubes.geom"));
-    m_def_rend->clear_shader_overrides();
-    m_def_rend->override_geometry_stage(ret, shader);
+
+    m_deferred_renderer->clear_shader_overrides();
+    m_deferred_renderer->override_geometry_stage(ret, shader);
 
 //    mat->set_shader(shader);
 //    ret->material()->set_roughness(0.2f);

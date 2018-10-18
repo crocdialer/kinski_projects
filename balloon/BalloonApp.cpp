@@ -14,7 +14,7 @@ using namespace kinski;
 using namespace glm;
 
 
-const std::string g_background_tag = "background";
+const std::string g_parallax_bg_tag = "background_parallax";
 
 /////////////////////////////////////////////////////////////////
 
@@ -26,13 +26,14 @@ void BalloonApp::setup()
     fonts()[1].load(fonts()[0].path(), 72);
 
     register_property(m_asset_dir);
+    register_property(m_offscreen_res);
     register_property(m_max_num_balloons);
     register_property(m_sprite_size);
     register_property(m_balloon_noise_intensity);
     register_property(m_balloon_noise_speed);
-    register_property(m_float_speed);
     register_property(m_parallax_factor);
-    register_property(m_offscreen_res);
+    register_property(m_motion_blur);
+    register_property(m_float_speed);
     register_property(m_use_syphon);
     observe_properties();
 
@@ -46,7 +47,7 @@ void BalloonApp::update(float timeDelta)
     ViewerApp::update(timeDelta);
 
     // check for offscreen fbo
-    if(!m_offscreen_fbo){ m_offscreen_res->notify_observers(); }
+    if(!m_offscreen_fbo || m_blur_fbos.empty() || !m_blur_fbos.front()){ m_offscreen_res->notify_observers(); }
 
     // construct ImGui window for this frame
     if(display_gui())
@@ -62,20 +63,27 @@ void BalloonApp::update(float timeDelta)
     // animate bg textures
     float factor = *m_float_speed;
 
-    gl::SelectVisitor<gl::Mesh> visitor({g_background_tag}, false);
+    gl::SelectVisitor<gl::Mesh> visitor({g_parallax_bg_tag}, false);
     scene()->root()->accept(visitor);
     uint32_t i = 0;
 
+    auto blur_factor = [](float f) -> float
+    {
+        return 50.f * f * f * f;
+    };
+
     for(auto m : visitor.get_objects())
     {
+        auto val = blur_factor(factor) * *m_motion_blur;
+
         auto *tex = m->material()->get_texture_ptr();
 
-        if(m_bg_textures[i])
+        if(m_parallax_textures[i])
         {
-            gl::render_to_texture(m_blur_fbos[i], [this, i, factor]()
+            gl::render_to_texture(m_blur_fbos[i], [this, i, val]()
             {
-                gl::Blur blur(glm::vec2(0.f, 100.f * factor * factor * factor));
-                blur.render_output(m_bg_textures[i]);
+                gl::Blur blur(glm::vec2(0.f, val));
+                blur.render_output(m_parallax_textures[i]);
             });
             tex = m_blur_fbos[i]->texture_ptr();
             m->material()->add_texture(*tex);
@@ -246,16 +254,28 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
     if(the_property == m_asset_dir)
     {
         scene()->clear();
-        m_bg_meshes.clear();
-        m_bg_textures.clear();
+        m_parallax_meshes.clear();
+        m_parallax_textures.clear();
         m_blur_fbos.clear();
 
-        // retrieve background assets
-        auto bg_image_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "background"),
+        // retrieve static background
+        auto static_bg_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "static_backgrounds"),
+                                                         fs::FileType::IMAGE, true);
+
+        if(!static_bg_paths.empty())
+        {
+            async_load_texture(static_bg_paths[0], [this](gl::Texture t)
+            {
+                m_bg_mesh->material()->add_texture(t);
+            }, true, true);
+        }
+
+        // retrieve parallax background assets
+        auto bg_image_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "parallax_backgrounds"),
                                                         fs::FileType::IMAGE, true);
         auto num_bg_images = bg_image_paths.size();
-        m_bg_meshes.resize(num_bg_images);
-        m_bg_textures.resize(num_bg_images);
+        m_parallax_meshes.resize(num_bg_images);
+        m_parallax_textures.resize(num_bg_images);
         m_blur_fbos.resize(num_bg_images);
 
         create_scene();
@@ -266,8 +286,8 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         {
             async_load_texture(p, [this, num_bg_images, i](gl::Texture t)
             {
-                m_bg_textures[i] = t;
-                m_bg_meshes[i]->material()->add_texture(t);
+                m_parallax_textures[i] = t;
+                m_parallax_meshes[i]->material()->add_texture(t);
             }, true, true);
             i++;
         }
@@ -331,15 +351,22 @@ void BalloonApp::create_scene()
     scene()->clear();
     float z_val = -10.f;
 
-    for(uint32 i = 0; i < m_bg_meshes.size(); ++i)
+    // parallax backgrounds
+    for(uint32 i = 0; i < m_parallax_meshes.size(); ++i)
     {
-        m_bg_meshes[i] = create_sprite_mesh();
-        m_bg_meshes[i]->set_position(glm::vec3(0.f, 0.f, z_val));
-        scene()->add_object(m_bg_meshes[i]);
+        m_parallax_meshes[i] = create_sprite_mesh();
+        m_parallax_meshes[i]->set_position(glm::vec3(0.f, 0.f, z_val));
+        scene()->add_object(m_parallax_meshes[i]);
         z_val -= .1f;
-        m_bg_meshes[i]->add_tag(g_background_tag);
-        m_bg_meshes[i]->set_name("background_0" + to_string(i));
+        m_parallax_meshes[i]->add_tag(g_parallax_bg_tag);
+        m_parallax_meshes[i]->set_name("parallax_bg_0" + to_string(i));
     }
+
+    // static background
+    m_bg_mesh = create_sprite_mesh();
+    m_bg_mesh->set_position(glm::vec3(0.f, 0.f, z_val));
+    scene()->add_object(m_bg_mesh);
+    m_bg_mesh->set_name("static background");
 
     m_sprite_mesh = create_sprite_mesh();
     auto sprite_handle = gl::Object3D::create("balloon_handle");

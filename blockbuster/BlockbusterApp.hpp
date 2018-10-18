@@ -51,7 +51,7 @@ namespace kinski
         gl::Texture m_texture_input;
         gl::ShaderPtr m_block_shader, m_block_shader_shadows;
 
-        gl::DeferredRendererPtr m_def_rend;
+        gl::DeferredRendererPtr m_deferred_renderer;
 
         bool m_dirty_mesh = true, m_dirty_cl_context = true;
         bool m_has_new_texture = false;
