@@ -72,6 +72,8 @@ void BalloonApp::update(float timeDelta)
         return 50.f * f * f * f;
     };
 
+    gl::reset_state();
+    
     for(auto m : visitor.get_objects())
     {
         auto val = blur_factor(factor) * *m_motion_blur;
@@ -82,6 +84,7 @@ void BalloonApp::update(float timeDelta)
         {
             gl::render_to_texture(m_blur_fbos[i], [this, i, val]()
             {
+                gl::clear(gl::Color(0.f));
                 gl::Blur blur(glm::vec2(0.f, val));
                 blur.render_output(m_parallax_textures[i]);
             });
