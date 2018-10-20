@@ -37,6 +37,8 @@ namespace kinski
 
         uint32_t m_current_num_balloons;
 
+        bool m_float_speed_changed = true;
+        
         Property_<uint32_t>::Ptr
         m_max_num_balloons = Property_<uint32_t>::create("max num balloons", 10);
 
@@ -62,7 +64,9 @@ namespace kinski
         gl::MeshPtr create_sprite_mesh(const gl::Texture &t = gl::Texture());
 
         void create_scene();
-
+        
+        void update_balloon_cloud();
+        
         void explode_balloon();
 
     public:
