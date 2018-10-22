@@ -16,6 +16,8 @@ using namespace glm;
 
 const std::string g_parallax_bg_tag = "background_parallax";
 const std::string g_balloon_tag = "balloon";
+const std::string g_balloon_handle_name = "balloon_handle";
+const std::string g_character_handle_name = "zed_handle";
 
 /////////////////////////////////////////////////////////////////
 
@@ -30,6 +32,7 @@ void BalloonApp::setup()
     register_property(m_offscreen_res);
     register_property(m_max_num_balloons);
     register_property(m_sprite_size);
+    register_property(m_timeout_balloon_explode);
     register_property(m_balloon_noise_intensity);
     register_property(m_balloon_noise_speed);
     register_property(m_parallax_factor);
@@ -38,19 +41,32 @@ void BalloonApp::setup()
     register_property(m_use_syphon);
     observe_properties();
 
+    // create timers
+    create_timers();
+    
+    // load settings from file
     load_settings();
 }
 
 /////////////////////////////////////////////////////////////////
 
-void BalloonApp::update(float timeDelta)
+void BalloonApp::update(float the_delta_time)
 {
-    ViewerApp::update(timeDelta);
-
-//    *m_float_speed = -1.f + 2 * m_current_num_balloons / m_max_num_balloons->value();
+    ViewerApp::update(the_delta_time);
 
     // check for offscreen fbo
     if(!m_offscreen_fbo || m_blur_fbos.empty() || !m_blur_fbos.front()){ m_offscreen_res->notify_observers(); }
+    
+    if(m_dirty_scene)
+    {
+        create_scene();
+        m_dirty_scene = false;
+    }
+    *m_float_speed = map_value(m_current_num_balloons / (float)m_max_num_balloons->value(),
+                               0.f, 1.f, -1.f, 1.f);
+    
+    m_current_float_speed = mix<float>(m_current_float_speed, *m_float_speed, 0.04f);
+    
 
     // construct ImGui window for this frame
     if(display_gui())
@@ -64,7 +80,7 @@ void BalloonApp::update(float timeDelta)
     }
 
     // animate bg textures
-    float factor = *m_float_speed;
+    float factor = m_current_float_speed;//*m_float_speed;
 
     gl::SelectVisitor<gl::Mesh> visitor({g_parallax_bg_tag}, false);
     scene()->root()->accept(visitor);
@@ -98,11 +114,10 @@ void BalloonApp::update(float timeDelta)
 
         if(tex)
         {
-            tex->set_uvw_offset(tex->uvw_offset() + gl::Y_AXIS * timeDelta * factor);
+            tex->set_uvw_offset(tex->uvw_offset() + gl::Y_AXIS * the_delta_time * factor);
             factor /= *m_parallax_factor;
         }
     }
-//    m_float_speed_changed = false;
     
     // balloon sprite scaling / positioning
     if(m_sprite_mesh)
@@ -114,27 +129,52 @@ void BalloonApp::update(float timeDelta)
         m_sprite_mesh->set_position(glm::vec3(pos_offset, 0.f));
     }
     
-    update_balloon_cloud();
+    update_balloon_cloud(the_delta_time);
 }
 
 /////////////////////////////////////////////////////////////////
 
-void BalloonApp::update_balloon_cloud()
+void BalloonApp::update_balloon_cloud(float the_delta_time)
 {
-    gl::SelectVisitor<gl::Mesh> visitor({g_balloon_tag}, false);
-    scene()->root()->accept(visitor);
-    std::vector<gl::Mesh*> balloons(visitor.get_objects().begin(), visitor.get_objects().end());
+    auto balloons = scene()->get_objects_by_tag(g_balloon_tag);
     
-    for(uint32_t i = 0; i < balloons.size(); ++i)
+    for(uint32_t i = 0; i < m_balloon_particles.size(); ++i)
     {
-        glm::vec3 force;
+        glm::vec2 force = glm::vec2(0.f, 7.5f);
         
-        for(uint32_t j = 0; j < balloons.size(); ++j)
+        for(uint32_t j = 0; j < m_balloon_particles.size(); ++j)
         {
             if(i == j){ continue; }
-            auto pos_01 = balloons[i]->position();
-            auto pos_02 = balloons[j]->position();
+            auto diff = m_balloon_particles[i].position - m_balloon_particles[j].position;
+            float distance = length(diff);
+            
+            if(distance <= (m_balloon_particles[i].radius + m_balloon_particles[j].radius))
+            {
+                force += (diff / distance) / (1.f + distance * distance);
+            }
         }
+        // update velocity
+        m_balloon_particles[i].velocity += force * the_delta_time;
+        
+        // update position
+        m_balloon_particles[i].position += m_balloon_particles[i].velocity * the_delta_time;
+    }
+    
+    // set position for gameobjects
+    for(uint32_t i = 0; i < m_balloon_particles.size(); ++i)
+    {
+        // apply contraints (string length, etc.)
+        glm::vec2 anchor = vec2(0.f);
+        glm::vec2 pos_diff = m_balloon_particles[i].position - anchor;
+        const float max_diff = m_balloon_particles[i].string_length;
+        
+        if(glm::length(pos_diff) > max_diff)
+        {
+            m_balloon_particles[i].position = anchor + max_diff * glm::normalize(pos_diff);
+        }
+        
+        auto pos_2d = m_balloon_particles[i].position;
+        balloons[i]->set_position(glm::vec3(pos_2d, balloons[i]->position().z));
     }
 }
 
@@ -307,7 +347,11 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         m_parallax_textures.resize(num_bg_images);
         m_blur_fbos.resize(num_bg_images);
 
-        create_scene();
+        for(uint32 i = 0; i < m_parallax_meshes.size(); ++i)
+        {
+            m_parallax_meshes[i] = create_sprite_mesh();
+        }
+//        create_scene();
 
         uint32_t i = 0;
 
@@ -333,10 +377,8 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
                 m_sprite_mesh->material()->add_texture(t);
             }, true, true);
         }
-    }
-    else if(the_property == m_float_speed)
-    {
-        m_float_speed_changed = true;
+        // dirt flag
+        m_dirty_scene = true;
     }
     else if(the_property == m_max_num_balloons)
     {
@@ -404,49 +446,100 @@ void BalloonApp::create_scene()
     m_bg_mesh->set_name("static background");
 
     m_sprite_mesh = create_sprite_mesh();
-    auto sprite_handle = gl::Object3D::create("zed_handle");
+    auto sprite_handle = gl::Object3D::create(g_character_handle_name);
     sprite_handle->add_child(m_sprite_mesh);
     scene()->add_object(sprite_handle);
     m_sprite_mesh->set_scale(glm::vec3(m_sprite_size->value() / gl::window_dimension(), 1.f));
     m_sprite_mesh->set_name("zed");
-    
-    // balloon cloud
-    z_val = .1f;
-    auto circle_geom = gl::Geometry::create_solid_circle(32);
-    auto balloon_handle = gl::Object3D::create("balloon_handle");
+    auto balloon_handle = gl::Object3D::create(g_balloon_handle_name);
     m_sprite_mesh->add_child(balloon_handle);
     
-    for(uint32_t i = 0; i < *m_max_num_balloons; ++i)
+    create_balloon_cloud();
+}
+
+void BalloonApp::create_balloon_cloud()
+{
+    // balloon cloud
+    float z_val = .1f;
+    auto circle_geom = gl::Geometry::create_solid_circle(32);
+    auto balloon_handle = scene()->get_object_by_name(g_balloon_handle_name);
+    balloon_handle->children().clear();
+    m_balloon_particles.clear();
+    
+    for(uint32_t i = 0; i < m_current_num_balloons; ++i)
     {
         auto balloon = gl::Mesh::create(circle_geom);
         balloon->add_tag(g_balloon_tag);
         balloon->set_name(g_balloon_tag + "_" + to_string(i));
         balloon->set_scale(.1f);
-        balloon->set_position(glm::vec3(glm::circularRand(0.2f), z_val));
+        float line_length = random(.3f, .6f);
+        auto pos_2D = glm::circularRand(0.2f);
+        balloon_particle_t b = {pos_2D, glm::vec2(0.f), 0.25f, line_length};
+        balloon->set_position(glm::vec3(pos_2D, z_val));
         balloon_handle->add_child(balloon);
+        m_balloon_particles.push_back(b);
         z_val += 0.1f;
     }
-
+    
     // balloon strings
-    auto rect_geom = gl::Geometry::create_plane(2, 2);
+//    auto rect_geom = gl::Geometry::create_plane(2, 2);
+}
 
+void BalloonApp::create_timers()
+{
+    m_balloon_timer = Timer(main_queue().io_service());
 }
 
 void BalloonApp::explode_balloon()
 {
+    if(!m_balloon_timer.has_expired())
+    {
+        LOG_DEBUG << "blocked explode: waiting for balloon timeout ...";
+        return;
+    }
+    
     m_current_num_balloons--;
 
     if(!m_current_num_balloons)
     {
         LOG_DEBUG << "crash!";
         m_current_num_balloons = *m_max_num_balloons;
+        create_balloon_cloud();
     }
     else
     {
-        gl::SelectVisitor<gl::Mesh> visitor({g_balloon_tag}, false);
-        scene()->root()->accept(visitor);
-
-        if(!visitor.get_objects().empty()){ scene()->remove_object(visitor.get_objects().front()->shared_from_this()); }
+        auto balloons = scene()->get_objects_by_tag(g_balloon_tag);
+        if(!balloons.empty())
+        {
+            scene()->remove_object(balloons.front());
+            m_balloon_particles.pop_front();
+        }
         LOG_DEBUG << "explode_balloon: " << m_current_num_balloons << " left ...";
     }
+    
+    // start timer
+    m_balloon_timer.expires_from_now(*m_timeout_balloon_explode);
+}
+
+bool BalloonApp::is_state_change_valid(GamePhase the_phase, GamePhase the_next_phase)
+{
+    // sanity check
+    switch(the_phase)
+    {
+        case GamePhase::IDLE:
+            return the_next_phase == GamePhase::FLOATING;
+            break;
+        case GamePhase::FLOATING:
+            return the_next_phase == GamePhase::FLOATING || the_next_phase == GamePhase::CRASHED;
+            break;
+        case GamePhase::CRASHED:
+            return the_next_phase == GamePhase::IDLE;
+            break;
+    }
+}
+
+bool BalloonApp::change_gamephase(GamePhase the_next_phase)
+{
+    if(!is_state_change_valid(m_game_phase, the_next_phase)){ return false; }
+    return true;
 }

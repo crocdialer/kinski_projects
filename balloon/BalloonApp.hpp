@@ -22,6 +22,10 @@ namespace kinski
     class BalloonApp : public ViewerApp
     {
     private:
+        enum class GamePhase{IDLE, FLOATING, CRASHED};
+        
+        GamePhase m_game_phase = GamePhase::IDLE;
+        
         syphon::Output m_syphon_out;
 
         gl::CameraPtr m_2d_cam = gl::OrthoCamera::create(-1.f, 1.f, -1.f, 1.f, -100.f, 100.f);
@@ -34,10 +38,15 @@ namespace kinski
         gl::MeshPtr m_sprite_mesh, m_bg_mesh;
 
         gl::FboPtr m_offscreen_fbo;
-
+        
+        // animated values
         uint32_t m_current_num_balloons;
+        float m_current_float_speed;
 
-        bool m_float_speed_changed = true;
+        bool m_dirty_scene = true;
+        
+        // timer objects;
+        Timer m_balloon_timer;
         
         Property_<uint32_t>::Ptr
         m_max_num_balloons = Property_<uint32_t>::create("max num balloons", 10);
@@ -53,7 +62,8 @@ namespace kinski
         Property_<float>::Ptr
         m_float_speed = RangedProperty<float>::create("float speed", 1.f, -1.f, 1.f),
         m_parallax_factor = RangedProperty<float>::create("parallax factor", 1.618f, 1.f, 10.f),
-        m_motion_blur = RangedProperty<float>::create("motion blur", 0.f, 0.f, 1.f);
+        m_motion_blur = RangedProperty<float>::create("motion blur", 0.f, 0.f, 1.f),
+        m_timeout_balloon_explode = RangedProperty<float>::create("timeout balloon explode", 1.f, 0.f, 5.f);
 
         Property_<glm::ivec2>::Ptr
         m_offscreen_res = Property_<glm::ivec2>::create("offscreen resolution", glm::ivec2(1920, 1080));
@@ -62,12 +72,29 @@ namespace kinski
         m_use_syphon = Property_<bool>::create("use syphon", false);
 
         gl::MeshPtr create_sprite_mesh(const gl::Texture &t = gl::Texture());
-
+        
         void create_scene();
         
-        void update_balloon_cloud();
+        void create_balloon_cloud();
+        
+        void create_timers();
+        
+        void update_balloon_cloud(float the_delta_time);
         
         void explode_balloon();
+        
+        bool change_gamephase(GamePhase the_next_phase);
+        
+        bool is_state_change_valid(GamePhase the_phase, GamePhase the_next_phase);
+        
+        struct balloon_particle_t
+        {
+            glm::vec2 position;
+            glm::vec2 velocity;
+            float radius;
+            float string_length;
+        };
+        std::deque<balloon_particle_t> m_balloon_particles;
 
     public:
         BalloonApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
