@@ -47,6 +47,8 @@ void BalloonApp::update(float timeDelta)
 {
     ViewerApp::update(timeDelta);
 
+//    *m_float_speed = -1.f + 2 * m_current_num_balloons / m_max_num_balloons->value();
+
     // check for offscreen fbo
     if(!m_offscreen_fbo || m_blur_fbos.empty() || !m_blur_fbos.front()){ m_offscreen_res->notify_observers(); }
 
@@ -424,6 +426,10 @@ void BalloonApp::create_scene()
         balloon_handle->add_child(balloon);
         z_val += 0.1f;
     }
+
+    // balloon strings
+    auto rect_geom = gl::Geometry::create_plane(2, 2);
+
 }
 
 void BalloonApp::explode_balloon()
@@ -435,5 +441,12 @@ void BalloonApp::explode_balloon()
         LOG_DEBUG << "crash!";
         m_current_num_balloons = *m_max_num_balloons;
     }
-    else{ LOG_DEBUG << "explode_balloon: " << m_current_num_balloons << " left ..."; }
+    else
+    {
+        gl::SelectVisitor<gl::Mesh> visitor({g_balloon_tag}, false);
+        scene()->root()->accept(visitor);
+
+        if(!visitor.get_objects().empty()){ scene()->remove_object(visitor.get_objects().front()->shared_from_this()); }
+        LOG_DEBUG << "explode_balloon: " << m_current_num_balloons << " left ...";
+    }
 }
