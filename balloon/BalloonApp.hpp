@@ -28,7 +28,7 @@ namespace kinski
         
         enum AnimationEnum
         {
-            ANIM_FOREGROUND_FADE_IN = 0, ANIM_FOREGROUND_FADE_OUT = 1,
+            ANIM_FOREGROUND_IN = 0, ANIM_FOREGROUND_OUT = 1,
             ANIM_ZED_DROP = 2, ANIM_ZED_DROP_RECOVER = 3
         };
         
@@ -37,7 +37,8 @@ namespace kinski
         syphon::Output m_syphon_out;
 
         gl::CameraPtr m_2d_cam = gl::OrthoCamera::create(-1.f, 1.f, -1.f, 1.f, -100.f, 100.f);
-
+        
+        media::MediaControllerPtr m_sprite_movie = media::MediaController::create();
         gl::Texture m_sprite_texture;
         std::vector<gl::FboPtr> m_blur_fbos;
 

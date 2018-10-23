@@ -33,7 +33,7 @@ void BalloonApp::setup()
     ViewerApp::setup();
 
     // load larger glyphs
-    fonts()[1].load(fonts()[0].path(), 72);
+    fonts()[1].load(fonts()[0].path(), 96);
 
     register_property(m_asset_dir);
     register_property(m_offscreen_res);
@@ -128,6 +128,13 @@ void BalloonApp::update(float the_delta_time)
             }
         }
         
+        // update movie texture
+        if(m_sprite_movie->copy_frame_to_texture(m_sprite_texture, true))
+        {
+            m_sprite_mesh->material()->add_texture(m_sprite_texture);
+            textures()[0] = m_sprite_texture;
+        }
+        
         // balloon sprite scaling / positioning
         if(m_sprite_mesh)
         {
@@ -197,8 +204,8 @@ void BalloonApp::update_balloon_cloud(float the_delta_time)
         line_verts[2 * i + 1] = glm::vec3(pos_2d, balloons[i]->position().z);
         
         // rotation
-        glm::quat rotation_quat = glm::rotation(glm::vec3(0.f, 1.f, balloons[i]->position().z),
-                                                balloons[i]->position());
+        glm::quat rotation_quat = glm::rotation(glm::vec3(0.f, 1.f, 0.f),
+                                                glm::normalize(glm::vec3(pos_2d, 0.f)));
         
         balloons[i]->set_rotation(rotation_quat);
         
@@ -246,6 +253,12 @@ void BalloonApp::draw()
 
     // syphon output
     if(*m_use_syphon){ m_syphon_out.publish_texture(offscreen_tex); }
+    
+    if(m_game_phase == GamePhase::IDLE || m_game_phase == GamePhase::CRASHED)
+    {
+        gl::draw_text_2D(g_state_names[m_game_phase], fonts()[1], gl::COLOR_WHITE,
+                         gl::window_dimension() / 3.f);
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -408,6 +421,8 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         {
             async_load_texture(p, [this, i](gl::Texture t)
             {
+                Area_<uint32_t> roi(0, 0, t.width(), t.height() / 3.f);
+                t.set_roi(roi);
                 m_parallax_textures[i] = t;
                 m_parallax_meshes[i]->material()->add_texture(t);
             }, true, true);
@@ -427,6 +442,14 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
             }, true, true);
         }
         
+        auto zed_movie_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "zed"),
+                                                         fs::FileType::MOVIE, true);
+        
+        if(!zed_movie_paths.empty())
+        {
+            m_sprite_movie->load(zed_movie_paths.front(), true, true);
+        }
+        
         // retrieve main-sprite assets
         auto balloon_image_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "balloon"),
                                                          fs::FileType::IMAGE, true);
@@ -436,16 +459,7 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         for(const auto &p : balloon_image_paths)
         {
             m_balloon_textures.push_back(gl::create_texture_from_file(p, true, true));
-            
-//            async_load_texture(p, [this, i](gl::Texture t)
-//            {
-//                m_balloon_textures[i] = t;
-//            }, true, true);
-//            i++;
         }
-        
-        // dirt flag
-//        m_dirty_scene = true;
     }
     else if(the_property == m_max_num_balloons)
     {
@@ -515,7 +529,7 @@ void BalloonApp::create_scene()
     // foreground
     z_val = -0.1f;
     m_fg_mesh = create_sprite_mesh();
-    m_fg_mesh->set_position(glm::vec3(0.f, 0.f, z_val));
+    m_fg_mesh->set_position(glm::vec3(0.f, -2.f, z_val));
     scene()->add_object(m_fg_mesh);
     m_fg_mesh->set_name("foreground");
     
@@ -526,7 +540,7 @@ void BalloonApp::create_scene()
     m_sprite_mesh->set_scale(glm::vec3(m_sprite_size->value() / gl::window_dimension(), 1.f));
     m_sprite_mesh->set_name("zed");
     auto balloon_handle = gl::Object3D::create(g_balloon_handle_name);
-    balloon_handle->set_position(glm::vec3(0.05f, 0.3f, 0.1f));
+    balloon_handle->set_position(glm::vec3(0.f, 0.65f, 0.1f));
     m_sprite_mesh->add_child(balloon_handle);
     
     create_balloon_cloud();
@@ -642,11 +656,13 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
             break;
             
         case GamePhase::FLOATING:
+            m_animations[ANIM_FOREGROUND_OUT]->start();
             m_current_num_balloons = *m_max_num_balloons;
             create_balloon_cloud();
             break;
             
         case GamePhase::CRASHED:
+            m_animations[ANIM_FOREGROUND_IN]->start();
             main_queue().submit_with_delay([this]()
             {
                 change_gamephase(GamePhase::IDLE);
@@ -660,6 +676,22 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
 
 void BalloonApp::create_animations()
 {
+    m_animations[ANIM_FOREGROUND_IN] = std::make_shared<animation::Animation>(2.f, 0.f,
+                                                                              [this](float progress)
+    {
+        auto z_val = m_fg_mesh->position().z;
+        glm::vec3 pos = kinski::mix(glm::vec3(0.f, -2.f, z_val), glm::vec3(0.f, 0.f, z_val), progress);
+        m_fg_mesh->set_position(pos);
+    });
+    
+    m_animations[ANIM_FOREGROUND_OUT] = std::make_shared<animation::Animation>(2.f, 0.f,
+                                                                               [this](float progress)
+    {
+        auto z_val = m_fg_mesh->position().z;
+        glm::vec3 pos = kinski::mix(glm::vec3(0.f, 0.f, z_val), glm::vec3(0.f, -2.f, z_val), progress);
+        m_fg_mesh->set_position(pos);
+    });
+    
     // balloon exploded
     m_animations[ANIM_ZED_DROP] = animation::create(&m_zed_offset,
                                                     glm::vec2(0.f), glm::vec2(0.f, -0.3f),
