@@ -149,7 +149,7 @@ void BalloonApp::update(float the_delta_time)
     
     update_balloon_cloud(the_delta_time);
     
-    m_current_float_speed = mix<float>(m_current_float_speed, *m_float_speed, 0.04f);
+    m_current_float_speed = mix<float>(m_current_float_speed, *m_float_speed, 0.03f);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -507,7 +507,7 @@ gl::MeshPtr BalloonApp::create_sprite_mesh(const gl::Texture &t)
 void BalloonApp::create_scene()
 {
     scene()->clear();
-    float z_val = -10.f;
+    float z_val = .05f;
 
     // parallax backgrounds
     for(uint32 i = 0; i < m_parallax_meshes.size(); ++i)
@@ -521,13 +521,14 @@ void BalloonApp::create_scene()
     }
 
     // static background
+    z_val = -10.f;
     m_bg_mesh = create_sprite_mesh();
     m_bg_mesh->set_position(glm::vec3(0.f, 0.f, z_val));
     scene()->add_object(m_bg_mesh);
     m_bg_mesh->set_name("static background");
 
     // foreground
-    z_val = -0.1f;
+    z_val = -5.f;
     m_fg_mesh = create_sprite_mesh();
     m_fg_mesh->set_position(glm::vec3(0.f, -2.f, z_val));
     scene()->add_object(m_fg_mesh);
@@ -655,6 +656,7 @@ bool BalloonApp::is_state_change_valid(GamePhase the_phase, GamePhase the_next_p
             return the_next_phase == GamePhase::IDLE;
             break;
     }
+    return false;
 }
 
 bool BalloonApp::change_gamephase(GamePhase the_next_phase)
