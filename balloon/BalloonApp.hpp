@@ -21,8 +21,10 @@ namespace kinski
 {
     class BalloonApp : public ViewerApp
     {
-    private:
+    public:
         enum class GamePhase{IDLE, FLOATING, CRASHED};
+        
+    private:
         
         GamePhase m_game_phase = GamePhase::IDLE;
         
@@ -35,7 +37,7 @@ namespace kinski
 
         std::vector<gl::Texture> m_parallax_textures;
         std::vector<gl::MeshPtr> m_parallax_meshes;
-        gl::MeshPtr m_sprite_mesh, m_bg_mesh;
+        gl::MeshPtr m_sprite_mesh, m_bg_mesh, m_fg_mesh;
 
         gl::FboPtr m_offscreen_fbo;
         
@@ -97,6 +99,7 @@ namespace kinski
         std::deque<balloon_particle_t> m_balloon_particles;
 
     public:
+        
         BalloonApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;
         void update(float timeDelta) override;
