@@ -26,6 +26,12 @@ namespace kinski
         
     private:
         
+        enum AnimationEnum
+        {
+            ANIM_FOREGROUND_FADE_IN = 0, ANIM_FOREGROUND_FADE_OUT = 1,
+            ANIM_ZED_DROP = 2, ANIM_ZED_DROP_RECOVER = 3
+        };
+        
         GamePhase m_game_phase = GamePhase::IDLE;
         
         syphon::Output m_syphon_out;
@@ -35,16 +41,17 @@ namespace kinski
         gl::Texture m_sprite_texture;
         std::vector<gl::FboPtr> m_blur_fbos;
 
-        std::vector<gl::Texture> m_parallax_textures;
+        std::vector<gl::Texture> m_parallax_textures, m_balloon_textures;
         std::vector<gl::MeshPtr> m_parallax_meshes;
-        gl::MeshPtr m_sprite_mesh, m_bg_mesh, m_fg_mesh;
+        gl::MeshPtr m_sprite_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh;
 
         gl::FboPtr m_offscreen_fbo;
         
         // animated values
-        uint32_t m_current_num_balloons;
-        float m_current_float_speed;
-
+        uint32_t m_current_num_balloons = 0;
+        float m_current_float_speed = 0.f;
+        glm::vec2 m_zed_offset;
+        
         bool m_dirty_scene = true;
         
         // timer objects;
@@ -65,7 +72,8 @@ namespace kinski
         m_float_speed = RangedProperty<float>::create("float speed", 1.f, -1.f, 1.f),
         m_parallax_factor = RangedProperty<float>::create("parallax factor", 1.618f, 1.f, 10.f),
         m_motion_blur = RangedProperty<float>::create("motion blur", 0.f, 0.f, 1.f),
-        m_timeout_balloon_explode = RangedProperty<float>::create("timeout balloon explode", 1.f, 0.f, 5.f);
+        m_timeout_balloon_explode = RangedProperty<float>::create("timeout balloon explode", 1.f, 0.f, 5.f),
+        m_balloon_scale = RangedProperty<float>::create("balloon scale", .5f, 0.f, 5.f);
 
         Property_<glm::ivec2>::Ptr
         m_offscreen_res = Property_<glm::ivec2>::create("offscreen resolution", glm::ivec2(1920, 1080));
@@ -80,6 +88,8 @@ namespace kinski
         void create_balloon_cloud();
         
         void create_timers();
+        
+        void create_animations();
         
         void update_balloon_cloud(float the_delta_time);
         
