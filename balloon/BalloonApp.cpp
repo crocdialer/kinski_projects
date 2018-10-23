@@ -430,17 +430,17 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         }
 
         // retrieve main-sprite assets
-        auto zed_image_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "zed"),
-                                                             fs::FileType::IMAGE, true);
-
-        if(!zed_image_paths.empty())
-        {
-            async_load_texture(zed_image_paths[0], [this](gl::Texture t)
-            {
-                m_sprite_texture = t;
-                m_sprite_mesh->material()->add_texture(t);
-            }, true, true);
-        }
+//        auto zed_image_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "zed"),
+//                                                             fs::FileType::IMAGE, true);
+//
+//        if(!zed_image_paths.empty())
+//        {
+//            async_load_texture(zed_image_paths[0], [this](gl::Texture t)
+//            {
+//                m_sprite_texture = t;
+//                m_sprite_mesh->material()->add_texture(t);
+//            }, true, true);
+//        }
         
         auto zed_movie_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "zed"),
                                                          fs::FileType::MOVIE, true);
@@ -540,7 +540,7 @@ void BalloonApp::create_scene()
     m_sprite_mesh->set_scale(glm::vec3(m_sprite_size->value() / gl::window_dimension(), 1.f));
     m_sprite_mesh->set_name("zed");
     auto balloon_handle = gl::Object3D::create(g_balloon_handle_name);
-    balloon_handle->set_position(glm::vec3(0.f, 0.65f, 0.1f));
+    balloon_handle->set_position(glm::vec3(0.f, 0.73f, 0.1f));
     m_sprite_mesh->add_child(balloon_handle);
     
     create_balloon_cloud();
@@ -568,7 +568,7 @@ void BalloonApp::create_balloon_cloud()
         auto balloon = gl::Mesh::create(rect_geom, mat);
         balloon->add_tag(g_balloon_tag);
         balloon->set_name(g_balloon_tag + "_" + to_string(i));
-        balloon->set_scale(.5f);
+        balloon->set_scale(glm::vec3(.5f, 0.6f, 1.f));
         float line_length = random(.75f, 1.2f);
         auto pos_2D = glm::circularRand(0.2f);
         balloon_particle_t b = {pos_2D, glm::vec2(0.f), 0.35f, line_length};
@@ -615,6 +615,8 @@ void BalloonApp::explode_balloon()
         m_balloon_particles.pop_front();
     }
     
+    rumble_balloons();
+    
     // play drop animation
     m_animations[ANIM_ZED_DROP]->start();
     LOG_DEBUG << "explode_balloon: " << m_current_num_balloons << " left ...";
@@ -626,6 +628,15 @@ void BalloonApp::explode_balloon()
     {
         LOG_DEBUG << "crash!";
         change_gamephase(GamePhase::CRASHED);
+    }
+}
+
+void BalloonApp::rumble_balloons()
+{
+    for(auto &b : m_balloon_particles)
+    {
+        float f = random(-2.5f, -1.5f);
+        b.velocity = f * b.position;
     }
 }
 

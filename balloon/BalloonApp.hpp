@@ -73,7 +73,7 @@ namespace kinski
         m_float_speed = RangedProperty<float>::create("float speed", 1.f, -1.f, 1.f),
         m_parallax_factor = RangedProperty<float>::create("parallax factor", 1.618f, 1.f, 10.f),
         m_motion_blur = RangedProperty<float>::create("motion blur", 0.f, 0.f, 1.f),
-        m_timeout_balloon_explode = RangedProperty<float>::create("timeout balloon explode", 1.f, 0.f, 5.f),
+        m_timeout_balloon_explode = RangedProperty<float>::create("timeout balloon explode", 3.f, 0.f, 5.f),
         m_balloon_scale = RangedProperty<float>::create("balloon scale", .5f, 0.f, 5.f);
 
         Property_<glm::ivec2>::Ptr
@@ -87,6 +87,8 @@ namespace kinski
         void create_scene();
         
         void create_balloon_cloud();
+        
+        void rumble_balloons();
         
         void create_timers();
         
