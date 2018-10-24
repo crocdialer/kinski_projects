@@ -49,9 +49,7 @@ namespace kinski
         std::vector<gl::Texture> m_parallax_textures, m_balloon_textures;
         std::vector<gl::MeshPtr> m_parallax_meshes;
         gl::MeshPtr m_sprite_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh, m_corpse_mesh,
-            m_title_mesh;
-        
-        std::vector<glm::vec3> m_crash_sites;
+            m_title_mesh, m_tombstone_template;
         
         gl::FboPtr m_offscreen_fbo;
         
@@ -66,7 +64,8 @@ namespace kinski
         Timer m_balloon_timer;
         
         Property_<uint32_t>::Ptr
-        m_max_num_balloons = Property_<uint32_t>::create("max num balloons", 10);
+        m_max_num_balloons = Property_<uint32_t>::create("max num balloons", 10),
+        m_num_dead = Property_<uint32_t>::create("number of deaths", 0);
 
         Property_<string>::Ptr
         m_asset_dir = Property_<string>::create("asset directory");
@@ -91,6 +90,9 @@ namespace kinski
         Property_<bool>::Ptr
         m_use_syphon = Property_<bool>::create("use syphon", false);
 
+        Property_<std::vector<glm::vec2>>::Ptr
+        m_crash_sites = Property_<std::vector<glm::vec2>>::create("crash sites");
+        
         gl::MeshPtr create_sprite_mesh(const gl::Texture &t = gl::Texture());
         
         void create_scene();
@@ -109,9 +111,13 @@ namespace kinski
         
         void explode_balloon();
         
+        void add_random_tombstone();
+        
         bool change_gamephase(GamePhase the_next_phase);
         
         bool is_state_change_valid(GamePhase the_phase, GamePhase the_next_phase);
+        
+        void create_tombstone_mesh(uint32_t the_index, const glm::vec2 &the_pos);
         
         struct balloon_particle_t
         {
