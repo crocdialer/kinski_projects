@@ -142,7 +142,17 @@ void BalloonApp::update(float the_delta_time)
         }
         
         // update sprite movie texture
-        if(!m_sprite_movies.empty() && m_sprite_movies[0]->copy_frame_to_texture(m_sprite_texture, true))
+        float balloons_frac = 1.f - m_current_num_balloons / (float)m_max_num_balloons->value();
+        uint32_t sprite_index = balloons_frac * m_sprite_movies.size();
+        sprite_index = clamp<uint32_t>(sprite_index, 0, m_sprite_movies.size() - 1);
+        
+        for(uint32_t i = 0; i < m_sprite_movies.size(); ++i)
+        {
+            if(i != sprite_index){ m_sprite_movies[i]->pause(); }
+        }
+        if(m_sprite_movies.size() > sprite_index){ m_sprite_movies[sprite_index]->play(); }
+        
+        if(!m_sprite_movies.empty() && m_sprite_movies[sprite_index]->copy_frame_to_texture(m_sprite_texture, true))
         {
             m_sprite_mesh->material()->add_texture(m_sprite_texture);
         }
@@ -567,7 +577,7 @@ void BalloonApp::create_scene()
     // foreground
     z_val = -.01f;
     m_fg_mesh = create_sprite_mesh();
-    m_fg_mesh->set_position(glm::vec3(0.f, -2.f, z_val));
+    m_fg_mesh->set_position(glm::vec3(0.f, 0.f, z_val));
     scene()->add_object(m_fg_mesh);
     m_fg_mesh->set_name("foreground");
     
@@ -602,7 +612,7 @@ void BalloonApp::create_scene()
 void BalloonApp::create_balloon_cloud()
 {
     // balloon cloud
-    float z_val = 0.f;
+    float z_val = 0.04f;
     auto balloon_handle = scene()->get_object_by_name(g_balloon_handle_name);
     if(!balloon_handle){ return; }
     balloon_handle->children().clear();
@@ -706,7 +716,7 @@ bool BalloonApp::is_state_change_valid(GamePhase the_phase, GamePhase the_next_p
     switch(the_phase)
     {
         case GamePhase::IDLE:
-            return the_next_phase == GamePhase::FLOATING;
+            return the_next_phase == GamePhase::IDLE || the_next_phase == GamePhase::FLOATING;
             break;
         case GamePhase::FLOATING:
             return the_next_phase == GamePhase::FLOATING || the_next_phase == GamePhase::CRASHED;
