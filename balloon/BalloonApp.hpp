@@ -31,7 +31,7 @@ namespace kinski
             ANIM_FOREGROUND_IN = 0, ANIM_FOREGROUND_OUT = 1,
             ANIM_ZED_DROP = 2, ANIM_ZED_DROP_RECOVER = 3,
             ANIM_ZED_IN = 4, ANIM_ZED_OUT = 5,
-//            ANIM_CORPSE_IN = 6, ANIM_CORPSE_OUT = 7
+            ANIM_TITLE_IN = 6, ANIM_TITLE_OUT = 7
         };
         
         GamePhase m_game_phase = GamePhase::IDLE;
@@ -43,12 +43,13 @@ namespace kinski
         std::vector<media::MediaControllerPtr> m_sprite_movies;
         media::MediaControllerPtr m_corpse_movie = media::MediaController::create();
         
-        gl::Texture m_sprite_texture, m_corpse_texture;
+        gl::Texture m_sprite_texture, m_corpse_texture, m_tombstone_texture;
         std::vector<gl::FboPtr> m_blur_fbos;
 
         std::vector<gl::Texture> m_parallax_textures, m_balloon_textures;
         std::vector<gl::MeshPtr> m_parallax_meshes;
-        gl::MeshPtr m_sprite_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh, m_corpse_mesh;
+        gl::MeshPtr m_sprite_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh, m_corpse_mesh,
+            m_title_mesh;
         
         std::vector<glm::vec3> m_crash_sites;
         

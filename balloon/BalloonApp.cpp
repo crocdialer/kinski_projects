@@ -66,7 +66,7 @@ void BalloonApp::setup()
     // load settings from file
     load_settings();
     
-    change_gamephase(GamePhase::FLOATING);
+    change_gamephase(GamePhase::IDLE);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -277,11 +277,11 @@ void BalloonApp::draw()
     // syphon output
     if(*m_use_syphon){ m_syphon_out.publish_texture(offscreen_tex); }
     
-    if(m_game_phase == GamePhase::IDLE || m_game_phase == GamePhase::CRASHED)
-    {
-        gl::draw_text_2D(g_state_names[m_game_phase], fonts()[1], gl::COLOR_WHITE,
-                         gl::window_dimension() / 3.f);
-    }
+//    if(m_game_phase == GamePhase::IDLE || m_game_phase == GamePhase::CRASHED)
+//    {
+//        gl::draw_text_2D(g_state_names[m_game_phase], fonts()[1], gl::COLOR_WHITE,
+//                         gl::window_dimension() / 3.f);
+//    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -473,6 +473,30 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         {
             m_balloon_textures.push_back(gl::create_texture_from_file(p, true, true));
         }
+        
+        // retrieve title image
+        auto title_path = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "title"),
+                                                    fs::FileType::IMAGE, true);
+        
+        if(!title_path.empty())
+        {
+            async_load_texture(title_path[0], [this](gl::Texture t)
+            {
+                m_title_mesh->material()->add_texture(t);
+            }, true, true);
+        }
+        
+        // retrieve tombstone image
+        auto tombstone_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "tombstone"),
+                                                         fs::FileType::IMAGE, true);
+        
+        if(!tombstone_paths.empty())
+        {
+            async_load_texture(tombstone_paths[0], [this](gl::Texture t)
+            {
+               m_tombstone_texture = t;
+            }, true, true);
+        }
     }
     else if(the_property == m_max_num_balloons)
     {
@@ -555,7 +579,7 @@ void BalloonApp::create_scene()
     m_sprite_mesh->set_scale(glm::vec3(m_sprite_size->value() / gl::window_dimension(), 1.f));
     m_sprite_mesh->set_name("zed");
     auto balloon_handle = gl::Object3D::create(g_balloon_handle_name);
-    balloon_handle->set_position(glm::vec3(0.f, 0.73f, 0.1f));
+    balloon_handle->set_position(glm::vec3(0.f, 0.73f, 0.f));
     m_sprite_mesh->add_child(balloon_handle);
     
     // generate balloons
@@ -565,15 +589,20 @@ void BalloonApp::create_scene()
     z_val = 0.1f;
     m_corpse_mesh = create_sprite_mesh();
     m_corpse_mesh->set_name("zed corpse");
-//    m_corpse_mesh->set_scale(glm::vec3(1.f, .4f, 1.f));
     m_corpse_mesh->set_position(glm::vec3(0.f, 0.f, z_val));
     m_fg_mesh->add_child(m_corpse_mesh);
+    
+    // title
+    m_title_mesh = create_sprite_mesh();
+    m_title_mesh->set_name("title");
+    m_title_mesh->set_position(glm::vec3(0.f, 2.f, z_val));
+    scene()->add_object(m_title_mesh);
 }
 
 void BalloonApp::create_balloon_cloud()
 {
     // balloon cloud
-    float z_val = .1f;
+    float z_val = 0.f;
     auto balloon_handle = scene()->get_object_by_name(g_balloon_handle_name);
     if(!balloon_handle){ return; }
     balloon_handle->children().clear();
@@ -597,7 +626,7 @@ void BalloonApp::create_balloon_cloud()
         balloon->set_position(glm::vec3(pos_2D, z_val));
         balloon_handle->add_child(balloon);
         m_balloon_particles.push_back(b);
-        z_val += 0.1f;
+        z_val += 0.01f;
     }
     
     // balloon string mesh
@@ -622,6 +651,9 @@ void BalloonApp::create_timers()
 
 void BalloonApp::explode_balloon()
 {
+    // should not happen anyway
+    if(m_game_phase != GamePhase::FLOATING){ return; }
+    
     if(!m_balloon_timer.has_expired())
     {
         LOG_DEBUG << "blocked explode: waiting for balloon timeout ...";
@@ -693,21 +725,43 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
     switch(the_next_phase)
     {
         case GamePhase::IDLE:
+            m_animations[ANIM_TITLE_IN]->start();
+            m_sprite_mesh->set_enabled(false);
             break;
             
         case GamePhase::FLOATING:
+            m_sprite_mesh->set_enabled(true);
+            
+            // start animations
+            m_animations[ANIM_TITLE_OUT]->start();
             m_animations[ANIM_FOREGROUND_OUT]->start();
             m_animations[ANIM_ZED_IN]->start();
+            
+            // start first sprite movie
+            if(!m_sprite_movies.empty() && m_sprite_movies.front()){ m_sprite_movies.front()->play(); }
+            
+            // stop corpse movie
+            if(m_corpse_movie){ m_corpse_movie->pause(); }
+            
             m_current_num_balloons = *m_max_num_balloons;
             create_balloon_cloud();
             break;
             
         case GamePhase::CRASHED:
-            m_animations[ANIM_FOREGROUND_IN]->start();
-            main_queue().submit_with_delay([this]()
+            // start corpse movie
+            if(m_corpse_movie)
             {
-                change_gamephase(GamePhase::IDLE);
-            }, 5.f);
+                m_corpse_movie->restart();
+                m_corpse_movie->set_media_ended_callback([this](media::MediaControllerPtr mc)
+                {
+                    change_gamephase(GamePhase::IDLE);
+                });
+            }
+            
+            // stop whichever sprite movie was playing
+            for(auto &m : m_sprite_movies){ if(m){ m->pause(); } }
+            
+            m_animations[ANIM_FOREGROUND_IN]->start();
             break;
     }
     m_game_phase = the_next_phase;
@@ -717,6 +771,22 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
 
 void BalloonApp::create_animations()
 {
+    m_animations[ANIM_TITLE_IN] = std::make_shared<animation::Animation>(2.f, 0.f,
+    [this](float progress)
+    {
+        auto z_val = m_title_mesh->position().z;
+        glm::vec3 pos = kinski::mix(glm::vec3(0.f, 2.f, z_val), glm::vec3(0.f, 0.f, z_val), progress);
+        m_title_mesh->set_position(pos);
+    });
+    
+    m_animations[ANIM_TITLE_OUT] = std::make_shared<animation::Animation>(2.f, 0.f,
+    [this](float progress)
+    {
+        auto z_val = m_title_mesh->position().z;
+        glm::vec3 pos = kinski::mix(glm::vec3(0.f, 2.f, z_val), glm::vec3(0.f, 0.f, z_val), 1.f - progress);
+        m_title_mesh->set_position(pos);
+    });
+    
     m_animations[ANIM_FOREGROUND_IN] = std::make_shared<animation::Animation>(2.f, 0.f,
                                                                               [this](float progress)
     {
