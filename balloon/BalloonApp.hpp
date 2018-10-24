@@ -29,7 +29,9 @@ namespace kinski
         enum AnimationEnum
         {
             ANIM_FOREGROUND_IN = 0, ANIM_FOREGROUND_OUT = 1,
-            ANIM_ZED_DROP = 2, ANIM_ZED_DROP_RECOVER = 3
+            ANIM_ZED_DROP = 2, ANIM_ZED_DROP_RECOVER = 3,
+            ANIM_ZED_IN = 4, ANIM_ZED_OUT = 5,
+//            ANIM_CORPSE_IN = 6, ANIM_CORPSE_OUT = 7
         };
         
         GamePhase m_game_phase = GamePhase::IDLE;
@@ -38,14 +40,18 @@ namespace kinski
 
         gl::CameraPtr m_2d_cam = gl::OrthoCamera::create(-1.f, 1.f, -1.f, 1.f, -100.f, 100.f);
         
-        media::MediaControllerPtr m_sprite_movie = media::MediaController::create();
-        gl::Texture m_sprite_texture;
+        std::vector<media::MediaControllerPtr> m_sprite_movies;
+        media::MediaControllerPtr m_corpse_movie = media::MediaController::create();
+        
+        gl::Texture m_sprite_texture, m_corpse_texture;
         std::vector<gl::FboPtr> m_blur_fbos;
 
         std::vector<gl::Texture> m_parallax_textures, m_balloon_textures;
         std::vector<gl::MeshPtr> m_parallax_meshes;
-        gl::MeshPtr m_sprite_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh;
-
+        gl::MeshPtr m_sprite_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh, m_corpse_mesh;
+        
+        std::vector<glm::vec3> m_crash_sites;
+        
         gl::FboPtr m_offscreen_fbo;
         
         // animated values
@@ -67,9 +73,11 @@ namespace kinski
         Property_<glm::vec2>::Ptr
         m_sprite_size = Property_<glm::vec2>::create("sprite size", glm::vec2(160, 300)),
         m_balloon_noise_intensity = Property_<glm::vec2>::create("balloon noise intensity", glm::vec2(80, 100)),
-        m_balloon_noise_speed = Property_<glm::vec2>::create("balloon noise speed", glm::vec2(.6f, 1.f));
+        m_balloon_noise_speed = Property_<glm::vec2>::create("balloon noise speed", glm::vec2(.6f, 1.f)),
+        m_balloon_line_length = Property_<glm::vec2>::create("balloon line length", glm::vec2(.75f, 1.2f));
 
-        Property_<float>::Ptr
+        RangedProperty<float>::Ptr
+        m_float_speed_mutliplier = RangedProperty<float>::create("float multiplier", 1.f, 0.f, 10.f),
         m_float_speed = RangedProperty<float>::create("float speed", 1.f, -1.f, 1.f),
         m_parallax_factor = RangedProperty<float>::create("parallax factor", 1.618f, 1.f, 10.f),
         m_motion_blur = RangedProperty<float>::create("motion blur", 0.f, 0.f, 1.f),
@@ -88,6 +96,8 @@ namespace kinski
         
         void create_balloon_cloud();
         
+        gl::Color random_balloon_color();
+        
         void rumble_balloons();
         
         void create_timers();
@@ -105,6 +115,7 @@ namespace kinski
         struct balloon_particle_t
         {
             glm::vec2 position;
+            glm::vec2 force;
             glm::vec2 velocity;
             float radius;
             float string_length;
