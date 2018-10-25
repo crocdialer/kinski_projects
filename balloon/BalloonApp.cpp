@@ -105,10 +105,13 @@ void BalloonApp::update(float the_delta_time)
                                    0.f, 1.f, m_float_speed->range().first, m_float_speed->range().second);
 
         // update sprite movie texture
-        float balloons_frac = 1.f - std::min(m_max_num_balloons->value(), m_current_num_balloons + 1) / (float)m_max_num_balloons->value();
-        uint32_t sprite_index = balloons_frac * m_sprite_movies.size();
-        sprite_index = clamp<uint32_t>(sprite_index, 0, m_sprite_movies.size() - 1);
-
+        float balloons_frac = 1.f - (m_current_num_balloons / (float)m_max_num_balloons->value());
+        uint32_t sprite_index = balloons_frac * (m_sprite_movies.size() - 1);
+        sprite_index = clamp<uint32_t>(sprite_index, 0, m_sprite_movies.size() - 2);
+        
+        // shitty hack for correct index
+        if(!m_current_num_balloons){ sprite_index = m_sprite_movies.size() - 1; }
+        
         // play zed_audio
         if(m_current_sprite_index != sprite_index)
         {
@@ -1043,7 +1046,10 @@ void BalloonApp::create_animations()
     
     m_animations[ANIM_ZED_OUT]->set_finish_callback([this]()
     {
-        change_gamephase(GamePhase::CRASHED);
+        main_queue().submit_with_delay([this]()
+        {
+            change_gamephase(GamePhase::CRASHED);
+        }, 2.f);
     });
     
     // zed reborn

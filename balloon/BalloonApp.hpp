@@ -43,7 +43,7 @@ namespace kinski
         
         std::vector<media::MediaControllerPtr> m_sprite_movies;
 
-        uint32_t m_current_sprite_index = 0;
+        int m_current_sprite_index = -1;
 
         // balloon explode movie
         media::MediaControllerPtr m_balloon_pow_movie = media::MediaController::create();
