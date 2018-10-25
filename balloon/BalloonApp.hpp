@@ -56,7 +56,9 @@ namespace kinski
         std::vector<gl::MeshPtr> m_parallax_meshes;
         gl::MeshPtr m_sprite_mesh, m_pow_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh, m_corpse_mesh,
             m_title_mesh, m_tombstone_template;
-        
+
+        gl::Font m_tombstone_font;
+
         gl::FboPtr m_offscreen_fbo;
         
         // animated values
