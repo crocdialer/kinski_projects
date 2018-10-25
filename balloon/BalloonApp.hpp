@@ -43,19 +43,31 @@ namespace kinski
         
         std::vector<media::MediaControllerPtr> m_sprite_movies;
 
+        uint32_t m_current_sprite_index = 0;
+
         // balloon explode movie
         media::MediaControllerPtr m_balloon_pow_movie = media::MediaController::create();
+        std::vector<media::MediaControllerPtr> m_balloon_pow_sounds;
+
+        // zed sounds
+        std::vector<media::MediaControllerPtr> m_zed_sounds;
 
         // corpse movie
         media::MediaControllerPtr m_corpse_movie = media::MediaController::create();
-        
+
+        // background wind audio
+        media::MediaControllerPtr m_background_audio = media::MediaController::create();
+
+        // start audio
+        media::MediaControllerPtr m_start_audio = media::MediaController::create();
+
         gl::Texture m_sprite_texture, m_corpse_texture, m_pow_texture, m_tombstone_texture;
         std::vector<gl::FboPtr> m_blur_fbos;
 
         std::vector<gl::Texture> m_parallax_textures, m_balloon_textures;
         std::vector<gl::MeshPtr> m_parallax_meshes;
         gl::MeshPtr m_sprite_mesh, m_pow_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh, m_corpse_mesh,
-            m_title_mesh, m_tombstone_template;
+            m_title_mesh, m_tombstone_template, m_tomb_balloon;
 
         gl::Font m_tombstone_font;
 
@@ -114,12 +126,14 @@ namespace kinski
         void create_timers();
         
         void create_animations();
-        
+
+        void create_tombstone_animations(const gl::MeshPtr &the_tombstone_mesh, float duration, float delay);
+
         void update_balloon_cloud(float the_delta_time);
         
         void explode_balloon();
-        
-        void add_random_tombstone();
+
+        gl::MeshPtr add_random_tombstone();
         
         bool change_gamephase(GamePhase the_next_phase);
         
