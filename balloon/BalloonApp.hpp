@@ -22,7 +22,7 @@ namespace kinski
     class BalloonApp : public ViewerApp
     {
     public:
-        enum class GamePhase{IDLE, FLOATING, CRASHED};
+        enum class GamePhase{UNDEFINED, IDLE, FLOATING, CRASHED};
         
     private:
         
@@ -31,24 +31,30 @@ namespace kinski
             ANIM_FOREGROUND_IN = 0, ANIM_FOREGROUND_OUT = 1,
             ANIM_ZED_DROP = 2, ANIM_ZED_DROP_RECOVER = 3,
             ANIM_ZED_IN = 4, ANIM_ZED_OUT = 5,
-            ANIM_TITLE_IN = 6, ANIM_TITLE_OUT = 7
+            ANIM_TITLE_IN = 6, ANIM_TITLE_OUT = 7,
+            ANIM_TOMBSTONE_IN = 8, ANIM_TOMBSTONE_OUT = 9,
         };
         
-        GamePhase m_game_phase = GamePhase::IDLE;
+        GamePhase m_game_phase = GamePhase::UNDEFINED;
         
         syphon::Output m_syphon_out;
 
         gl::CameraPtr m_2d_cam = gl::OrthoCamera::create(-1.f, 1.f, -1.f, 1.f, -100.f, 100.f);
         
         std::vector<media::MediaControllerPtr> m_sprite_movies;
+
+        // balloon explode movie
+        media::MediaControllerPtr m_balloon_pow_movie = media::MediaController::create();
+
+        // corpse movie
         media::MediaControllerPtr m_corpse_movie = media::MediaController::create();
         
-        gl::Texture m_sprite_texture, m_corpse_texture, m_tombstone_texture;
+        gl::Texture m_sprite_texture, m_corpse_texture, m_pow_texture, m_tombstone_texture;
         std::vector<gl::FboPtr> m_blur_fbos;
 
         std::vector<gl::Texture> m_parallax_textures, m_balloon_textures;
         std::vector<gl::MeshPtr> m_parallax_meshes;
-        gl::MeshPtr m_sprite_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh, m_corpse_mesh,
+        gl::MeshPtr m_sprite_mesh, m_pow_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh, m_corpse_mesh,
             m_title_mesh, m_tombstone_template;
         
         gl::FboPtr m_offscreen_fbo;
@@ -117,7 +123,7 @@ namespace kinski
         
         bool is_state_change_valid(GamePhase the_phase, GamePhase the_next_phase);
         
-        void create_tombstone_mesh(uint32_t the_index, const glm::vec2 &the_pos);
+        gl::MeshPtr create_tombstone_mesh(uint32_t the_index, const glm::vec2 &the_pos);
         
         struct balloon_particle_t
         {

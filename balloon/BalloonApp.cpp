@@ -97,79 +97,23 @@ void BalloonApp::update(float the_delta_time)
     
     if(m_game_phase == GamePhase::FLOATING)
     {
-        *m_float_speed = map_value(m_current_num_balloons / (float)m_max_num_balloons->value(),
+        *m_float_speed = map_value(m_current_num_balloons / (float) m_max_num_balloons->value(),
                                    0.f, 1.f, m_float_speed->range().first, m_float_speed->range().second);
-        
-        // animate bg textures
-        float factor = m_current_float_speed;//*m_float_speed;
-        
-        gl::SelectVisitor<gl::Mesh> visitor({g_parallax_bg_tag}, false);
-        scene()->root()->accept(visitor);
-        uint32_t i = 0;
-        
-        auto blur_factor = [](float f) -> float
-        {
-            return 50.f * f * f * f;
-        };
-        
-        gl::reset_state();
-        
-        for(auto m : visitor.get_objects())
-        {
-            auto val = blur_factor(factor) * *m_motion_blur;
-            
-            auto *tex = m->material()->get_texture_ptr();
-            
-            if(m_parallax_textures[i])
-            {
-                gl::render_to_texture(m_blur_fbos[i], [this, i, val]()
-                {
-                    gl::clear(gl::Color(0.f));
-                    gl::Blur blur(glm::vec2(0.f, val));
-                    blur.render_output(m_parallax_textures[i]);
-                });
-                tex = m_blur_fbos[i]->texture_ptr();
-                
-                // set region of interest
-                Area_<uint32_t> roi(0, 0, tex->width(), tex->height() / 3.f);
-                tex->set_roi(roi);
-                
-                m->material()->add_texture(*tex);
-                i++;
-            }
-            
-            if(tex)
-            {
-                tex->set_uvw_offset(tex->uvw_offset() + gl::Y_AXIS * the_delta_time * factor);
-                factor /= *m_parallax_factor;
-            }
-        }
-        
+
         // update sprite movie texture
         float balloons_frac = 1.f - m_current_num_balloons / (float)m_max_num_balloons->value();
         uint32_t sprite_index = balloons_frac * m_sprite_movies.size();
         sprite_index = clamp<uint32_t>(sprite_index, 0, m_sprite_movies.size() - 1);
-        
+
         for(uint32_t i = 0; i < m_sprite_movies.size(); ++i)
         {
             if(i != sprite_index){ m_sprite_movies[i]->pause(); }
         }
         if(m_sprite_movies.size() > sprite_index){ m_sprite_movies[sprite_index]->play(); }
-        
+
         if(!m_sprite_movies.empty() && m_sprite_movies[sprite_index]->copy_frame_to_texture(m_sprite_texture, true))
         {
             m_sprite_mesh->material()->add_texture(m_sprite_texture);
-        }
-        
-        // balloon sprite scaling / positioning
-        if(m_sprite_mesh)
-        {
-            m_sprite_mesh->set_scale(glm::vec3(m_sprite_size->value() / gl::window_dimension(), 1.f));
-            glm::vec2 pos_offset = glm::vec2(glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().x, 0.f)),
-                                             glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().y, 0.2f)));
-            pos_offset *= m_balloon_noise_intensity->value() / glm::vec2(m_offscreen_fbo->size());
-            pos_offset += m_zed_offset;
-            m_sprite_mesh->set_position(glm::vec3(pos_offset, 0.f));
         }
     }
     else if(m_game_phase == GamePhase::CRASHED)
@@ -179,6 +123,62 @@ void BalloonApp::update(float the_delta_time)
         {
             m_corpse_mesh->material()->add_texture(m_corpse_texture);
         }
+    }
+
+    // animate bg textures
+    float factor = m_current_float_speed;//*m_float_speed;
+
+    gl::SelectVisitor<gl::Mesh> visitor({g_parallax_bg_tag}, false);
+    scene()->root()->accept(visitor);
+    uint32_t i = 0;
+
+    auto blur_factor = [](float f) -> float
+    {
+        return 50.f * f * f * f;
+    };
+
+    gl::reset_state();
+
+    for(auto m : visitor.get_objects())
+    {
+        auto val = blur_factor(factor) * *m_motion_blur;
+
+        auto *tex = m->material()->get_texture_ptr();
+
+        if(m_parallax_textures[i])
+        {
+            gl::render_to_texture(m_blur_fbos[i], [this, i, val]()
+            {
+                gl::clear(gl::Color(0.f));
+                gl::Blur blur(glm::vec2(0.f, val));
+                blur.render_output(m_parallax_textures[i]);
+            });
+            tex = m_blur_fbos[i]->texture_ptr();
+
+            // set region of interest
+            Area_<uint32_t> roi(0, 0, tex->width(), tex->height() / 3.f);
+            tex->set_roi(roi);
+
+            m->material()->add_texture(*tex);
+            i++;
+        }
+
+        if(tex)
+        {
+            tex->set_uvw_offset(tex->uvw_offset() + gl::Y_AXIS * the_delta_time * factor);
+            factor /= *m_parallax_factor;
+        }
+    }
+
+    // balloon sprite scaling / positioning
+    if(m_sprite_mesh)
+    {
+        m_sprite_mesh->set_scale(glm::vec3(m_sprite_size->value() / gl::window_dimension(), 1.f));
+        glm::vec2 pos_offset = glm::vec2(glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().x, 0.f)),
+                                         glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().y, 0.2f)));
+        pos_offset *= m_balloon_noise_intensity->value() / glm::vec2(m_offscreen_fbo->size());
+        pos_offset += m_zed_offset;
+        m_sprite_mesh->set_position(glm::vec3(pos_offset, 0.f));
     }
     
     update_balloon_cloud(the_delta_time);
@@ -290,12 +290,6 @@ void BalloonApp::draw()
 
     // syphon output
     if(*m_use_syphon){ m_syphon_out.publish_texture(offscreen_tex); }
-    
-//    if(m_game_phase == GamePhase::IDLE || m_game_phase == GamePhase::CRASHED)
-//    {
-//        gl::draw_text_2D(g_state_names[m_game_phase], fonts()[1], gl::COLOR_WHITE,
-//                         gl::window_dimension() / 3.f);
-//    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -321,19 +315,13 @@ void BalloonApp::key_press(const KeyEvent &e)
         {
             auto &crash_sites = m_crash_sites->value();
             crash_sites.clear();
-            for(uint32_t i = 0; i < 20; ++i)
-            {
-                crash_sites.push_back(glm::linearRand(glm::vec2(-1.f, -.7f), glm::vec2(1.f, -.4f)));
-            }
-            
+
             // remove old graves
             auto old_tombstones = scene()->get_objects_by_tag(g_tombstone_tag);
             for(auto &m : old_tombstones){ scene()->remove_object(m); }
-            
-            for(uint32_t i = 0; i < crash_sites.size(); ++i)
-            {
-                create_tombstone_mesh(i, crash_sites[i]);
-            }
+
+            for(uint32_t i = 0; i < 20; ++i){ add_random_tombstone(); }
+
             break;
         }
         default:
@@ -464,10 +452,10 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
             {
                 t.set_roi(0, 2, t.width(), t.height() - 2);
                 m_fg_mesh->material()->add_texture(t);
-                
-                auto fg = scene()->get_object_by_name("foreground");
-                scene()->remove_object(fg);
-                scene()->add_object(m_fg_mesh);
+
+//                auto fg = scene()->get_object_by_name("foreground");
+//                scene()->remove_object(fg);
+//                scene()->add_object(m_fg_mesh);
             }, true, true);
         }
 
@@ -492,7 +480,8 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         {
             m_sprite_movies.push_back(media::MediaController::create(p, true, true));
         }
-        
+
+        // retrieve dead zed movie
         auto corpse_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "corpse"),
                                                      fs::FileType::MOVIE, true);
         
@@ -500,7 +489,15 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         {
             m_corpse_movie = media::MediaController::create(corpse_paths.front(), false, true);
         }
-        
+
+        auto pow_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "pow"),
+                                                   fs::FileType::MOVIE, true);
+
+        if(!pow_paths.empty())
+        {
+            m_balloon_pow_movie = media::MediaController::create(pow_paths.front(), false, true);
+        }
+
         // retrieve balloon textures
         auto balloon_image_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "balloon"),
                                                          fs::FileType::IMAGE, true);
@@ -643,9 +640,16 @@ void BalloonApp::create_scene()
     
     // generate balloons
     create_balloon_cloud();
-    
+
+    // balloon explosion mesh
+    m_pow_mesh = create_sprite_mesh();
+    m_pow_mesh->set_name("explosion pow");
+    m_pow_mesh->set_scale(.1f);
+    m_pow_mesh->set_enabled(false);
+    m_sprite_mesh->add_child(m_pow_mesh);
+
     // crashed corpse
-    z_val = 0.1f;
+    z_val = 5.f;
     m_corpse_mesh = create_sprite_mesh();
     m_corpse_mesh->set_name("zed corpse");
     m_corpse_mesh->set_position(glm::vec3(0.f, 0.f, z_val));
@@ -660,7 +664,7 @@ void BalloonApp::create_scene()
     // tombstone template
     m_tombstone_template = create_sprite_mesh();
     m_tombstone_template->add_tag(g_tombstone_tag);
-    m_tombstone_template->set_scale(glm::vec3(.1f, .08f, 1.f));
+    m_tombstone_template->set_scale(glm::vec3(.1f, .07f, 1.f));
 }
 
 void BalloonApp::create_balloon_cloud()
@@ -769,8 +773,11 @@ bool BalloonApp::is_state_change_valid(GamePhase the_phase, GamePhase the_next_p
     // sanity check
     switch(the_phase)
     {
+        case GamePhase::UNDEFINED:
+            return the_next_phase == GamePhase::IDLE;
+            break;
         case GamePhase::IDLE:
-            return the_next_phase == GamePhase::IDLE || the_next_phase == GamePhase::FLOATING;
+            return the_next_phase == GamePhase::FLOATING;
             break;
         case GamePhase::FLOATING:
             return the_next_phase == GamePhase::FLOATING || the_next_phase == GamePhase::CRASHED;
@@ -778,24 +785,33 @@ bool BalloonApp::is_state_change_valid(GamePhase the_phase, GamePhase the_next_p
         case GamePhase::CRASHED:
             return the_next_phase == GamePhase::IDLE;
             break;
+        default:
+            return false;
     }
-    return false;
 }
 
 bool BalloonApp::change_gamephase(GamePhase the_next_phase)
 {
-    if(!is_state_change_valid(m_game_phase, the_next_phase)){ return false; }
+    if(!is_state_change_valid(m_game_phase, the_next_phase))
+    {
+        LOG_DEBUG << "invalid state change requested: " << g_state_names[m_game_phase] << " -> " << g_state_names[the_next_phase];
+        return false;
+    }
     
     switch(the_next_phase)
     {
         case GamePhase::IDLE:
+            *m_float_speed = 0.f;
             m_animations[ANIM_TITLE_IN]->start();
+            m_corpse_mesh->set_enabled(false);
             m_sprite_mesh->set_enabled(false);
+            m_parallax_meshes.front()->set_enabled(false);
             break;
             
         case GamePhase::FLOATING:
             m_sprite_mesh->set_enabled(true);
-            
+            m_parallax_meshes.front()->set_enabled(true);
+
             // start animations
             m_animations[ANIM_TITLE_OUT]->start();
             m_animations[ANIM_FOREGROUND_OUT]->start();
@@ -812,7 +828,10 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
             break;
             
         case GamePhase::CRASHED:
-            
+
+            *m_float_speed = 0.f;
+            m_corpse_mesh->set_enabled(true);
+
             // TODO: need animation
             add_random_tombstone();
             
@@ -920,19 +939,19 @@ gl::Color BalloonApp::random_balloon_color()
 
 void BalloonApp::add_random_tombstone()
 {
-    auto pos = glm::linearRand(glm::vec2(-1.f, -.7f), glm::vec2(1.f, -.4f));
+    auto pos = glm::linearRand(glm::vec2(-1.f, -.7f), glm::vec2(1.f, -.55f));
     m_crash_sites->value().push_back(pos);
     *m_num_dead = *m_num_dead + 1;
-    create_tombstone_mesh(*m_num_dead, pos);
+    m_fg_mesh->add_child(create_tombstone_mesh(*m_num_dead, pos));
 }
 
-void BalloonApp::create_tombstone_mesh(uint32_t the_index, const glm::vec2 &the_pos)
+gl::MeshPtr BalloonApp::create_tombstone_mesh(uint32_t the_index, const glm::vec2 &the_pos)
 {
-    auto m = m_tombstone_template->copy();
-    m->set_position(glm::vec3(the_pos, 5.f - the_pos.y));
+    gl::MeshPtr m = m_tombstone_template->copy();
+    m->set_position(glm::vec3(the_pos, 1.f - the_pos.y));
     glm::vec3 scale = m->scale();
     m->set_name("tombstone_" + to_string(the_index));
     //TODO: index label with font
-    
-    m_fg_mesh->add_child(m);
+
+    return m;
 }
