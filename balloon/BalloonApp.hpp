@@ -69,6 +69,8 @@ namespace kinski
         gl::MeshPtr m_sprite_mesh, m_pow_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh, m_corpse_mesh,
             m_title_mesh, m_tombstone_template, m_tomb_balloon;
 
+        gl::Object3DPtr m_credits_handle = gl::Object3D::create("credits");
+
         gl::Font m_tombstone_font;
 
         gl::FboPtr m_offscreen_fbo;
@@ -78,37 +80,42 @@ namespace kinski
         float m_current_float_speed = 0.f;
         glm::vec2 m_zed_offset;
         
-        bool m_dirty_scene = true;
+        bool m_dirty_tombs = true, m_dirty_balloon_cloud = true, m_dirty_animations = true;
         
         // timer objects;
         Timer m_balloon_timer;
         
         Property_<uint32_t>::Ptr
         m_max_num_balloons = Property_<uint32_t>::create("max num balloons", 10),
+        m_max_num_tombstones = Property_<uint32_t>::create("max num tombstones", 100),
         m_num_dead = Property_<uint32_t>::create("number of deaths", 0);
 
         Property_<string>::Ptr
         m_asset_dir = Property_<string>::create("asset directory");
 
         Property_<glm::vec2>::Ptr
+        m_title_position = Property_<glm::vec2>::create("title position", glm::vec2(0.f, .35f)),
         m_sprite_size = Property_<glm::vec2>::create("sprite size", glm::vec2(160, 300)),
-        m_balloon_noise_intensity = Property_<glm::vec2>::create("balloon noise intensity", glm::vec2(80, 100)),
-        m_balloon_noise_speed = Property_<glm::vec2>::create("balloon noise speed", glm::vec2(.6f, 1.f)),
-        m_balloon_line_length = Property_<glm::vec2>::create("balloon line length", glm::vec2(.75f, 1.2f));
+        m_balloon_noise_intensity = Property_<glm::vec2>::create("balloon noise intensity", glm::vec2(80, 110)),
+        m_balloon_noise_speed = Property_<glm::vec2>::create("balloon noise speed", glm::vec2(.2f, .3f)),
+        m_balloon_line_length = Property_<glm::vec2>::create("balloon line length", glm::vec2(1.f, 1.5f)),
+        m_tombstone_scale = Property_<glm::vec2>::create("tombstone scale", glm::vec2(1.5f, 1.6f));
 
         RangedProperty<float>::Ptr
         m_float_speed_mutliplier = RangedProperty<float>::create("float multiplier", 1.f, 0.f, 10.f),
         m_float_speed = RangedProperty<float>::create("float speed", 1.f, -1.f, 1.f),
-        m_parallax_factor = RangedProperty<float>::create("parallax factor", 1.618f, 1.f, 10.f),
-        m_motion_blur = RangedProperty<float>::create("motion blur", 0.f, 0.f, 1.f),
+        m_parallax_factor = RangedProperty<float>::create("parallax factor", 5.5f, 1.f, 10.f),
+        m_motion_blur = RangedProperty<float>::create("motion blur", 1.f, 0.f, 1.f),
         m_timeout_balloon_explode = RangedProperty<float>::create("timeout balloon explode", 3.f, 0.f, 5.f),
-        m_balloon_scale = RangedProperty<float>::create("balloon scale", .5f, 0.f, 5.f);
+        m_balloon_scale = RangedProperty<float>::create("balloon scale", 1.5f, 0.f, 5.f);
 
         Property_<glm::ivec2>::Ptr
         m_offscreen_res = Property_<glm::ivec2>::create("offscreen resolution", glm::ivec2(1920, 1080));
 
         Property_<bool>::Ptr
-        m_use_syphon = Property_<bool>::create("use syphon", false);
+        m_use_syphon = Property_<bool>::create("use syphon", false),
+        m_show_credits = Property_<bool>::create("show credits", true),
+        m_auto_save = Property_<bool>::create("auto save", false);
 
         Property_<std::vector<glm::vec2>>::Ptr
         m_crash_sites = Property_<std::vector<glm::vec2>>::create("crash sites");
@@ -118,6 +125,8 @@ namespace kinski
         void create_scene();
         
         void create_balloon_cloud();
+
+        void create_tombstones();
         
         gl::Color random_balloon_color();
         

@@ -21,7 +21,7 @@ const std::string g_tag_tomb_balloon = "tomb_balloon";
 const std::string g_balloon_handle_name = "balloon_handle";
 const std::string g_character_handle_name = "zed_handle";
 
-const glm::vec2 g_tombstone_y_pos_min = glm::vec2(-1.f, -.71f);
+const glm::vec2 g_tombstone_y_pos_min = glm::vec2(-1.f, -.68f);
 const glm::vec2 g_tombstone_y_pos_max = glm::vec2(1.f, -.55f);
 
 std::map<BalloonApp::GamePhase, std::string> g_state_names =
@@ -37,6 +37,12 @@ const std::vector<gl::Color> g_balloon_color_palette =
     gl::Color(1.f, 0.941f, 0.4f, 1.f)
 };
 
+const gl::Color
+g_color_opaque = gl::Color(1.f, 1.f, 1.f, .999f),
+g_color_transparent = gl::Color(1.f, 1.f, 1.f, 0.f),
+g_color_tomb_opaque = gl::Color(0.2f, 0.2f, .2f, .999f),
+g_color_tomb_transparent = gl::Color(0.2f, 0.2f, .2f, 0.f);
+
 /////////////////////////////////////////////////////////////////
 
 void BalloonApp::setup()
@@ -48,6 +54,7 @@ void BalloonApp::setup()
 
     register_property(m_asset_dir);
     register_property(m_offscreen_res);
+    register_property(m_title_position);
     register_property(m_num_dead);
     register_property(m_max_num_balloons);
     register_property(m_sprite_size);
@@ -62,7 +69,11 @@ void BalloonApp::setup()
     register_property(m_float_speed);
     register_property(m_use_syphon);
     m_crash_sites->set_tweakable(false);
+    register_property(m_max_num_tombstones);
+    register_property(m_tombstone_scale);
     register_property(m_crash_sites);
+    register_property(m_show_credits);
+    register_property(m_auto_save);
     observe_properties();
 
     // create timers
@@ -96,9 +107,15 @@ void BalloonApp::update(float the_delta_time)
     
     // check for offscreen fbo
     if(!m_offscreen_fbo || m_blur_fbos.empty() || !m_blur_fbos.front()){ m_offscreen_res->notify_observers(); }
-    
-    if(m_dirty_scene){ create_scene(); }
-    
+
+    // balloon cloud parameters have changed
+    if(m_dirty_balloon_cloud){ create_balloon_cloud(); }
+
+    // tombstone params have changed
+    if(m_dirty_tombs){ create_tombstones(); }
+
+    if(m_dirty_animations){ create_animations(); }
+
     if(m_game_phase == GamePhase::FLOATING)
     {
         *m_float_speed = map_value(m_current_num_balloons / (float) m_max_num_balloons->value(),
@@ -113,7 +130,7 @@ void BalloonApp::update(float the_delta_time)
         if(!m_current_num_balloons){ sprite_index = m_sprite_movies.size() - 1; }
         
         // play zed_audio
-        if(m_current_sprite_index != sprite_index)
+        if(static_cast<uint32_t >(m_current_sprite_index) != sprite_index)
         {
             m_current_sprite_index = sprite_index;
             m_zed_sounds[sprite_index]->restart();
@@ -204,7 +221,7 @@ void BalloonApp::update(float the_delta_time)
 
     if(m_game_phase == GamePhase::IDLE && m_title_mesh && m_animations[ANIM_FOREGROUND_IN]->finished())
     {
-        m_title_mesh->position().xy = .5f * pos_offset;
+        m_title_mesh->position().xy = m_title_position->value() + .5f * pos_offset;
     }
 
     update_balloon_cloud(the_delta_time);
@@ -350,6 +367,11 @@ void BalloonApp::key_press(const KeyEvent &e)
 
             break;
         }
+        case Key::_DELETE:
+            m_crash_sites->value().clear();
+            *m_num_dead = 0;
+            m_dirty_tombs = true;
+            break;
         default:
             break;
     }
@@ -589,6 +611,12 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         if(!tombstone_font_paths.empty())
         {
             m_tombstone_font.load(tombstone_font_paths.front(), 23);
+            auto credits_label = m_tombstone_font.create_text_object("crocdialer.com\npackungsbeilage.tv",
+                                                                     gl::Font::Align::CENTER);
+            gl::SelectVisitor<gl::Mesh> visitor;
+            credits_label->accept(visitor);
+            for(auto m : visitor.get_objects()){ m->material()->set_diffuse(g_color_tomb_opaque); }
+            m_credits_handle->add_child(credits_label);
         }
 
         // background audio
@@ -610,7 +638,11 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
     else if(the_property == m_max_num_balloons)
     {
         m_current_num_balloons = *m_max_num_balloons;
-        create_balloon_cloud();
+        m_dirty_balloon_cloud = true;
+    }
+    else if(the_property == m_balloon_scale || the_property == m_balloon_line_length)
+    {
+        m_dirty_balloon_cloud = true;
     }
     else if(the_property == m_offscreen_res)
     {
@@ -632,24 +664,24 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
             fbo->texture_ptr()->set_wrap(GL_REPEAT, GL_REPEAT);
         }
     }
+    else if(the_property == m_title_position)
+    {
+        m_title_mesh->set_position(glm::vec3(m_title_position->value(), m_title_mesh->position().z));
+        m_dirty_animations = true;
+    }
+    else if(the_property == m_show_credits)
+    {
+        if(*m_show_credits){ m_fg_mesh->add_child(m_credits_handle); }
+        else{ scene()->remove_object(m_credits_handle); }
+    }
     else if(the_property == m_use_syphon)
     {
         m_syphon_out = *m_use_syphon ? syphon::Output("balloon") : syphon::Output();
     }
-    else if(the_property == m_crash_sites)
+    else if(the_property == m_crash_sites || the_property == m_tombstone_scale ||
+            the_property == m_max_num_tombstones)
     {
-        auto &crash_sites = m_crash_sites->value();
-        
-        // remove old graves
-        auto old_tombstones = scene()->get_objects_by_tag(g_tombstone_tag);
-        for(auto &m : old_tombstones){ scene()->remove_object(m); }
-        
-        for(uint32_t i = 0; i < crash_sites.size(); ++i)
-        {
-            create_tombstone_mesh(i, crash_sites[i]);
-        }
-        
-        change_gamephase(GamePhase::IDLE);
+        m_dirty_tombs = true;
     }
 }
 
@@ -745,10 +777,17 @@ void BalloonApp::create_scene()
     m_tomb_balloon->set_name("tomb balloon");
     m_tomb_balloon->add_tag(g_tag_tomb_balloon);
     m_tomb_balloon->set_position(glm::vec3(0.05f, 2.86f, 0.1f));
+    m_tomb_balloon->set_scale(glm::vec3(1.f, 1.2f, 1.f));
     auto balloon_string = create_sprite_mesh();
-    balloon_string->set_scale(glm::vec3(.05f, 1.f, 1.f));
-    balloon_string->set_position(glm::vec3(0.f, -1.f, -0.001f));
+    balloon_string->set_scale(glm::vec3(.025f, .45f, 1.f));
+    balloon_string->set_position(glm::vec3(0.f, -1.15f, -0.001f));
     m_tomb_balloon->add_child(balloon_string);
+
+    // credits
+    m_credits_handle->set_scale(glm::vec3(4.f / glm::vec2(m_offscreen_res->value().x), 1.f));
+    m_credits_handle->set_position(glm::vec3(0.f, -.85, 5.f));
+
+    if(*m_show_credits){ m_fg_mesh->add_child(m_credits_handle); }
 }
 
 void BalloonApp::create_balloon_cloud()
@@ -771,10 +810,10 @@ void BalloonApp::create_balloon_cloud()
         auto balloon = gl::Mesh::create(rect_geom, mat);
         balloon->add_tag(g_balloon_tag);
         balloon->set_name(g_balloon_tag + "_" + to_string(i));
-        balloon->set_scale(glm::vec3(.5f, 0.6f, 1.f));
-        float line_length = random(.75f, 1.2f);
+        balloon->set_scale(glm::vec3(m_balloon_scale->value() * glm::vec2(.5f, 0.6f), 1.f));
+        float line_length = random(m_balloon_line_length->value().x, m_balloon_line_length->value().y);
         auto pos_2D = glm::circularRand(0.2f);
-        balloon_particle_t b = {pos_2D, glm::vec2(0.f), glm::vec2(0.f), 0.35f, line_length};
+        balloon_particle_t b = {pos_2D, glm::vec2(0.f), glm::vec2(0.f), 0.35f * *m_balloon_scale, line_length};
         balloon->set_position(glm::vec3(pos_2D, z_val));
         balloon_handle->add_child(balloon);
         m_balloon_particles.push_back(b);
@@ -793,7 +832,22 @@ void BalloonApp::create_balloon_cloud()
     m_balloon_lines_mesh = gl::Mesh::create(line_geom, line_mat);
     m_balloon_lines_mesh->set_name("balloon_lines");
     balloon_handle->add_child(m_balloon_lines_mesh);
-    m_dirty_scene = false;
+    m_dirty_balloon_cloud = false;
+}
+
+void BalloonApp::create_tombstones()
+{
+    auto &crash_sites = m_crash_sites->value();
+
+    // remove old graves
+    auto old_tombstones = scene()->get_objects_by_tag(g_tombstone_tag);
+    for(auto &m : old_tombstones){ scene()->remove_object(m); }
+
+    for(uint32_t i = 0; i < crash_sites.size(); ++i)
+    {
+        m_fg_mesh->add_child(create_tombstone_mesh(i + 1, crash_sites[i]));
+    }
+    m_dirty_tombs = false;
 }
 
 void BalloonApp::create_timers()
@@ -939,6 +993,7 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
             auto tomb_stone = add_random_tombstone();
             tomb_stone->set_enabled(false);
             tomb_stone->add_child(m_tomb_balloon);
+            m_tomb_balloon->set_rotation(glm::inverse(tomb_stone->rotation()));
             auto color_opaque = gl::Color(1.f, 1.f, 1.f, .999f);
             m_tomb_balloon->material()->set_diffuse(color_opaque);
             for(auto &c : m_tomb_balloon->children())
@@ -973,6 +1028,14 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
             }
 
             m_animations[ANIM_FOREGROUND_IN]->start();
+
+            // make sure title will be transparent when restarting
+            m_title_mesh->material()->set_diffuse(g_color_transparent);
+            gl::SelectVisitor<gl::Mesh> visitor;
+            m_credits_handle->accept(visitor);
+            for(auto m : visitor.get_objects()){ m->material()->set_diffuse(g_color_tomb_transparent); }
+
+            if(*m_auto_save){ save_settings(); }
             break;
         }
         case GamePhase::UNDEFINED:
@@ -986,19 +1049,28 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
 
 void BalloonApp::create_animations()
 {
+    if(!m_animations.empty() && m_animations[ANIM_TITLE_IN] && m_animations[ANIM_TITLE_IN]->is_playing())
+    {
+        m_title_mesh->material()->set_diffuse(g_color_opaque);
+    }
+
     m_animations[ANIM_TITLE_IN] = std::make_shared<animation::Animation>(2.f, 0.f,
     [this](float progress)
     {
-        auto z_val = m_title_mesh->position().z;
-        glm::vec3 pos = kinski::mix(glm::vec3(0.f, 2.f, z_val), glm::vec3(0.f, 0.f, z_val), progress);
-        m_title_mesh->set_position(pos);
+        auto color = mix(g_color_transparent, g_color_opaque, progress);
+        m_title_mesh->material()->set_diffuse(color);
+
+        auto color_credits = mix(g_color_tomb_transparent, g_color_tomb_opaque, progress);
+        gl::SelectVisitor<gl::Mesh> visitor;
+        m_credits_handle->accept(visitor);
+        for(auto m : visitor.get_objects()){ m->material()->set_diffuse(color_credits); }
     });
     
     m_animations[ANIM_TITLE_OUT] = std::make_shared<animation::Animation>(2.f, 0.f,
     [this](float progress)
     {
         auto z_val = m_title_mesh->position().z;
-        glm::vec3 pos = kinski::mix(glm::vec3(0.f, 2.f, z_val), glm::vec3(0.f, 0.f, z_val), 1.f - progress);
+        glm::vec3 pos = kinski::mix(glm::vec3(0.f, 2.f, z_val), glm::vec3(m_title_position->value(), z_val), 1.f - progress);
         m_title_mesh->set_position(pos);
     });
     
@@ -1058,6 +1130,8 @@ void BalloonApp::create_animations()
     {
         m_zed_offset = mix(out_of_screen_pos, glm::vec2(0.f), progress);
     });
+
+    m_dirty_animations = false;
 }
 
 gl::Color BalloonApp::random_balloon_color()
@@ -1075,6 +1149,12 @@ gl::MeshPtr BalloonApp::add_random_tombstone()
     *m_num_dead = *m_num_dead + 1;
     auto m = create_tombstone_mesh(*m_num_dead, pos);
     m_fg_mesh->add_child(m);
+
+    // enforce maximum number of tombstones in scene
+    auto tombstones = scene()->get_objects_by_tag(g_tombstone_tag);
+    int num_overflow = tombstones.size() - *m_max_num_tombstones;
+    for(int i = 0; i <= num_overflow; ++i){ scene()->remove_object(tombstones[i]); }
+
     return m;
 }
 
@@ -1083,21 +1163,26 @@ gl::MeshPtr BalloonApp::create_tombstone_mesh(uint32_t the_index, const glm::vec
     gl::MeshPtr m = m_tombstone_template->copy();
     m->set_position(glm::vec3(the_pos, 1.f - the_pos.y));
     glm::vec3 scale = m->scale();
+    scale.xy *= *m_tombstone_scale;
+
+    // pseudo perspective scaling
     float scale_y_frac = (the_pos.y - g_tombstone_y_pos_min.y) / (g_tombstone_y_pos_max.y - g_tombstone_y_pos_min.y);
     scale.xy = scale.xy * mix(1.f, .6f, scale_y_frac);
     bool flip_x = false;//random_int(0, 1);
     if(flip_x){ scale.x *= -1.f; }
     m->set_scale(scale);
+
+    // random rotation
     auto transform = glm::rotate(m->transform(), random<float>(glm::radians(-10.f), glm::radians(10.f)), gl::Z_AXIS);
     m->set_transform(transform);
     m->set_name("tombstone_" + to_string(the_index));
 
     // index label with font
-    std::string label_string = "zed\n#" + (the_index < 10 ? string("0") : string("")) + to_string(the_index);
+    std::string label_string = "zed\n #\n" + (the_index < 10 ? string("0") : string("")) + to_string(the_index);
     auto label_mesh = m_tombstone_font.create_mesh(label_string)->copy();
-    label_mesh->set_position(glm::vec3(glm::vec2(0.3f * (flip_x ? 1.f : -1.f), -0.25f), 0.0001f));
+    label_mesh->set_position(glm::vec3(glm::vec2(0.4f * (flip_x ? 1.f : -1.f), -0.62f), 0.0001f));
     label_mesh->material()->set_blending();
-    label_mesh->material()->set_diffuse(gl::Color(0.2f, 0.2f, .2f, .999f));
+    label_mesh->material()->set_diffuse(g_color_tomb_opaque);
     label_mesh->material()->set_culling(gl::Material::CULL_NONE);
     glm::vec3 label_scale = glm::vec3(glm::vec2(.7f / label_mesh->aabb().width()), 1.f);
     if(flip_x){ label_scale.x *= -1.f; }
@@ -1119,14 +1204,12 @@ void BalloonApp::create_tombstone_animations(const gl::MeshPtr &the_tombstone_me
         the_tombstone_mesh->set_position(mix(start_pos, final_pos, progress));
     });
 
-    gl::Color color_opaque = gl::COLOR_WHITE, color_transparent = gl::COLOR_WHITE;
-    color_opaque.a = 0.999f;
-    color_transparent.a = 0.f;
+
 
     m_animations[ANIM_TOMBSTONE_OUT] = std::make_shared<animation::Animation>(2.f, 0.f,
-    [this, color_opaque, color_transparent](float progress)
+    [this](float progress)
     {
-        auto color = mix(color_opaque, color_transparent, progress);
+        auto color = mix(g_color_opaque, g_color_transparent, progress);
         m_tomb_balloon->material()->set_diffuse(color);
 
         for(auto &c : m_tomb_balloon->children())
