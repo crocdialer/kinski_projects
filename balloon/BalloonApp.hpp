@@ -88,7 +88,8 @@ namespace kinski
         Property_<uint32_t>::Ptr
         m_max_num_balloons = Property_<uint32_t>::create("max num balloons", 10),
         m_max_num_tombstones = Property_<uint32_t>::create("max num tombstones", 100),
-        m_num_dead = Property_<uint32_t>::create("number of deaths", 0);
+        m_num_dead = Property_<uint32_t>::create("number of deaths", 0),
+        m_num_button_pressed = Property_<uint32_t>::create("number of button presses", 0);
 
         Property_<string>::Ptr
         m_asset_dir = Property_<string>::create("asset directory");

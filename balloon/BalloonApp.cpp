@@ -56,6 +56,7 @@ void BalloonApp::setup()
     register_property(m_offscreen_res);
     register_property(m_title_position);
     register_property(m_num_dead);
+    register_property(m_num_button_pressed);
     register_property(m_max_num_balloons);
     register_property(m_sprite_size);
     register_property(m_timeout_balloon_explode);
@@ -363,13 +364,14 @@ void BalloonApp::key_press(const KeyEvent &e)
             auto old_tombstones = scene()->get_objects_by_tag(g_tombstone_tag);
             for(auto &m : old_tombstones){ scene()->remove_object(m); }
 
-            for(uint32_t i = 0; i < 20; ++i){ add_random_tombstone(); }
+            for(uint32_t i = 0; i < *m_max_num_tombstones; ++i){ add_random_tombstone(); }
 
             break;
         }
         case Key::_DELETE:
             m_crash_sites->value().clear();
             *m_num_dead = 0;
+            *m_num_button_pressed = 0;
             m_dirty_tombs = true;
             break;
         default:
@@ -382,6 +384,16 @@ void BalloonApp::key_press(const KeyEvent &e)
 void BalloonApp::key_release(const KeyEvent &e)
 {
     ViewerApp::key_release(e);
+
+    switch(e.code())
+    {
+        case Key::_X:
+            *m_num_button_pressed = *m_num_button_pressed + 1;
+            break;
+
+        default:
+            break;
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -847,6 +859,12 @@ void BalloonApp::create_tombstones()
     {
         m_fg_mesh->add_child(create_tombstone_mesh(i + 1, crash_sites[i]));
     }
+
+    // enforce maximum number of tombstones in scene
+    auto tombstones = scene()->get_objects_by_tag(g_tombstone_tag);
+    int num_overflow = tombstones.size() - *m_max_num_tombstones;
+    for(int i = 0; i <= num_overflow; ++i){ scene()->remove_object(tombstones[i]); }
+
     m_dirty_tombs = false;
 }
 
@@ -1178,7 +1196,7 @@ gl::MeshPtr BalloonApp::create_tombstone_mesh(uint32_t the_index, const glm::vec
     m->set_name("tombstone_" + to_string(the_index));
 
     // index label with font
-    std::string label_string = "zed\n #\n" + (the_index < 10 ? string("0") : string("")) + to_string(the_index);
+    std::string label_string = "ZED\n #\n" + to_string(the_index, 3);
     auto label_mesh = m_tombstone_font.create_mesh(label_string)->copy();
     label_mesh->set_position(glm::vec3(glm::vec2(0.4f * (flip_x ? 1.f : -1.f), -0.62f), 0.0001f));
     label_mesh->material()->set_blending();
@@ -1187,7 +1205,7 @@ gl::MeshPtr BalloonApp::create_tombstone_mesh(uint32_t the_index, const glm::vec
     glm::vec3 label_scale = glm::vec3(glm::vec2(.7f / label_mesh->aabb().width()), 1.f);
     if(flip_x){ label_scale.x *= -1.f; }
     label_mesh->set_scale(label_scale);
-    label_mesh->set_name("tombstone_label_" + to_string(the_index));
+    label_mesh->set_name("tombstone_label_" + to_string(the_index, 3));
     m->add_child(label_mesh);
     return m;
 }
