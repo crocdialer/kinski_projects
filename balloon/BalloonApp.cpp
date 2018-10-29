@@ -6,6 +6,7 @@
 //
 //
 
+#include <gl/ShaderLibrary.h>
 #include "gl_post_process/Blur.hpp"
 #include "BalloonApp.hpp"
 
@@ -82,7 +83,11 @@ void BalloonApp::setup()
     
     // create animations
     create_animations();
-    
+
+    m_array_shader = gl::Shader::create(unlit_vert, unlit_array_frag);
+//    m_array_shader->load_from_data(unlit_vert, unlit_array_frag);
+
+
     // load settings from file
     load_settings();
     
@@ -124,11 +129,11 @@ void BalloonApp::update(float the_delta_time)
 
         // update sprite movie texture
         float balloons_frac = 1.f - (m_current_num_balloons / (float)m_max_num_balloons->value());
-        uint32_t sprite_index = balloons_frac * (m_sprite_movies.size() - 1);
-        sprite_index = clamp<uint32_t>(sprite_index, 0, m_sprite_movies.size() - 2);
+        uint32_t sprite_index = balloons_frac * (m_sprite_arrays.size() - 1);
+        sprite_index = clamp<uint32_t>(sprite_index, 0, m_sprite_arrays.size() - 2);
         
         // shitty hack for correct index
-        if(!m_current_num_balloons){ sprite_index = m_sprite_movies.size() - 1; }
+        if(!m_current_num_balloons){ sprite_index = m_sprite_arrays.size() - 1; }
         
         // play zed_audio
         if(static_cast<uint32_t >(m_current_sprite_index) != sprite_index)
@@ -136,20 +141,26 @@ void BalloonApp::update(float the_delta_time)
             m_current_sprite_index = sprite_index;
             m_zed_sounds[sprite_index]->restart();
         }
-        for(uint32_t i = 0; i < m_sprite_movies.size(); ++i)
-        {
-            if(i != sprite_index){ m_sprite_movies[i]->pause(); }
-        }
-        if(m_sprite_movies.size() > sprite_index){ m_sprite_movies[sprite_index]->play(); }
 
-        if(!m_sprite_movies.empty() && m_sprite_movies[sprite_index]->copy_frame_to_texture(m_sprite_texture, true))
+        if(m_sprite_arrays.size() > sprite_index)
+        {
+            m_sprite_texture = m_sprite_arrays[sprite_index];
+        }
+
+        // active sprite movie texture
         {
             m_sprite_mesh->material()->add_texture(m_sprite_texture);
+
+            m_current_sprite_frame += the_delta_time * 30.f;
+            m_current_sprite_frame = fmod(m_current_sprite_frame, m_sprite_texture.depth());
+            m_sprite_mesh->material()->uniform("u_current_index", static_cast<int>(m_current_sprite_frame));
         }
 
-        // pow movie
-        if(m_balloon_pow_movie && m_balloon_pow_movie->copy_frame_to_texture(m_pow_texture, true))
+        // pow movie texture
         {
+            m_current_pow_frame += the_delta_time * 30.f;
+            m_current_pow_frame = fmod(m_current_pow_frame, m_pow_texture.depth());
+            m_pow_mesh->material()->uniform("u_current_index", static_cast<int>(m_current_pow_frame));
             m_pow_mesh->material()->add_texture(m_pow_texture);
         }
     }
@@ -530,11 +541,26 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
         // movie sprites
         auto zed_movie_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "zed"),
                                                          fs::FileType::MOVIE, true);
-        m_sprite_movies.clear();
-        
-        for(const auto &p : zed_movie_paths)
+        m_sprite_arrays.resize(zed_movie_paths.size());
+
+        for(uint32_t mc_i = 0; mc_i < zed_movie_paths.size(); ++mc_i)
         {
-            m_sprite_movies.push_back(media::MediaController::create(p, true, true));
+            auto movie = media::MediaController::create(zed_movie_paths[mc_i], false, false);
+
+            movie->set_on_load_callback([this, mc_i, movie](media::MediaControllerPtr mc)
+            {
+                main_queue().submit([this, mc, mc_i]()
+                {
+                    if(mc->copy_frames_offline(m_sprite_arrays[mc_i], true))
+                    {
+                        LOG_DEBUG << "extracted " << m_sprite_arrays[mc_i].depth() << " frames from: " << mc->path();
+                        m_current_sprite_fps = mc->fps();
+                    }
+                    else{ LOG_ERROR << "could not extract frames from movie: " << mc->path(); }
+
+                    mc->unload();
+                });
+            });
         }
 
         // zed sounds
@@ -565,7 +591,21 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
 
         if(!pow_paths.empty())
         {
-            m_balloon_pow_movie = media::MediaController::create(pow_paths.front(), false, false);
+            auto movie = media::MediaController::create(pow_paths.front(), false, false);
+
+            movie->set_on_load_callback([this, movie](media::MediaControllerPtr mc)
+            {
+                main_queue().submit([this, mc]()
+                {
+                    if(mc->copy_frames_offline(m_pow_texture, true))
+                    {
+                        LOG_DEBUG << "extracted " << m_pow_texture.depth() << " frames from: " << mc->path();
+                        m_pow_fps = mc->fps();
+                    }
+                    else{ LOG_ERROR << "could not extract frames from movie: " << mc->path(); }
+                    mc->unload();
+                });
+            });
         }
 
         auto pow_audio_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "pow"),
@@ -747,6 +787,7 @@ void BalloonApp::create_scene()
     
     // main sprite
     m_sprite_mesh = create_sprite_mesh();
+    m_sprite_mesh->material()->set_shader(m_array_shader);
     auto sprite_handle = gl::Object3D::create(g_character_handle_name);
     sprite_handle->add_child(m_sprite_mesh);
     scene()->add_object(sprite_handle);
@@ -761,6 +802,7 @@ void BalloonApp::create_scene()
 
     // balloon explosion mesh
     m_pow_mesh = create_sprite_mesh();
+    m_pow_mesh->material()->set_shader(m_array_shader);
     m_pow_mesh->set_name("explosion pow");
     m_pow_mesh->set_scale(1.5f);
     m_pow_mesh->set_position(glm::vec3(0.f, 0.f, .1f));
@@ -891,15 +933,14 @@ void BalloonApp::explode_balloon()
     {
         auto b = balloons.front();
         b->add_child(m_pow_mesh);
-        m_balloon_pow_movie->restart();
-        m_balloon_pow_movie->set_media_ended_callback([this, b](media::MediaControllerPtr mc)
+
+        m_current_pow_frame = 0;
+        main_queue().submit_with_delay([this, b]()
         {
-           main_queue().submit([this, b]()
-           {
-               scene()->remove_object(b);
-               m_balloon_particles.pop_front();
-           });
-        });
+            scene()->remove_object(b);
+            m_balloon_particles.pop_front();
+        }, m_pow_texture.depth() / m_pow_fps);
+
 
         // random pow sound
         if(!m_balloon_pow_sounds.empty())
@@ -991,9 +1032,6 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
 
             // play start movie
             m_start_audio->restart();
-
-            // start first sprite movie
-            if(!m_sprite_movies.empty() && m_sprite_movies.front()){ m_sprite_movies.front()->play(); }
             
             // stop corpse movie
             if(m_corpse_movie){ m_corpse_movie->pause(); }
@@ -1036,13 +1074,6 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
                 {
                     change_gamephase(GamePhase::IDLE);
                 });
-            }
-
-            // stop whichever sprite movie was playing
-            for(auto &m : m_sprite_movies)
-            {
-                if(m)
-                { m->pause(); }
             }
 
             m_animations[ANIM_FOREGROUND_IN]->start();

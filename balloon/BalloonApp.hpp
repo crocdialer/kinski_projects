@@ -40,13 +40,12 @@ namespace kinski
         syphon::Output m_syphon_out;
 
         gl::CameraPtr m_2d_cam = gl::OrthoCamera::create(-1.f, 1.f, -1.f, 1.f, -100.f, 100.f);
-        
-        std::vector<media::MediaControllerPtr> m_sprite_movies;
 
         int m_current_sprite_index = -1;
+        float m_current_sprite_frame = 0, m_current_pow_frame = 0;
+        float m_pow_fps = 1.f, m_current_sprite_fps = 1.f;
 
         // balloon explode movie
-        media::MediaControllerPtr m_balloon_pow_movie = media::MediaController::create();
         std::vector<media::MediaControllerPtr> m_balloon_pow_sounds;
 
         // zed sounds
@@ -64,7 +63,7 @@ namespace kinski
         gl::Texture m_sprite_texture, m_corpse_texture, m_pow_texture, m_tombstone_texture;
         std::vector<gl::FboPtr> m_blur_fbos;
 
-        std::vector<gl::Texture> m_parallax_textures, m_balloon_textures;
+        std::vector<gl::Texture> m_parallax_textures, m_balloon_textures, m_sprite_arrays;
         std::vector<gl::MeshPtr> m_parallax_meshes;
         gl::MeshPtr m_sprite_mesh, m_pow_mesh, m_bg_mesh, m_fg_mesh, m_balloon_lines_mesh, m_corpse_mesh,
             m_title_mesh, m_tombstone_template, m_tomb_balloon;
@@ -74,7 +73,9 @@ namespace kinski
         gl::Font m_tombstone_font;
 
         gl::FboPtr m_offscreen_fbo;
-        
+
+        gl::ShaderPtr m_array_shader;
+
         // animated values
         uint32_t m_current_num_balloons = 0;
         float m_current_float_speed = 0.f;
