@@ -80,7 +80,8 @@ namespace kinski
         uint32_t m_current_num_balloons = 0;
         float m_current_float_speed = 0.f;
         glm::vec2 m_zed_offset;
-        
+
+        bool m_assets_loaded = false;
         bool m_dirty_tombs = true, m_dirty_balloon_cloud = true, m_dirty_animations = true;
         
         // timer objects;

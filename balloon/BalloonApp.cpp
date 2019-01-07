@@ -90,8 +90,8 @@ void BalloonApp::setup()
 
     // load settings from file
     load_settings();
-    
-    change_gamephase(GamePhase::IDLE);
+
+    if(m_assets_loaded){ change_gamephase(GamePhase::IDLE); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -99,6 +99,8 @@ void BalloonApp::setup()
 void BalloonApp::update(float the_delta_time)
 {
     ViewerApp::update(the_delta_time);
+
+    if(!m_assets_loaded){ return; }
 
     // construct ImGui window for this frame
     if(display_gui())
@@ -316,6 +318,8 @@ void BalloonApp::update_balloon_cloud(float the_delta_time)
 
 void BalloonApp::draw()
 {
+    if(!m_assets_loaded){ return; }
+
     auto offscreen_tex = gl::render_to_texture(m_offscreen_fbo, [this]()
     {
         gl::clear();
@@ -486,6 +490,8 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
 
     if(the_property == m_asset_dir)
     {
+        if(fs::exists(*m_asset_dir)){ m_assets_loaded = true; }
+        
         scene()->clear();
         m_parallax_meshes.clear();
         m_parallax_textures.clear();
@@ -1018,7 +1024,7 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
             m_animations[ANIM_TITLE_IN]->start();
             m_corpse_mesh->set_enabled(false);
             m_sprite_mesh->set_enabled(false);
-            m_parallax_meshes.front()->set_enabled(false);
+            if(!m_parallax_meshes.empty()){ m_parallax_meshes.front()->set_enabled(false); }
             break;
             
         case GamePhase::FLOATING:
