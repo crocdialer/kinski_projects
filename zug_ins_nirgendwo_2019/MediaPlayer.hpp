@@ -37,7 +37,6 @@ private:
 //    std::unordered_map<std::string, CircularBuffer<double>> m_ip_roundtrip;
 
     std::string m_ip_adress;
-    float m_current_delay = 0.f;
 
     // properties
     Property_<string>::Ptr
@@ -53,6 +52,7 @@ private:
     m_is_master = Property_<bool>::create("is master", false);
 
     Property_<float>::Ptr
+    m_current_delay = Property_<float>::create("current delay", 0.f),
     m_playback_speed = Property_<float>::create("playback speed", 1.f),
     m_volume = RangedProperty<float>::create("volume", 1.f, 0.f , 1.f),
     m_brightness = RangedProperty<float>::create("brightness", 1.f, 0.f , 2.f),

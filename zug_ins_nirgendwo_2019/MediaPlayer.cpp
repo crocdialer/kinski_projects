@@ -52,6 +52,7 @@ void MediaPlayer::setup()
     fonts()[2].load(fonts()[0].path(), 54);
     register_property(m_media_path);
     register_property(m_ip_adresses);
+    register_property(m_current_delay);
     register_property(m_playlist);
     register_property(m_delays);
     register_property(m_playlist_index);
@@ -404,7 +405,7 @@ void MediaPlayer::update_property(const Property::ConstPtr &theProperty)
             }
             else if(*m_playlist_index >= 0 && *m_playlist_index < (int)playlist.size())
             {
-                m_current_delay = delays[*m_playlist_index];
+                *m_current_delay = delays[*m_playlist_index];
                 *m_media_path = playlist[*m_playlist_index];
             }
         });
@@ -638,7 +639,7 @@ void MediaPlayer::send_sync_cmd()
 
     for(const auto &ip : m_ip_adresses->value())
     {
-        double sync_delay = m_current_delay * delay_index;
+        double sync_delay = *m_current_delay * delay_index;
         string cmd = "seek_to_time " + to_string(m_media->current_time() - sync_delay, 3);
         
         // send command via async udp
@@ -908,5 +909,10 @@ void MediaPlayer::setup_rpc_interface()
             {"playing", m_media->is_playing()}
         };
         con->write(j.dump());
+    });
+    remote_control().add_command("delay", [this](net::tcp_connection_ptr con,
+                                          const std::vector<std::string> &rpc_args)
+    {
+        if(!rpc_args.empty()){ *m_current_delay = string_to<float>(rpc_args[0]); }
     });
 }
