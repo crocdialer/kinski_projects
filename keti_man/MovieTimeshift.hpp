@@ -8,13 +8,15 @@
 
 #pragma once
 
-#include "core/Timer.hpp"
+#include <crocore/Timer.hpp>
 #include "gl/Fbo.hpp"
 #include "gl/Noise.hpp"
 #include "app/ViewerApp.hpp"
 
 #include "media/media.h"
 #include "syphon/SyphonConnector.h"
+
+using namespace crocore;
 
 namespace kinski
 {
@@ -71,7 +73,7 @@ namespace kinski
         
         // properties
         Property_<int>::Ptr m_cam_id = Property_<int>::create("camera id", 0);
-        Property_<string>::Ptr m_movie_path = Property_<string>::create("movie path", "");
+        Property_<std::string>::Ptr m_movie_path = Property_<std::string>::create("movie path", "");
         Property_<float>::Ptr m_movie_speed = Property_<float>::create("movie speed", 1.f);
         
         // simplex noise params
@@ -124,7 +126,7 @@ namespace kinski
         void draw() override;
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &theProperty) override;
+        void update_property(const PropertyConstPtr &theProperty) override;
         void key_press(const KeyEvent &e) override;
         void set_fullscreen(bool b, int monitor_index) override;
         void on_movie_load();
@@ -135,6 +137,6 @@ namespace kinski
 int main(int argc, char *argv[])
 {
     auto theApp = std::make_shared<kinski::MovieTimeshift>(argc, argv);
-    LOG_INFO << "local ip: " << kinski::net::local_ip();
+    LOG_INFO << "local ip: " << crocore::net::local_ip();
     return theApp->run();
 }

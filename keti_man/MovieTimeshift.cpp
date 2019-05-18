@@ -56,7 +56,7 @@ void MovieTimeshift::setup()
     {
         auto sh = gl::create_shader_from_file("array_shader.vert", "array_shader.frag");
         m_custom_mat->set_shader(sh);
-    } catch (Exception &e) { LOG_ERROR << e.what();}
+    } catch (std::exception &e) { LOG_ERROR << e.what();}
     
     // init buffer as PixelBuffer
     m_pbo = gl::Buffer(GL_PIXEL_PACK_BUFFER, GL_STREAM_COPY);
@@ -406,7 +406,7 @@ bool MovieTimeshift::set_input_source(InputSource the_src)
 
 /////////////////////////////////////////////////////////////////
 
-void MovieTimeshift::update_property(const Property::ConstPtr &theProperty)
+void MovieTimeshift::update_property(const PropertyConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
     

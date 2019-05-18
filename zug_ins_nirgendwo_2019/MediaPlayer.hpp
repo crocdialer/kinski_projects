@@ -18,6 +18,8 @@
 
 #include "media/media.h"
 
+using namespace crocore;
+
 namespace kinski
 {
 class MediaPlayer : public ViewerApp
@@ -33,15 +35,15 @@ private:
     Timer m_broadcast_timer, m_sync_timer, m_sync_off_timer, m_scan_media_timer, m_check_ip_timer;
 
     net::udp_server m_udp_server;
-//    std::unordered_map<std::string, float> m_ip_timestamps;
-//    std::unordered_map<std::string, CircularBuffer<double>> m_ip_roundtrip;
+//    std::unordered_map<std::std::string, float> m_ip_timestamps;
+//    std::unordered_map<std::std::string, CircularBuffer<double>> m_ip_roundtrip;
 
     std::string m_ip_adress;
 
     // properties
-    Property_<string>::Ptr
-    m_media_path = Property_<string>::create("media path", ""),
-    m_text_overlay = Property_<string>::create("text overlay", "");
+    Property_<std::string>::Ptr
+    m_media_path = Property_<std::string>::create("media path", ""),
+    m_text_overlay = Property_<std::string>::create("text overlay", "");
 
     Property_<bool>::Ptr
     m_scale_to_fit = Property_<bool>::create("scale_to_fit", false),
@@ -61,9 +63,9 @@ private:
     Property_<int>::Ptr
     m_broadcast_port = Property_<int>::create("discovery broadcast port", 55555);
 
-    Property_<std::vector<string>>::Ptr
-    m_playlist = Property_<std::vector<string>>::create("playlist"),
-    m_ip_adresses = Property_<std::vector<string>>::create("ip adresses", {"reibach.local"});
+    Property_<std::vector<std::string>>::Ptr
+    m_playlist = Property_<std::vector<std::string>>::create("playlist"),
+    m_ip_adresses = Property_<std::vector<std::string>>::create("ip adresses", {"reibach.local"});
 
     Property_<std::vector<float>>::Ptr
     m_delays = Property_<std::vector<float>>::create("delays");
@@ -81,14 +83,14 @@ private:
     void begin_network_sync();
     void send_sync_cmd();
     void send_network_cmd(const std::string &the_cmd);
-//    void ping_delay(const std::string &the_ip);
+//    void ping_delay(const std::std::string &the_ip);
 
     void create_playlist(const std::string &the_base_dir);
     void playlist_next();
     void playlist_prev();
     void playlist_track(size_t the_index);
-    const std::vector<string>& playlist() const { return m_playlist->value(); }
-    void set_playlist(const std::vector<string> &the_playlist){ m_playlist->set(the_playlist); };
+    const std::vector<std::string>& playlist() const { return m_playlist->value(); }
+    void set_playlist(const std::vector<std::string> &the_playlist){ m_playlist->set(the_playlist); };
 
 public:
 
@@ -109,7 +111,7 @@ public:
     void touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
     void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
     void teardown() override;
-    void update_property(const Property::ConstPtr &theProperty) override;
+    void update_property(const PropertyConstPtr &theProperty) override;
 
     bool needs_redraw() const override;
 
