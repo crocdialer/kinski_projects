@@ -9,6 +9,7 @@
 #ifndef __gl__GrowthApp__
 #define __gl__GrowthApp__
 
+#include "crocore/Animation.hpp"
 #include "app/ViewerApp.hpp"
 #include "l_system/LSystem.h"
 
@@ -36,7 +37,7 @@ namespace kinski
         std::vector<gl::Mesh::Entry> m_entries;
         
         //! animations
-        std::vector<animation::AnimationPtr> m_animations{10};
+        std::vector<AnimationPtr> m_animations{10};
         
         // Properties
         RangedProperty<uint32_t>::Ptr m_max_index = RangedProperty<uint32_t>::create("max index",
