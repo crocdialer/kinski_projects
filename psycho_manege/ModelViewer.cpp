@@ -25,7 +25,7 @@ void s_midi_callback(double timeStamp, std::vector<unsigned char> *message, void
     ModelViewer* app = static_cast<ModelViewer*>(userData);
     
     // schedule on main queue
-    app->main_queue().submit(std::bind(&ModelViewer::midi_callback, app, timeStamp, *message));
+    app->main_queue().post(std::bind(&ModelViewer::midi_callback, app, timeStamp, *message));
 }
 
 /////////////////////////////////////////////////////////////////
@@ -384,7 +384,7 @@ void ModelViewer::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void ModelViewer::update_property(const Property::ConstPtr &theProperty)
+void ModelViewer::update_property(const PropertyConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
 
@@ -577,7 +577,7 @@ void ModelViewer::setup_offscreen_cameras(int num_screens, bool as_circle)
     try
     {
         m_offscreen_fbo = gl::Fbo::create(m_offscreen_size->value().x * *m_num_screens, m_offscreen_size->value().y);
-    }catch(Exception &e){ LOG_ERROR << e.what(); }
+    }catch(std::exception &e){ LOG_ERROR << e.what(); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -635,7 +635,7 @@ bool ModelViewer::load_asset(const std::string &the_path, uint32_t the_lvl, bool
         case fs::FileType::IMAGE:
             
             try { t = gl::create_texture_from_file(the_path, true, true); }
-            catch (Exception &e) { LOG_WARNING << e.what(); }
+            catch (std::exception &e) { LOG_WARNING << e.what(); }
             
             if(t)
             {

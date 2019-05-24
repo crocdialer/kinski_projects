@@ -13,9 +13,9 @@
 
 #pragma once
 
-#include "core/Timer.hpp"
-#include "core/Serial.hpp"
-#include "core/networking.hpp"
+#include "crocore/Timer.hpp"
+#include "crocore/Serial.hpp"
+#include "crocore/networking.hpp"
 #include "app/ViewerApp.hpp"
 
 namespace kinski
@@ -40,23 +40,23 @@ namespace kinski
         void touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &theProperty) override;
+        void update_property(const crocore::PropertyConstPtr &theProperty) override;
         
     private:
         enum FontEnum{FONT_SMALL = 0, FONT_MEDIUM = 1, FONT_LARGE = 2};
         
-        std::set<ConnectionPtr> m_devices, m_clients;
-        
-        net::tcp_server m_tcp_server;
-        Timer m_udp_broadcast_timer, m_device_scan_timer;
+        std::set<crocore::ConnectionPtr> m_devices, m_clients;
+
+        crocore::net::tcp_server m_tcp_server;
+        crocore::Timer m_udp_broadcast_timer, m_device_scan_timer;
         
         gl::ivec2 m_unit_resolution{58, 14};
         std::vector<uint8_t> m_buffer;
         
         size_t m_bytes_to_write = 0, m_bytes_written = 0;
         void search_devices();
-        void new_connection_cb(net::tcp_connection_ptr the_con);
-        void tcp_data_cb(net::tcp_connection_ptr, const std::vector<uint8_t>&);
+        void new_connection_cb(crocore::net::tcp_connection_ptr the_con);
+        void tcp_data_cb(crocore::net::tcp_connection_ptr, const std::vector<uint8_t>&);
         
         void send_data(const uint8_t *the_data, size_t the_num_bytes) const;
         void set_segments(const std::vector<int> &the_segments) const;
@@ -66,6 +66,6 @@ namespace kinski
 int main(int argc, char *argv[])
 {
     auto theApp = std::make_shared<kinski::LED_Proxy>(argc, argv);
-    LOG_INFO << "local ip: " << kinski::net::local_ip();
+    LOG_INFO << "local ip: " << crocore::net::local_ip();
     return theApp->run();
 }

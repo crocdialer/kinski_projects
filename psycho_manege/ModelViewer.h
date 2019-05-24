@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/CircularBuffer.hpp"
+#include "crocore/CircularBuffer.hpp"
 #include "app/ViewerApp.hpp"
 #include "app/LightComponent.hpp"
 #include "app/RemoteControl.hpp"
@@ -20,6 +20,8 @@
 #include "opencl/ParticleSystem.hpp"
 #include "audio/audio.h"
 #include "rtmidi/RtMidi.h"
+
+using namespace crocore;
 
 namespace kinski
 {
@@ -170,7 +172,7 @@ namespace kinski
         // recording assets
         audio::SoundPtr m_sound_recording;
         std::vector<float> m_sound_spectrum;
-        std::vector<kinski::CircularBuffer<float>> m_sound_values{256};
+        std::vector<crocore::CircularBuffer<float>> m_sound_values{256, crocore::CircularBuffer<float>(10)};
         
         // last measured values
         std::vector<float> m_last_volumes;
@@ -190,16 +192,16 @@ namespace kinski
         
         ////////////////////////////////////////////////////////////////////////////////////////
         
-        void build_skeleton(gl::BonePtr currentBone, vector<glm::vec3> &points,
-                            vector<string> &bone_names);
+        void build_skeleton(gl::BonePtr currentBone, std::vector<glm::vec3> &points,
+                            std::vector<std::string> &bone_names);
         
         /*!
          * load asset into the pool of prototype meshes
          */
         bool load_asset(const std::string &the_path, uint32_t the_lvl, bool add_to_scene = false);
         
-        Property_<vector<string>>::Ptr
-        m_asset_paths = Property_<vector<string>>::create("asset paths");
+        Property_<std::vector<std::string>>::Ptr
+        m_asset_paths = Property_<std::vector<std::string>>::create("asset paths");
         
     public:
         
@@ -217,7 +219,7 @@ namespace kinski
         void mouse_wheel(const MouseEvent &e) override;
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &theProperty) override;
+        void update_property(const PropertyConstPtr &theProperty) override;
         
         ////////////////////////////////////////////////////////////////////////////////////////
         

@@ -19,6 +19,8 @@
 #include "freenect/KinectDevice.h"
 #include "syphon/SyphonConnector.h"
 
+using namespace crocore;
+
 namespace kinski
 {
     class BlockbusterApp : public ViewerApp
@@ -139,7 +141,7 @@ namespace kinski
         void touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &theProperty) override;
+        void update_property(const PropertyConstPtr &theProperty) override;
 
         void set_fullscreen(bool b, int monitor_index) override;
     };
@@ -148,7 +150,7 @@ namespace kinski
 int main(int argc, char *argv[])
 {
     auto theApp = std::make_shared<kinski::BlockbusterApp>(argc, argv);
-    LOG_INFO<<"local ip: " << kinski::net::local_ip();
+    LOG_INFO<<"local ip: " << crocore::net::local_ip();
     return theApp->run();
 }
 

@@ -60,7 +60,7 @@ void GrowthApp::setup()
                                                   phong_frag,
                                                   fs::read_file("lines_to_cuboids.geom").c_str());
     }
-    catch(Exception &e){LOG_ERROR << e.what();}
+    catch(std::exception &e){LOG_ERROR << e.what();}
     
     // add lights to scene
     for (auto l : lights()){ scene()->add_object(l ); }
@@ -286,7 +286,7 @@ void GrowthApp::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void GrowthApp::update_property(const Property::ConstPtr &theProperty)
+void GrowthApp::update_property(const PropertyConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
     
@@ -369,40 +369,41 @@ void GrowthApp::refresh_lsystem()
         m_max_index->set_range(min, max);
         LOG_DEBUG << "radius: " << glm::length(m_mesh->aabb().halfExtents());
     };
-    
-    background_queue().submit([this, finish_cb]()
-    {
-        m_lsystem.set_axiom(*m_axiom);
-        m_lsystem.rules().clear();
-        
-        for(auto r : m_rules)
-            m_lsystem.add_rule(*r);
-        
-        m_lsystem.set_branch_angles(*m_branch_angles);
-        m_lsystem.set_branch_randomness(*m_branch_randomness);
-        m_lsystem.set_increment(*m_increment);
-        m_lsystem.set_increment_randomness(*m_increment_randomness);
-        m_lsystem.set_diameter(*m_diameter);
-        m_lsystem.set_diameter_shrink_factor(*m_diameter_shrink);
-        
-        // iterate
-        m_lsystem.iterate(*m_num_iterations);
-        
-        m_lsystem.set_max_random_tries(20);
-        
-        // add a position check functor
-        if(*m_use_bounding_mesh)
-        {
-            m_lsystem.set_position_check([=](const glm::vec3& p) -> bool
-                                         {
-                                             return gl::is_point_inside_mesh(p, m_bounding_mesh);
-                                         });
-        }
-        // add an empty functor (clear position check)
-        else{ m_lsystem.set_position_check(LSystem::PositionCheckFunctor()); }
-        
-        auto new_mesh = m_lsystem.create_mesh();
-        
-        main_queue().submit([finish_cb, new_mesh](){ finish_cb(new_mesh); });
-    });
+
+    background_queue().post([this, finish_cb]()
+                            {
+                                m_lsystem.set_axiom(*m_axiom);
+                                m_lsystem.rules().clear();
+
+                                for(auto r : m_rules)
+                                    m_lsystem.add_rule(*r);
+
+                                m_lsystem.set_branch_angles(*m_branch_angles);
+                                m_lsystem.set_branch_randomness(*m_branch_randomness);
+                                m_lsystem.set_increment(*m_increment);
+                                m_lsystem.set_increment_randomness(*m_increment_randomness);
+                                m_lsystem.set_diameter(*m_diameter);
+                                m_lsystem.set_diameter_shrink_factor(*m_diameter_shrink);
+
+                                // iterate
+                                m_lsystem.iterate(*m_num_iterations);
+
+                                m_lsystem.set_max_random_tries(20);
+
+                                // add a position check functor
+                                if(*m_use_bounding_mesh)
+                                {
+                                    m_lsystem.set_position_check([=](const glm::vec3 &p) -> bool
+                                                                 {
+                                                                     return gl::is_point_inside_mesh(p,
+                                                                                                     m_bounding_mesh);
+                                                                 });
+                                }
+                                    // add an empty functor (clear position check)
+                                else{ m_lsystem.set_position_check(LSystem::PositionCheckFunctor()); }
+
+                                auto new_mesh = m_lsystem.create_mesh();
+
+                                main_queue().post([finish_cb, new_mesh]() { finish_cb(new_mesh); });
+                            });
 }

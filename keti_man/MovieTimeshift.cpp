@@ -237,12 +237,12 @@ void MovieTimeshift::draw()
 void MovieTimeshift::set_fullscreen(bool b, int monitor_index)
 {
     ViewerApp::set_fullscreen(b, monitor_index);
-    main_queue().submit([this]()
-    {
-        m_noise = gl::Noise(gl::vec2(m_noise_scale_x->value(), m_noise_scale_y->value()),
-                            gl::ivec2(m_noise_map_size->value()));
-        m_offscreen_size->notify_observers();
-    });
+    main_queue().post([this]()
+                      {
+                          m_noise = gl::Noise(gl::vec2(m_noise_scale_x->value(), m_noise_scale_y->value()),
+                                              gl::ivec2(m_noise_map_size->value()));
+                          m_offscreen_size->notify_observers();
+                      });
 }
 
 /////////////////////////////////////////////////////////////////

@@ -211,10 +211,10 @@ void CapSenseMonitor::update_property(const Property::ConstPtr &theProperty)
                 {
                     auto img = create_image_from_data(response.data);
 
-                    main_queue().submit([this, img]()
-                    {
-                        textures()[0] = gl::create_texture_from_image(img);
-                    });
+                    main_queue().post([this, img]()
+                                      {
+                                          textures()[0] = gl::create_texture_from_image(img);
+                                      });
                 }
                 catch(std::exception &e){ LOG_WARNING << "could not decode: " << c.url; }
             });
@@ -327,7 +327,7 @@ void CapSenseMonitor::reset_sensors()
         
         if(the_id == CapacitiveSensor::id())
         {
-            main_queue().submit([this, the_device]{ connect_sensor(the_device); });
+            main_queue().post([this, the_device] { connect_sensor(the_device); });
         }
     };
     

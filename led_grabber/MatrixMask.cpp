@@ -32,8 +32,8 @@ namespace kinski{namespace gl{
         // generate random timestamps for new cells
         for(uint32_t i = 0; i < num_new_cells; ++i)
         {
-            auto cell_index = kinski::random_int<uint32_t>(0, m_grid_cells.size() - 1);
-            m_grid_cells[cell_index].life_time = kinski::random(m_lifetime_min, m_lifetime_max);
+            auto cell_index = crocore::random_int<uint32_t>(0, m_grid_cells.size() - 1);
+            m_grid_cells[cell_index].life_time = crocore::random(m_lifetime_min, m_lifetime_max);
         }
         
         // generate image

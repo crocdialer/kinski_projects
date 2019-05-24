@@ -121,7 +121,7 @@ void LED_GrabberApp::setup()
     m_check_ip_timer = Timer(background_queue().io_service(), [this]()
     {
         auto fetched_ip = net::local_ip();
-        main_queue().submit([this, fetched_ip](){ m_ip_adress = fetched_ip; });
+        main_queue().post([this, fetched_ip]() { m_ip_adress = fetched_ip; });
     });
     m_check_ip_timer.set_periodic();
     m_check_ip_timer.expires_from_now(5.f);
@@ -345,17 +345,18 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                 {
                     m_camera->stop_capture();
                     m_led_grabber->set_warp(m_warp_component->quad_warp(0));
-                    
-                    background_queue().submit([this]()
-                    {
-                        auto points = m_led_grabber->run_calibration(*m_cam_index,
-                                                                     *m_calibration_thresh,
-                                                                     *m_led_calib_color);
-                        main_queue().submit([this, points]()
-                        {
-                            m_calibration_points->set_value(std::move(points));
-                        });
-                    });
+
+                    background_queue().post([this]()
+                                            {
+                                                auto points = m_led_grabber->run_calibration(*m_cam_index,
+                                                                                             *m_calibration_thresh,
+                                                                                             *m_led_calib_color);
+                                                main_queue().post([this, points]()
+                                                                  {
+                                                                      m_calibration_points->set_value(
+                                                                              std::move(points));
+                                                                  });
+                                            });
                 }
                 break;
                 
@@ -478,7 +479,7 @@ void LED_GrabberApp::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void LED_GrabberApp::update_property(const Property::ConstPtr &theProperty)
+void LED_GrabberApp::update_property(const PropertyConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
 
@@ -692,11 +693,11 @@ void LED_GrabberApp::reload_media()
             }
             else if(!m_playlist.empty())
             {
-                main_queue().submit([this]()
-                {
-                    m_current_playlist_index = (m_current_playlist_index + 1) % m_playlist.size();
-                    *m_media_path = m_playlist[m_current_playlist_index];
-                });
+                main_queue().post([this]()
+                                  {
+                                      m_current_playlist_index = (m_current_playlist_index + 1) % m_playlist.size();
+                                      *m_media_path = m_playlist[m_current_playlist_index];
+                                  });
             }
         });
         
@@ -881,7 +882,7 @@ void LED_GrabberApp::ping_delay(const std::string &the_ip)
             << (int)(1000.0 * mean(m_ip_roundtrip[ptr->remote_ip()])) << " ms";
         
 //        ptr->close();
-        con->set_tcp_receive_cb();
+        con->set_tcp_receive_cb({});
     };
     con->set_connect_cb([](ConnectionPtr the_con){ the_con->write("echo ping"); });
     con->set_tcp_receive_cb(receive_func);
@@ -904,12 +905,12 @@ void LED_GrabberApp::create_playlist(const std::string &the_base_dir)
     
     if(file_list.size() != m_playlist.size())
     {
-        main_queue().submit([this, file_list]()
-        {
-            m_current_playlist_index = 0;
-            m_playlist = file_list;
-            *m_media_path = m_playlist[0];
-        });
+        main_queue().post([this, file_list]()
+                          {
+                              m_current_playlist_index = 0;
+                              m_playlist = file_list;
+                              *m_media_path = m_playlist[0];
+                          });
     }
 }
 
@@ -943,7 +944,7 @@ void LED_GrabberApp::playlist_track(size_t the_index)
 {
     if(!m_playlist.empty())
     {
-        m_current_playlist_index = clamp<size_t>(the_index, 0, m_playlist.size() - 1);
+        m_current_playlist_index = crocore::clamp<size_t>(the_index, 0, m_playlist.size() - 1);
         *m_media_path = m_playlist[m_current_playlist_index];
     }
 }
@@ -1000,39 +1001,39 @@ void LED_GrabberApp::setup_rpc_interface()
     remote_control().add_command("set_volume");
     register_function("set_volume", [this](const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ *m_volume = kinski::string_to<float>(rpc_args.front()); }
+        if(!rpc_args.empty()){ *m_volume = crocore::string_to<float>(rpc_args.front()); }
     });
 
     remote_control().add_command("volume", [this](net::tcp_connection_ptr con,
                                                   const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ *m_volume = kinski::string_to<float>(rpc_args.front()); }
+        if(!rpc_args.empty()){ *m_volume = crocore::string_to<float>(rpc_args.front()); }
         else{ con->write(to_string(m_media->volume())); }
     });
 
     remote_control().add_command("brightness", [this](net::tcp_connection_ptr con,
                                                       const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ *m_brightness = kinski::string_to<float>(rpc_args.front()); }
+        if(!rpc_args.empty()){ *m_brightness = crocore::string_to<float>(rpc_args.front()); }
         else{ con->write(to_string(m_brightness->value())); }
     });
 
     remote_control().add_command("set_brightness", [this](net::tcp_connection_ptr con,
                                                           const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ *m_brightness = kinski::string_to<float>(rpc_args.front()); }
+        if(!rpc_args.empty()){ *m_brightness = crocore::string_to<float>(rpc_args.front()); }
     });
 
     remote_control().add_command("set_rate");
     register_function("set_rate", [this](const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ *m_playback_speed = kinski::string_to<float>(rpc_args.front()); }
+        if(!rpc_args.empty()){ *m_playback_speed = crocore::string_to<float>(rpc_args.front()); }
     });
 
     remote_control().add_command("rate", [this](net::tcp_connection_ptr con,
                                                 const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ *m_playback_speed = kinski::string_to<float>(rpc_args.front()); }
+        if(!rpc_args.empty()){ *m_playback_speed = crocore::string_to<float>(rpc_args.front()); }
         con->write(to_string(m_media->rate()));
     });
 
@@ -1048,18 +1049,18 @@ void LED_GrabberApp::setup_rpc_interface()
             switch (splits.size())
             {
                 case 3:
-                    secs = kinski::string_to<float>(splits[2]) +
-                    60.f * kinski::string_to<float>(splits[1]) +
-                    3600.f * kinski::string_to<float>(splits[0]) ;
+                    secs = crocore::string_to<float>(splits[2]) +
+                    60.f * crocore::string_to<float>(splits[1]) +
+                    3600.f * crocore::string_to<float>(splits[0]) ;
                     break;
 
                 case 2:
-                    secs = kinski::string_to<float>(splits[1]) +
-                    60.f * kinski::string_to<float>(splits[0]);
+                    secs = crocore::string_to<float>(splits[1]) +
+                    60.f * crocore::string_to<float>(splits[0]);
                     break;
 
                 case 1:
-                    secs = kinski::string_to<float>(splits[0]);
+                    secs = crocore::string_to<float>(splits[0]);
                     break;
 
                 default:
@@ -1084,13 +1085,13 @@ void LED_GrabberApp::setup_rpc_interface()
     remote_control().add_command("set_loop");
     register_function("set_loop", [this](const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ *m_loop = kinski::string_to<bool>(rpc_args.front()); }
+        if(!rpc_args.empty()){ *m_loop = crocore::string_to<bool>(rpc_args.front()); }
     });
 
     remote_control().add_command("loop", [this](net::tcp_connection_ptr con,
                                                 const std::vector<std::string> &rpc_args)
     {
-        if(!rpc_args.empty()){ *m_loop = kinski::string_to<bool>(rpc_args.front()); }
+        if(!rpc_args.empty()){ *m_loop = crocore::string_to<bool>(rpc_args.front()); }
         con->write(to_string(m_media->loop()));
     });
 

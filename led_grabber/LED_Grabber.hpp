@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "core/Connection.hpp"
+#include "crocore/Connection.hpp"
 #include "gl/Texture.hpp"
 #include "gl/Warp.hpp"
 
@@ -21,22 +21,22 @@ class LED_Grabber
 public:
     static const std::string id();
     
-    static LED_GrabberPtr create(ConnectionPtr the_con = ConnectionPtr());
+    static LED_GrabberPtr create(crocore::ConnectionPtr the_con = {});
     
     virtual ~LED_Grabber();
     
-    bool connect(ConnectionPtr the_device);
+    bool connect(crocore::ConnectionPtr the_device);
 
-    bool disconnect(ConnectionPtr the_device);
+    bool disconnect(crocore::ConnectionPtr the_device);
 
-    const std::set<ConnectionPtr>& connections() const;
+    const std::set<crocore::ConnectionPtr>& connections() const;
     
     bool is_initialized() const;
     
     void show_segment(size_t the_segment, int the_mark_width = 4) const;
     
     //!
-    bool grab_from_image_calib(const ImagePtr &the_image);
+    bool grab_from_image_calib(const crocore::ImagePtr &the_image);
     
     //!
     gl::vec4 brightness() const;

@@ -17,6 +17,8 @@
 #include "media/media.h"
 #include "syphon/SyphonConnector.h"
 
+using namespace crocore;
+
 namespace kinski
 {
     class BalloonApp : public ViewerApp
@@ -93,8 +95,8 @@ namespace kinski
         m_num_dead = Property_<uint32_t>::create("number of deaths", 0),
         m_num_button_pressed = Property_<uint32_t>::create("number of button presses", 0);
 
-        Property_<string>::Ptr
-        m_asset_dir = Property_<string>::create("asset directory");
+        Property_<std::string>::Ptr
+        m_asset_dir = Property_<std::string>::create("asset directory");
 
         Property_<glm::vec2>::Ptr
         m_title_position = Property_<glm::vec2>::create("title position", glm::vec2(0.f, .35f)),
@@ -182,13 +184,13 @@ namespace kinski
         void touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &the_property) override;
+        void update_property(const PropertyConstPtr &the_property) override;
     };
 }// namespace kinski
 
 int main(int argc, char *argv[])
 {
     auto theApp = std::make_shared<kinski::BalloonApp>(argc, argv);
-    LOG_INFO<<"local ip: " << kinski::net::local_ip();
+    LOG_INFO<<"local ip: " << crocore::net::local_ip();
     return theApp->run();
 }

@@ -20,6 +20,8 @@
 #include "LED_Grabber.hpp"
 #include "MatrixMask.hpp"
 
+using namespace crocore;
+
 namespace kinski
 {
     class LED_GrabberApp : public ViewerApp
@@ -51,20 +53,20 @@ namespace kinski
         bool m_reload_media = false, m_needs_redraw = true;
         int m_is_syncing = 0;
         Timer m_broadcast_timer, m_sync_timer, m_sync_off_timer, m_scan_media_timer, m_check_ip_timer;
-        
+
         net::udp_server m_udp_server;
         std::unordered_map<std::string, float> m_ip_timestamps;
         std::unordered_map<std::string, CircularBuffer<double>> m_ip_roundtrip;
         
-        std::vector<string> m_playlist;
+        std::vector<std::string> m_playlist;
         uint32_t m_current_playlist_index = 0;
         
         std::string m_ip_adress;
         
         // properties
-        Property_<string>::Ptr
-        m_media_path = Property_<string>::create("media path", ""),
-        m_calib_image_path = Property_<string>::create("calib image path", "");
+        Property_<std::string>::Ptr
+        m_media_path = Property_<std::string>::create("media path", ""),
+        m_calib_image_path = Property_<std::string>::create("calib image path", "");
         
         Property_<bool>::Ptr
         m_scale_to_fit = Property_<bool>::create("scale_to_fit", false),
@@ -101,8 +103,8 @@ namespace kinski
         Property_<std::vector<gl::vec2>>::Ptr
         m_calibration_points = Property_<std::vector<gl::vec2>>::create("calibration points");
         
-        Property_<string>::Ptr
-        m_led_proxy_ip = Property_<string>::create("led proxy ip", "");
+        Property_<std::string>::Ptr
+        m_led_proxy_ip = Property_<std::string>::create("led proxy ip", "");
         
         // overlay color
         Property_<gl::Color>::Ptr
@@ -162,7 +164,7 @@ namespace kinski
         void touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &theProperty) override;
+        void update_property(const PropertyConstPtr &theProperty) override;
         
         bool needs_redraw() const override;
 

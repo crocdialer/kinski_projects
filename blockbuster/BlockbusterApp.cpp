@@ -478,7 +478,7 @@ void BlockbusterApp::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void BlockbusterApp::update_property(const Property::ConstPtr &theProperty)
+void BlockbusterApp::update_property(const PropertyConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
     

@@ -132,7 +132,7 @@ void BalloonApp::update(float the_delta_time)
         // update sprite movie texture
         float balloons_frac = 1.f - (m_current_num_balloons / (float)m_max_num_balloons->value());
         uint32_t sprite_index = balloons_frac * (m_sprite_arrays.size() - 1);
-        sprite_index = clamp<uint32_t>(sprite_index, 0, m_sprite_arrays.size() - 2);
+        sprite_index = crocore::clamp<uint32_t>(sprite_index, 0, m_sprite_arrays.size() - 2);
         
         // shitty hack for correct index
         if(!m_current_num_balloons){ sprite_index = m_sprite_arrays.size() - 1; }
@@ -206,7 +206,7 @@ void BalloonApp::update(float the_delta_time)
             tex = m_blur_fbos[i]->texture_ptr();
 
             // set region of interest
-            Area_<uint32_t> roi(0, 0, tex->width(), tex->height() / 3.f);
+            Area_<uint32_t> roi = {0, 0, tex->width(), tex->height() / 3.f};
             tex->set_roi(roi);
 
             m->material()->add_texture(*tex);
@@ -240,7 +240,7 @@ void BalloonApp::update(float the_delta_time)
 
     update_balloon_cloud(the_delta_time);
     
-    m_current_float_speed = mix<float>(m_current_float_speed, *m_float_speed * *m_float_speed_mutliplier,
+    m_current_float_speed = crocore::mix<float>(m_current_float_speed, *m_float_speed * *m_float_speed_mutliplier,
                                        0.03f);
 }
 
@@ -484,7 +484,7 @@ void BalloonApp::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void BalloonApp::update_property(const Property::ConstPtr &the_property)
+void BalloonApp::update_property(const PropertyConstPtr &the_property)
 {
     ViewerApp::update_property(the_property);
 
@@ -555,17 +555,17 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
 
             movie->set_on_load_callback([this, mc_i, movie](media::MediaControllerPtr mc)
             {
-                main_queue().submit([this, mc, mc_i]()
-                {
-                    if(mc->copy_frames_offline(m_sprite_arrays[mc_i], true))
-                    {
-                        LOG_DEBUG << "extracted " << m_sprite_arrays[mc_i].depth() << " frames from: " << mc->path();
-                        m_current_sprite_fps = mc->fps();
-                    }
-                    else{ LOG_ERROR << "could not extract frames from movie: " << mc->path(); }
+                main_queue().post([this, mc, mc_i]()
+                                  {
+                                      if(mc->copy_frames_offline(m_sprite_arrays[mc_i], true))
+                                      {
+                                          LOG_DEBUG << "extracted " << m_sprite_arrays[mc_i].depth() << " frames from: "
+                                                    << mc->path();
+                                          m_current_sprite_fps = mc->fps();
+                                      }else{ LOG_ERROR << "could not extract frames from movie: " << mc->path(); }
 
-                    mc->unload();
-                });
+                                      mc->unload();
+                                  });
             });
         }
 
@@ -601,16 +601,16 @@ void BalloonApp::update_property(const Property::ConstPtr &the_property)
 
             movie->set_on_load_callback([this, movie](media::MediaControllerPtr mc)
             {
-                main_queue().submit([this, mc]()
-                {
-                    if(mc->copy_frames_offline(m_pow_texture, true))
-                    {
-                        LOG_DEBUG << "extracted " << m_pow_texture.depth() << " frames from: " << mc->path();
-                        m_pow_fps = mc->fps();
-                    }
-                    else{ LOG_ERROR << "could not extract frames from movie: " << mc->path(); }
-                    mc->unload();
-                });
+                main_queue().post([this, mc]()
+                                  {
+                                      if(mc->copy_frames_offline(m_pow_texture, true))
+                                      {
+                                          LOG_DEBUG << "extracted " << m_pow_texture.depth() << " frames from: "
+                                                    << mc->path();
+                                          m_pow_fps = mc->fps();
+                                      }else{ LOG_ERROR << "could not extract frames from movie: " << mc->path(); }
+                                      mc->unload();
+                                  });
             });
         }
 
@@ -941,11 +941,11 @@ void BalloonApp::explode_balloon()
         b->add_child(m_pow_mesh);
 
         m_current_pow_frame = 0;
-        main_queue().submit_with_delay([this, b]()
-        {
-            scene()->remove_object(b);
-            m_balloon_particles.pop_front();
-        }, m_pow_texture.depth() / m_pow_fps);
+        main_queue().post_with_delay([this, b]()
+                                     {
+                                         scene()->remove_object(b);
+                                         m_balloon_particles.pop_front();
+                                     }, m_pow_texture.depth() / m_pow_fps);
 
 
         // random pow sound
@@ -1065,11 +1065,11 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
             }
             create_tombstone_animations(tomb_stone, random(5.f, 15.f), 0.f);
 
-            main_queue().submit_with_delay([this, tomb_stone]()
-            {
-                tomb_stone->set_enabled(true);
-                m_animations[ANIM_TOMBSTONE_IN]->start();
-            }, random(10.f, 40.f));
+            main_queue().post_with_delay([this, tomb_stone]()
+                                         {
+                                             tomb_stone->set_enabled(true);
+                                             m_animations[ANIM_TOMBSTONE_IN]->start();
+                                         }, random(10.f, 40.f));
 
 
             // start corpse movie
@@ -1173,10 +1173,10 @@ void BalloonApp::create_animations()
     
     m_animations[ANIM_ZED_OUT]->set_finish_callback([this]()
     {
-        main_queue().submit_with_delay([this]()
-        {
-            change_gamephase(GamePhase::CRASHED);
-        }, 2.f);
+        main_queue().post_with_delay([this]()
+                                     {
+                                         change_gamephase(GamePhase::CRASHED);
+                                     }, 2.f);
     });
     
     // zed reborn

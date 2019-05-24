@@ -15,6 +15,8 @@
 
 #define DEVICE_ID "LEDS"
 
+using namespace crocore;
+
 namespace kinski
 {
 

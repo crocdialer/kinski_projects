@@ -151,7 +151,7 @@ void Terraner::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void Terraner::update_property(const Property::ConstPtr &the_property)
+void Terraner::update_property(const PropertyConstPtr &the_property)
 {
     ViewerApp::update_property(the_property);
 

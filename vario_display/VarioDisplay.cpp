@@ -179,7 +179,7 @@ void VarioDisplay::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void VarioDisplay::update_property(const Property::ConstPtr &theProperty)
+void VarioDisplay::update_property(const PropertyConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
 

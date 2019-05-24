@@ -10,6 +10,7 @@
 #include "sensors/sensors.h"
 #include <mutex>
 
+using namespace crocore;
 using namespace kinski;
 
 namespace
@@ -161,7 +162,7 @@ void LED_Proxy::mouse_wheel(const MouseEvent &e)
 
 void LED_Proxy::file_drop(const MouseEvent &e, const std::vector<std::string> &files)
 {
-    for(const string &f : files){ LOG_INFO << f; }
+    for(const std::string &f : files){ LOG_INFO << f; }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -173,7 +174,7 @@ void LED_Proxy::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void LED_Proxy::update_property(const Property::ConstPtr &theProperty)
+void LED_Proxy::update_property(const PropertyConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
 }

@@ -12,6 +12,8 @@
 #include "app/ViewerApp.hpp"
 #include "l_system/LSystem.h"
 
+using namespace crocore;
+
 namespace kinski
 {
     class GrowthApp : public ViewerApp
@@ -94,7 +96,7 @@ namespace kinski
         void touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &theProperty) override;
+        void update_property(const PropertyConstPtr &theProperty) override;
     };
 }// namespace kinski
 
