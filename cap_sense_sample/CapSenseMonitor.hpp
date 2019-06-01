@@ -8,11 +8,13 @@
 #pragma once
 
 #include "app/ViewerApp.hpp"
-#include "core/Timer.hpp"
+#include "crocore/Timer.hpp"
 
 // modules
 #include "http/http.hpp"
 #include "sensors/sensors.h"
+
+using namespace crocore;
 
 namespace kinski
 {
@@ -36,8 +38,8 @@ namespace kinski
         
         gl::ScenePtr m_gui_scene = gl::Scene::create();
 
-        Property_<string>::Ptr
-        m_img_url = Property_<string>::create("image url");
+        Property_<std::string>::Ptr
+        m_img_url = Property_<std::string>::create("image url");
 
         Property_<uint32_t>::Ptr
         m_broadcast_udp_port = Property_<uint32_t>::create("broadcast udp port", 4444),
@@ -70,7 +72,7 @@ namespace kinski
         void mouse_wheel(const MouseEvent &e) override;
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &theProperty) override;
+        void update_property(const PropertyConstPtr &theProperty) override;
 
         void sensor_touch(int the_sensor_index, int the_pad_index);
         void sensor_release(int the_sensor_index, int the_pad_index);
@@ -80,6 +82,6 @@ namespace kinski
 int main(int argc, char *argv[])
 {
     auto theApp = std::make_shared<kinski::CapSenseMonitor>(argc, argv);
-    LOG_INFO << "local ip: " << kinski::net::local_ip();
+    LOG_INFO << "local ip: " << crocore::net::local_ip();
     return theApp->run();
 }

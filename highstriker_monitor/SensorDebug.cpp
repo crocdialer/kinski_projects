@@ -95,6 +95,9 @@ void SensorDebug::update(float timeDelta)
     
     // send current value to nixies
     update_score_display();
+
+    // update animations
+    for(auto &a : m_animations){ a.update(); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -114,7 +117,7 @@ void SensorDebug::draw()
         float val = m_measurements[i].back();
 
         // rectangle for current value
-        gl::draw_quad(vec2(val * w, h), gl::COLOR_GRAY, offset);
+//        gl::draw_quad(vec2(val * w, h), gl::COLOR_GRAY, offset);
 
         gl::draw_text_2D(to_string(100.f * val, 1) + "%", fonts()[FONT_MEDIUM], gl::COLOR_WHITE,
                          offset + vec2(val * w, 0));
@@ -274,7 +277,7 @@ void SensorDebug::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::update_property(const Property::ConstPtr &theProperty)
+void SensorDebug::update_property(const PropertyConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
 
@@ -288,6 +291,7 @@ void SensorDebug::update_property(const Property::ConstPtr &theProperty)
             
             if(serial->open(*m_device_name_sensor))
             {
+                serial->write("\n");
                 m_serial_sensor = serial;
             }
         }
@@ -367,7 +371,7 @@ void SensorDebug::update_sensor_values(float time_delta)
             for(size_t i = 0; i < max_index; i++)
             {
                 auto v = string_to<float>(*split_it++);
-                v = clamp(*m_force_multiplier * v / 16.f, 0.f, 1.f);
+                v = crocore::clamp(*m_force_multiplier * v / 16.f, 0.f, 1.f);
                 m_measurements[i].push_back(v);
                 m_sensor_last_max = std::max(m_sensor_last_max, v);
             }
@@ -459,17 +463,17 @@ bool SensorDebug::change_gamestate(GameState the_state)
 
                 if(score != *m_score_min)
                 {
-                    m_animations[ANIMATION_SCORE] = animation::create<float>(&m_display_value,
+                    m_animations[ANIMATION_SCORE] = Animation::create<float>(&m_display_value,
                                                                       0.f, m_current_value,
                                                                       *m_duration_count_score);
 
-                    m_animations[ANIMATION_SCORE]->set_ease_function(animation::EaseOutCirc());
-                    m_animations[ANIMATION_SCORE]->set_finish_callback([this]()
+                    m_animations[ANIMATION_SCORE].set_ease_function(easing::EaseOutCirc());
+                    m_animations[ANIMATION_SCORE].set_finish_callback([this](Animation &a)
                     {
                         m_timer_game_ready.expires_from_now(*m_duration_display_score);
                     });
 
-                    m_animations[ANIMATION_SCORE]->start();
+                    m_animations[ANIMATION_SCORE].start();
                     ret = true;
                 }
             }

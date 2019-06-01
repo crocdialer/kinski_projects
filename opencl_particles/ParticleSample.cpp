@@ -237,7 +237,7 @@ void ParticleSample::teardown()
 
 /////////////////////////////////////////////////////////////////
 
-void ParticleSample::update_property(const Property::ConstPtr &theProperty)
+void ParticleSample::update_property(const PropertyConstPtr &theProperty)
 {
     ViewerApp::update_property(theProperty);
 

@@ -37,7 +37,7 @@ namespace kinski
         std::vector<gl::Mesh::Entry> m_entries;
         
         //! animations
-        std::vector<AnimationPtr> m_animations{10};
+        std::vector<Animation> m_animations{10};
         
         // Properties
         RangedProperty<uint32_t>::Ptr m_max_index = RangedProperty<uint32_t>::create("max index",

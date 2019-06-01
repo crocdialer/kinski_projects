@@ -8,9 +8,10 @@
 
 #pragma once
 
+#include <crocore/Animation.hpp>
 #include "app/ViewerApp.hpp"
-#include "core/Serial.hpp"
-#include "core/CircularBuffer.hpp"
+#include "crocore/Serial.hpp"
+#include "crocore/CircularBuffer.hpp"
 
 // module includes
 #include "dmx/dmx.h"
@@ -24,7 +25,9 @@ namespace kinski
         enum FontEnum{FONT_CONSOLE = 0, FONT_MEDIUM = 1, FONT_LARGE = 2};
         
         enum AnimationEnum{ANIMATION_SCORE = 0};
-        
+
+        std::vector<crocore::Animation> m_animations{10};
+
         //////////////////////// serial IO //////////////////////////////////////
         
         ConnectionPtr
@@ -32,7 +35,7 @@ namespace kinski
         m_serial_nixie = Serial::create(background_queue().io_service());
         
         float m_last_sensor_reading = 0.f, m_sensor_timeout = 5.f;
-        dmx::DMXController m_dmx{background_queue().io_service()};
+        dmx::Controller m_dmx{background_queue().io_service()};
         
         //////////////////////// sensor input ///////////////////////////////////
 
@@ -47,10 +50,10 @@ namespace kinski
         
         //////////////////////////////////////////////////////////////////////////
         
-        Property_<string>::Ptr
-        m_device_name_sensor = Property_<string>::create("sensor device", ""),
-        m_device_name_nixie = Property_<string>::create("nixie device", ""),
-        m_device_name_dmx = Property_<string>::create("dmx device", "");
+        Property_<std::string>::Ptr
+        m_device_name_sensor = Property_<std::string>::create("sensor device", ""),
+        m_device_name_nixie = Property_<std::string>::create("nixie device", ""),
+        m_device_name_dmx = Property_<std::string>::create("dmx device", "");
         
         Property_<int>::Ptr
         m_sensor_refresh_rate = Property_<int>::create("sensor refresh rate", 0),
@@ -126,13 +129,13 @@ namespace kinski
         void touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &theProperty) override;
+        void update_property(const PropertyConstPtr &theProperty) override;
     };
 }// namespace kinski
 
 int main(int argc, char *argv[])
 {
     auto theApp = std::make_shared<kinski::SensorDebug>(argc, argv);
-    LOG_INFO<<"local ip: " << kinski::net::local_ip();
+    LOG_INFO<<"local ip: " << crocore::net::local_ip();
     return theApp->run();
 }

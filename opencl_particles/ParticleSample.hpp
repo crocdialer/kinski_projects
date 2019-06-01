@@ -18,6 +18,8 @@
 // module headers
 #include "opencl/ParticleSystem.hpp"
 
+using namespace crocore;
+
 namespace kinski
 {
     class ParticleSample : public ViewerApp
@@ -27,7 +29,7 @@ namespace kinski
         enum TextureEnum{TEXTURE_PARTICLE = 0};
 
         Property_<bool>::Ptr m_draw_fps = Property_<bool>::create("draw fps", true);
-        Property_<string>::Ptr m_texture_path = Property_<string>::create("texture path", "");
+        Property_<std::string>::Ptr m_texture_path = Property_<std::string>::create("texture path", "");
         
         RangedProperty<int>::Ptr
         m_num_particles = RangedProperty<int>::create("num particles", 100000, 1, 10000000),
@@ -76,13 +78,13 @@ namespace kinski
         void touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches) override;
         void file_drop(const MouseEvent &e, const std::vector<std::string> &files) override;
         void teardown() override;
-        void update_property(const Property::ConstPtr &theProperty) override;
+        void update_property(const PropertyConstPtr &theProperty) override;
     };
 }// namespace kinski
 
 int main(int argc, char *argv[])
 {
     auto theApp = std::make_shared<kinski::ParticleSample>(argc, argv);
-    LOG_INFO<<"local ip: " << kinski::net::local_ip();
+    LOG_INFO<<"local ip: " << crocore::net::local_ip();
     return theApp->run();
 }
