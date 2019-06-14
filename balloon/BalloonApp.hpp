@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include "crocore/Animation.hpp"
 #include "app/ViewerApp.hpp"
 #include "media/media.h"
 #include "syphon/SyphonConnector.h"
@@ -35,8 +36,10 @@ namespace kinski
             ANIM_ZED_IN = 4, ANIM_ZED_OUT = 5,
             ANIM_TITLE_IN = 6, ANIM_TITLE_OUT = 7,
             ANIM_TOMBSTONE_IN = 8, ANIM_TOMBSTONE_OUT = 9,
+            MAX_NUM_ANIMATIONS = 10
         };
-        
+        std::vector<crocore::Animation> m_animations{MAX_NUM_ANIMATIONS};
+
         GamePhase m_game_phase = GamePhase::UNDEFINED;
         
         syphon::Output m_syphon_out;
@@ -81,13 +84,13 @@ namespace kinski
         // animated values
         uint32_t m_current_num_balloons = 0;
         float m_current_float_speed = 0.f;
-        glm::vec2 m_zed_offset;
+        glm::vec2 m_zed_offset = glm::vec2(0.f, -1.5f);
 
         bool m_assets_loaded = false;
         bool m_dirty_tombs = true, m_dirty_balloon_cloud = true, m_dirty_animations = true;
         
         // timer objects;
-        Timer m_balloon_timer;
+        Timer m_timer_balloon, m_timer_tombstone, m_timer_crash, m_timer_pow_remove;
         
         Property_<uint32_t>::Ptr
         m_max_num_balloons = Property_<uint32_t>::create("max num balloons", 10),

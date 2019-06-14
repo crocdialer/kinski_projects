@@ -26,23 +26,23 @@ const glm::vec2 g_tombstone_y_pos_min = glm::vec2(-1.f, -.68f);
 const glm::vec2 g_tombstone_y_pos_max = glm::vec2(1.f, -.55f);
 
 std::map<BalloonApp::GamePhase, std::string> g_state_names =
-{
-    {BalloonApp::GamePhase::IDLE, "IDLE"},
-    {BalloonApp::GamePhase::FLOATING, "FLOATING"},
-    {BalloonApp::GamePhase::CRASHED, "CRASHED"}
-};
+        {
+                {BalloonApp::GamePhase::IDLE,     "IDLE"},
+                {BalloonApp::GamePhase::FLOATING, "FLOATING"},
+                {BalloonApp::GamePhase::CRASHED,  "CRASHED"}
+        };
 
 const std::vector<gl::Color> g_balloon_color_palette =
-{
-    gl::Color(1.f, 0.976f, 0.749f, 1.f),
-    gl::Color(1.f, 0.941f, 0.4f, 1.f)
-};
+        {
+                gl::Color(1.f, 0.976f, 0.749f, 1.f),
+                gl::Color(1.f, 0.941f, 0.4f, 1.f)
+        };
 
 const gl::Color
-g_color_opaque = gl::Color(1.f, 1.f, 1.f, .999f),
-g_color_transparent = gl::Color(1.f, 1.f, 1.f, 0.f),
-g_color_tomb_opaque = gl::Color(0.2f, 0.2f, .2f, .999f),
-g_color_tomb_transparent = gl::Color(0.2f, 0.2f, .2f, 0.f);
+        g_color_opaque = gl::Color(1.f, 1.f, 1.f, .999f),
+        g_color_transparent = gl::Color(1.f, 1.f, 1.f, 0.f),
+        g_color_tomb_opaque = gl::Color(0.2f, 0.2f, .2f, .999f),
+        g_color_tomb_transparent = gl::Color(0.2f, 0.2f, .2f, 0.f);
 
 /////////////////////////////////////////////////////////////////
 
@@ -80,7 +80,7 @@ void BalloonApp::setup()
 
     // create timers
     create_timers();
-    
+
     // create animations
     create_animations();
 
@@ -109,10 +109,10 @@ void BalloonApp::update(float the_delta_time)
         gui::draw_scenegraph_ui(scene(), &selected_objects());
         auto obj = selected_objects().empty() ? nullptr : *selected_objects().begin();
         gui::draw_object3D_ui(obj, m_2d_cam);
-        
+
         if(*m_use_warping){ gui::draw_component_ui(m_warp_component); }
     }
-    
+
     // check for offscreen fbo
     if(!m_offscreen_fbo || m_blur_fbos.empty() || !m_blur_fbos.front()){ m_offscreen_res->notify_observers(); }
 
@@ -126,17 +126,17 @@ void BalloonApp::update(float the_delta_time)
 
     if(m_game_phase == GamePhase::FLOATING)
     {
-        *m_float_speed = map_value(m_current_num_balloons / (float) m_max_num_balloons->value(),
+        *m_float_speed = map_value(m_current_num_balloons / (float)m_max_num_balloons->value(),
                                    0.f, 1.f, m_float_speed->range().first, m_float_speed->range().second);
 
         // update sprite movie texture
         float balloons_frac = 1.f - (m_current_num_balloons / (float)m_max_num_balloons->value());
         uint32_t sprite_index = balloons_frac * (m_sprite_arrays.size() - 1);
         sprite_index = crocore::clamp<uint32_t>(sprite_index, 0, m_sprite_arrays.size() - 2);
-        
+
         // shitty hack for correct index
         if(!m_current_num_balloons){ sprite_index = m_sprite_arrays.size() - 1; }
-        
+
         // play zed_audio
         if(static_cast<uint32_t >(m_current_sprite_index) != sprite_index)
         {
@@ -165,8 +165,7 @@ void BalloonApp::update(float the_delta_time)
             m_pow_mesh->material()->uniform("u_current_index", static_cast<int>(m_current_pow_frame));
             m_pow_mesh->material()->add_texture(m_pow_texture);
         }
-    }
-    else if(m_game_phase == GamePhase::CRASHED)
+    }else if(m_game_phase == GamePhase::CRASHED)
     {
         // update movie texture
         if(m_corpse_movie && m_corpse_movie->copy_frame_to_texture(m_corpse_texture, true))
@@ -206,7 +205,7 @@ void BalloonApp::update(float the_delta_time)
             tex = m_blur_fbos[i]->texture_ptr();
 
             // set region of interest
-            Area_<uint32_t> roi = {0, 0, tex->width(), tex->height() / 3.f};
+            Area_<uint32_t> roi = {0, 0, tex->width(), tex->height() / 3};
             tex->set_roi(roi);
 
             m->material()->add_texture(*tex);
@@ -221,8 +220,9 @@ void BalloonApp::update(float the_delta_time)
     }
 
     // simplex movement
-    glm::vec2 pos_offset = glm::vec2(glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().x, 0.f)),
-                                     glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().y, 0.2f)));
+    glm::vec2 pos_offset = glm::vec2(
+            glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().x, 0.f)),
+            glm::simplex(glm::vec2(get_application_time() * m_balloon_noise_speed->value().y, 0.2f)));
 
     pos_offset *= m_balloon_noise_intensity->value() / glm::vec2(m_offscreen_fbo->size());
 
@@ -233,15 +233,18 @@ void BalloonApp::update(float the_delta_time)
         m_sprite_mesh->set_position(glm::vec3(pos_offset + m_zed_offset, 0.f));
     }
 
-    if(m_game_phase == GamePhase::IDLE && m_title_mesh && m_animations[ANIM_FOREGROUND_IN]->finished())
+    if(m_game_phase == GamePhase::IDLE && m_title_mesh && m_animations[ANIM_FOREGROUND_IN].finished())
     {
         m_title_mesh->position().xy = m_title_position->value() + .5f * pos_offset;
     }
 
     update_balloon_cloud(the_delta_time);
-    
+
     m_current_float_speed = crocore::mix<float>(m_current_float_speed, *m_float_speed * *m_float_speed_mutliplier,
-                                       0.03f);
+                                                0.03f);
+
+    // update animations
+    for(auto &a : m_animations){ a.update(); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -249,17 +252,17 @@ void BalloonApp::update(float the_delta_time)
 void BalloonApp::update_balloon_cloud(float the_delta_time)
 {
     auto balloons = scene()->get_objects_by_tag(g_balloon_tag);
-    
+
     for(uint32_t i = 0; i < m_balloon_particles.size(); ++i)
     {
         m_balloon_particles[i].force += glm::vec2(0.f, 7.5f);
-        
+
         for(uint32_t j = 0; j < m_balloon_particles.size(); ++j)
         {
             if(i == j){ continue; }
             auto diff = m_balloon_particles[i].position - m_balloon_particles[j].position;
             float distance = length(diff);
-            
+
             if(distance <= (m_balloon_particles[i].radius + m_balloon_particles[j].radius))
             {
                 m_balloon_particles[i].force += (diff / distance) / (1.f + distance * distance);
@@ -268,15 +271,15 @@ void BalloonApp::update_balloon_cloud(float the_delta_time)
         // apply force, update velocity
         m_balloon_particles[i].velocity += m_balloon_particles[i].force * the_delta_time;
         m_balloon_particles[i].force = glm::vec2(0);
-        
+
         // update position
         m_balloon_particles[i].position += m_balloon_particles[i].velocity * the_delta_time;
     }
-    
+
     // balloon lines
     auto &line_verts = m_balloon_lines_mesh->geometry()->vertices();
     line_verts.resize(m_current_num_balloons * 2);
-    
+
     // set position for gameobjects
     for(uint32_t i = 0; i < m_balloon_particles.size(); ++i)
     {
@@ -284,24 +287,24 @@ void BalloonApp::update_balloon_cloud(float the_delta_time)
         glm::vec2 anchor = vec2(0.f);
         glm::vec2 pos_diff = m_balloon_particles[i].position - anchor;
         const float max_diff = m_balloon_particles[i].string_length;
-        
+
         if(glm::length(pos_diff) > max_diff)
         {
             m_balloon_particles[i].position = anchor + max_diff * glm::normalize(pos_diff);
         }
-        
+
         auto pos_2d = m_balloon_particles[i].position;
         balloons[i]->set_position(glm::vec3(pos_2d, balloons[i]->position().z));
-        
+
         line_verts[2 * i] = glm::vec3(0.f, 0.f, balloons[i]->position().z);
         line_verts[2 * i + 1] = glm::vec3(pos_2d, balloons[i]->position().z);
-        
+
         // rotation
         glm::quat rotation_quat = glm::rotation(glm::vec3(0.f, 1.f, 0.f),
                                                 glm::normalize(glm::vec3(pos_2d, 0.f)));
-        
+
         balloons[i]->set_rotation(rotation_quat);
-        
+
         // add random balloon texture, if missing
         auto mesh = std::dynamic_pointer_cast<gl::Mesh>(balloons[i]);
         if(mesh && !mesh->material()->get_texture() && !m_balloon_textures.empty())
@@ -344,8 +347,7 @@ void BalloonApp::draw()
                 m_warp_component->render_output(i, offscreen_tex);
             }
         }
-    }
-    else{ gl::draw_texture(offscreen_tex, gl::window_dimension()); }
+    }else{ gl::draw_texture(offscreen_tex, gl::window_dimension()); }
 
     // syphon output
     if(*m_use_syphon){ m_syphon_out.publish_texture(offscreen_tex); }
@@ -353,7 +355,7 @@ void BalloonApp::draw()
 
 /////////////////////////////////////////////////////////////////
 
-void BalloonApp::resize(int w ,int h)
+void BalloonApp::resize(int w, int h)
 {
     ViewerApp::resize(w, h);
 }
@@ -434,21 +436,21 @@ void BalloonApp::mouse_move(const MouseEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void BalloonApp::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+void BalloonApp::touch_begin(const MouseEvent &e, const std::set<const Touch *> &the_touches)
 {
 
 }
 
 /////////////////////////////////////////////////////////////////
 
-void BalloonApp::touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+void BalloonApp::touch_end(const MouseEvent &e, const std::set<const Touch *> &the_touches)
 {
 
 }
 
 /////////////////////////////////////////////////////////////////
 
-void BalloonApp::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+void BalloonApp::touch_move(const MouseEvent &e, const std::set<const Touch *> &the_touches)
 {
 
 }
@@ -491,7 +493,7 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
     if(the_property == m_asset_dir)
     {
         if(fs::exists(*m_asset_dir)){ m_assets_loaded = true; }
-        
+
         scene()->clear();
         m_parallax_meshes.clear();
         m_parallax_textures.clear();
@@ -504,13 +506,13 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
         m_parallax_meshes.resize(num_bg_images);
         m_parallax_textures.resize(num_bg_images);
         m_blur_fbos.resize(num_bg_images);
-        
+
         create_scene();
-        
+
         // retrieve static background
         auto static_bg_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "static_backgrounds"),
                                                          fs::FileType::IMAGE, true);
-        
+
         if(!static_bg_paths.empty())
         {
             async_load_texture(static_bg_paths[0], [this](gl::Texture t)
@@ -518,11 +520,11 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
                 m_bg_mesh->material()->add_texture(t);
             }, true, true);
         }
-        
+
         // retrieve static foreground
         auto static_fg_path = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "foreground"),
                                                         fs::FileType::IMAGE, true);
-        
+
         if(!static_fg_path.empty())
         {
             async_load_texture(static_fg_path[0], [this](gl::Texture t)
@@ -543,7 +545,7 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
             }, true, true);
             i++;
         }
-        
+
         // movie sprites
         auto zed_movie_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "zed"),
                                                          fs::FileType::MOVIE, true);
@@ -554,19 +556,27 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
             auto movie = media::MediaController::create(zed_movie_paths[mc_i], false, false);
 
             movie->set_on_load_callback([this, mc_i, movie](media::MediaControllerPtr mc)
-            {
-                main_queue().post([this, mc, mc_i]()
-                                  {
-                                      if(mc->copy_frames_offline(m_sprite_arrays[mc_i], true))
-                                      {
-                                          LOG_DEBUG << "extracted " << m_sprite_arrays[mc_i].depth() << " frames from: "
-                                                    << mc->path();
-                                          m_current_sprite_fps = mc->fps();
-                                      }else{ LOG_ERROR << "could not extract frames from movie: " << mc->path(); }
+                                        {
+                                            main_queue().post([this, mc, mc_i]()
+                                                              {
+                                                                  if(mc->copy_frames_offline(m_sprite_arrays[mc_i],
+                                                                                             true))
+                                                                  {
+                                                                      LOG_DEBUG << "extracted "
+                                                                                << m_sprite_arrays[mc_i].depth()
+                                                                                << " frames from: "
+                                                                                << mc->path();
+                                                                      m_current_sprite_fps = mc->fps();
+                                                                  }else
+                                                                  {
+                                                                      LOG_ERROR
+                                                                      << "could not extract frames from movie: "
+                                                                      << mc->path();
+                                                                  }
 
-                                      mc->unload();
-                                  });
-            });
+                                                                  mc->unload();
+                                                              });
+                                        });
         }
 
         // zed sounds
@@ -577,16 +587,16 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
         {
             auto sound = media::MediaController::create(p, false, false);
             sound->set_on_load_callback([](media::MediaControllerPtr mc)
-            {
-                mc->set_volume(.5f);
-            });
+                                        {
+                                            mc->set_volume(.5f);
+                                        });
             m_zed_sounds.push_back(sound);
         }
 
         // retrieve dead zed movie
         auto corpse_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "corpse"),
-                                                     fs::FileType::MOVIE, true);
-        
+                                                      fs::FileType::MOVIE, true);
+
         if(!corpse_paths.empty())
         {
             m_corpse_movie = media::MediaController::create(corpse_paths.front(), false, false);
@@ -600,22 +610,28 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
             auto movie = media::MediaController::create(pow_paths.front(), false, false);
 
             movie->set_on_load_callback([this, movie](media::MediaControllerPtr mc)
-            {
-                main_queue().post([this, mc]()
-                                  {
-                                      if(mc->copy_frames_offline(m_pow_texture, true))
-                                      {
-                                          LOG_DEBUG << "extracted " << m_pow_texture.depth() << " frames from: "
-                                                    << mc->path();
-                                          m_pow_fps = mc->fps();
-                                      }else{ LOG_ERROR << "could not extract frames from movie: " << mc->path(); }
-                                      mc->unload();
-                                  });
-            });
+                                        {
+                                            main_queue().post([this, mc]()
+                                                              {
+                                                                  if(mc->copy_frames_offline(m_pow_texture, true))
+                                                                  {
+                                                                      LOG_DEBUG << "extracted " << m_pow_texture.depth()
+                                                                                << " frames from: "
+                                                                                << mc->path();
+                                                                      m_pow_fps = mc->fps();
+                                                                  }else
+                                                                  {
+                                                                      LOG_ERROR
+                                                                      << "could not extract frames from movie: "
+                                                                      << mc->path();
+                                                                  }
+                                                                  mc->unload();
+                                                              });
+                                        });
         }
 
         auto pow_audio_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "pow"),
-                                                   fs::FileType::AUDIO, true);
+                                                         fs::FileType::AUDIO, true);
 
         for(auto &p : pow_audio_paths)
         {
@@ -624,10 +640,10 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
 
         // retrieve balloon textures
         auto balloon_image_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "balloon"),
-                                                         fs::FileType::IMAGE, true);
-        
+                                                             fs::FileType::IMAGE, true);
+
         m_balloon_textures.clear();
-        
+
         for(const auto &p : balloon_image_paths)
         {
             m_balloon_textures.push_back(gl::create_texture_from_file(p, true, true));
@@ -641,7 +657,7 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
         // retrieve title image
         auto title_path = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "title"),
                                                     fs::FileType::IMAGE, true);
-        
+
         if(!title_path.empty())
         {
             async_load_texture(title_path[0], [this](gl::Texture t)
@@ -649,11 +665,11 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
                 m_title_mesh->material()->add_texture(t);
             }, true, true);
         }
-        
+
         // retrieve tombstone image
         auto tombstone_paths = fs::get_directory_entries(fs::join_paths(*m_asset_dir, "tombstone"),
                                                          fs::FileType::IMAGE, true);
-        
+
         if(!tombstone_paths.empty())
         {
             async_load_texture(tombstone_paths[0], [this](gl::Texture t)
@@ -692,17 +708,14 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
         {
             m_start_audio = media::MediaController::create(start_audio_paths.front(), false, false);
         }
-    }
-    else if(the_property == m_max_num_balloons)
+    }else if(the_property == m_max_num_balloons)
     {
         m_current_num_balloons = *m_max_num_balloons;
         m_dirty_balloon_cloud = true;
-    }
-    else if(the_property == m_balloon_scale || the_property == m_balloon_line_length)
+    }else if(the_property == m_balloon_scale || the_property == m_balloon_line_length)
     {
         m_dirty_balloon_cloud = true;
-    }
-    else if(the_property == m_offscreen_res)
+    }else if(the_property == m_offscreen_res)
     {
         glm::ivec2 size = *m_offscreen_res;
 
@@ -721,23 +734,19 @@ void BalloonApp::update_property(const PropertyConstPtr &the_property)
             fbo = gl::Fbo::create(size, fmt);
             fbo->texture_ptr()->set_wrap(GL_REPEAT, GL_REPEAT);
         }
-    }
-    else if(the_property == m_title_position)
+    }else if(the_property == m_title_position)
     {
         m_title_mesh->set_position(glm::vec3(m_title_position->value(), m_title_mesh->position().z));
         m_dirty_animations = true;
-    }
-    else if(the_property == m_show_credits)
+    }else if(the_property == m_show_credits)
     {
         if(*m_show_credits){ m_fg_mesh->add_child(m_credits_handle); }
         else{ scene()->remove_object(m_credits_handle); }
-    }
-    else if(the_property == m_use_syphon)
+    }else if(the_property == m_use_syphon)
     {
         m_syphon_out = *m_use_syphon ? syphon::Output("balloon") : syphon::Output();
-    }
-    else if(the_property == m_crash_sites || the_property == m_tombstone_scale ||
-            the_property == m_max_num_tombstones)
+    }else if(the_property == m_crash_sites || the_property == m_tombstone_scale ||
+             the_property == m_max_num_tombstones)
     {
         m_dirty_tombs = true;
     }
@@ -761,7 +770,7 @@ void BalloonApp::create_scene()
     scene()->clear();
     float z_val = 2.5f;
     float parallax_alpha = .9f;
-    
+
     // parallax backgrounds
     for(uint32 i = 0; i < m_parallax_meshes.size(); ++i)
     {
@@ -769,7 +778,7 @@ void BalloonApp::create_scene()
         auto color = gl::Color(1.f, 1.f, 1.f, parallax_alpha);
         m_parallax_meshes[i]->material()->set_diffuse(color);
         parallax_alpha -= .3f;
-        
+
         m_parallax_meshes[i]->set_position(glm::vec3(0.f, 0.f, z_val));
         scene()->add_object(m_parallax_meshes[i]);
         z_val -= 5.f;
@@ -790,7 +799,7 @@ void BalloonApp::create_scene()
     m_fg_mesh->set_position(glm::vec3(0.f, 0.f, z_val));
     scene()->add_object(m_fg_mesh);
     m_fg_mesh->set_name("foreground");
-    
+
     // main sprite
     m_sprite_mesh = create_sprite_mesh();
     m_sprite_mesh->material()->set_shader(m_array_shader);
@@ -802,7 +811,7 @@ void BalloonApp::create_scene()
     auto balloon_handle = gl::Object3D::create(g_balloon_handle_name);
     balloon_handle->set_position(glm::vec3(0.f, 0.73f, 0.f));
     m_sprite_mesh->add_child(balloon_handle);
-    
+
     // generate balloons
     create_balloon_cloud();
 
@@ -819,13 +828,13 @@ void BalloonApp::create_scene()
     m_corpse_mesh->set_name("zed corpse");
     m_corpse_mesh->set_position(glm::vec3(0.f, 0.f, z_val));
     m_fg_mesh->add_child(m_corpse_mesh);
-    
+
     // title
     m_title_mesh = create_sprite_mesh();
     m_title_mesh->set_name("title");
     m_title_mesh->set_position(glm::vec3(0.f, 2.f, z_val));
     scene()->add_object(m_title_mesh);
-    
+
     // tombstone template
     m_tombstone_template = create_sprite_mesh();
     m_tombstone_template->add_tag(g_tombstone_tag);
@@ -858,9 +867,9 @@ void BalloonApp::create_balloon_cloud()
     if(!balloon_handle){ return; }
     balloon_handle->children().clear();
     m_balloon_particles.clear();
-    
+
     auto rect_geom = gl::Geometry::create_plane(1.f, 1.f);
-    
+
     // individual balloons
     for(uint32_t i = 0; i < m_current_num_balloons; ++i)
     {
@@ -879,7 +888,7 @@ void BalloonApp::create_balloon_cloud()
         m_balloon_particles.push_back(b);
         z_val += 0.01f;
     }
-    
+
     // balloon string mesh
     auto line_geom = gl::Geometry::create();
     line_geom->vertices().resize(m_current_num_balloons * 2);
@@ -918,22 +927,28 @@ void BalloonApp::create_tombstones()
 
 void BalloonApp::create_timers()
 {
-    m_balloon_timer = Timer(main_queue().io_service());
+    m_timer_balloon = Timer(main_queue().io_service());
+
+    m_timer_tombstone = Timer(main_queue().io_service());
+
+    m_timer_crash = Timer(main_queue().io_service(), [this]() { change_gamephase(GamePhase::CRASHED); });
+
+    m_timer_pow_remove = Timer(main_queue().io_service());
 }
 
 void BalloonApp::explode_balloon()
 {
     // should not happen anyway
     if(m_game_phase != GamePhase::FLOATING){ return; }
-    
-    if(!m_balloon_timer.has_expired())
+
+    if(!m_timer_balloon.has_expired())
     {
         LOG_DEBUG << "blocked explode: waiting for balloon timeout ...";
         return;
     }
-    
+
     m_current_num_balloons--;
-    
+
     auto balloons = scene()->get_objects_by_tag(g_balloon_tag);
     if(!balloons.empty())
     {
@@ -941,12 +956,12 @@ void BalloonApp::explode_balloon()
         b->add_child(m_pow_mesh);
 
         m_current_pow_frame = 0;
-        main_queue().post_with_delay([this, b]()
-                                     {
-                                         scene()->remove_object(b);
-                                         m_balloon_particles.pop_front();
-                                     }, m_pow_texture.depth() / m_pow_fps);
-
+        m_timer_pow_remove.set_callback([this, b]()
+                                        {
+                                            scene()->remove_object(b);
+                                            m_balloon_particles.pop_front();
+                                        });
+        m_timer_pow_remove.expires_from_now(m_pow_texture.depth() / m_pow_fps);
 
         // random pow sound
         if(!m_balloon_pow_sounds.empty())
@@ -955,25 +970,25 @@ void BalloonApp::explode_balloon()
             m_balloon_pow_sounds[audio_index]->restart();
         }
     }
-    
+
     // start recovery timer
-    m_balloon_timer.expires_from_now(*m_timeout_balloon_explode);
-    
+    m_timer_balloon.expires_from_now(*m_timeout_balloon_explode);
+
     // no balloons left -> crash
     if(!m_current_num_balloons)
     {
         LOG_DEBUG << "crash!";
-        
+
         // animation removes sprite and trigger GamePhase::CRASHED afterwards
-        m_animations[ANIM_ZED_OUT]->start();
+        m_animations[ANIM_ZED_OUT].start();
     }
-    // go on
+        // go on
     else
     {
         rumble_balloons();
-        
+
         // play drop animation
-        m_animations[ANIM_ZED_DROP]->start();
+        m_animations[ANIM_ZED_DROP].start();
         LOG_DEBUG << "explode_balloon: " << m_current_num_balloons << " left ...";
     }
 }
@@ -1013,39 +1028,41 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
 {
     if(!is_state_change_valid(m_game_phase, the_next_phase))
     {
-        LOG_DEBUG << "invalid state change requested: " << g_state_names[m_game_phase] << " -> " << g_state_names[the_next_phase];
+        LOG_DEBUG << "invalid state change requested: " << g_state_names[m_game_phase] << " -> "
+                  << g_state_names[the_next_phase];
         return false;
     }
-    
+
     switch(the_next_phase)
     {
         case GamePhase::IDLE:
             *m_float_speed = 0.f;
-            m_animations[ANIM_TITLE_IN]->start();
+            m_animations[ANIM_TITLE_IN].start();
+//            m_zed_offset = out_of
             m_corpse_mesh->set_enabled(false);
             m_sprite_mesh->set_enabled(false);
             if(!m_parallax_meshes.empty()){ m_parallax_meshes.front()->set_enabled(false); }
             break;
-            
+
         case GamePhase::FLOATING:
             m_sprite_mesh->set_enabled(true);
             m_parallax_meshes.front()->set_enabled(true);
 
             // start animations
-            m_animations[ANIM_TITLE_OUT]->start();
-            m_animations[ANIM_FOREGROUND_OUT]->start();
-            m_animations[ANIM_ZED_IN]->start();
+            m_animations[ANIM_TITLE_OUT].start();
+            m_animations[ANIM_FOREGROUND_OUT].start();
+            m_animations[ANIM_ZED_IN].start();
 
             // play start movie
             m_start_audio->restart();
-            
+
             // stop corpse movie
             if(m_corpse_movie){ m_corpse_movie->pause(); }
-            
+
             m_current_num_balloons = *m_max_num_balloons;
             create_balloon_cloud();
             break;
-            
+
         case GamePhase::CRASHED:
         {
             *m_float_speed = 0.f;
@@ -1058,6 +1075,7 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
             m_tomb_balloon->set_rotation(glm::inverse(tomb_stone->rotation()));
             auto color_opaque = gl::Color(1.f, 1.f, 1.f, .999f);
             m_tomb_balloon->material()->set_diffuse(color_opaque);
+
             for(auto &c : m_tomb_balloon->children())
             {
                 auto child_mesh = std::dynamic_pointer_cast<gl::Mesh>(c);
@@ -1065,24 +1083,24 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
             }
             create_tombstone_animations(tomb_stone, random(5.f, 15.f), 0.f);
 
-            main_queue().post_with_delay([this, tomb_stone]()
-                                         {
-                                             tomb_stone->set_enabled(true);
-                                             m_animations[ANIM_TOMBSTONE_IN]->start();
-                                         }, random(10.f, 40.f));
-
+            m_timer_tombstone.set_callback([this, tomb_stone]()
+                                           {
+                                               tomb_stone->set_enabled(true);
+                                               m_animations[ANIM_TOMBSTONE_IN].start();
+                                           });
+            m_timer_tombstone.expires_from_now(random(10.f, 40.f));
 
             // start corpse movie
             if(m_corpse_movie)
             {
                 m_corpse_movie->restart();
                 m_corpse_movie->set_media_ended_callback([this](media::MediaControllerPtr mc)
-                {
-                    change_gamephase(GamePhase::IDLE);
-                });
+                                                         {
+                                                             change_gamephase(GamePhase::IDLE);
+                                                         });
             }
 
-            m_animations[ANIM_FOREGROUND_IN]->start();
+            m_animations[ANIM_FOREGROUND_IN].start();
 
             // make sure title will be transparent when restarting
             m_title_mesh->material()->set_diffuse(g_color_transparent);
@@ -1104,84 +1122,81 @@ bool BalloonApp::change_gamephase(GamePhase the_next_phase)
 
 void BalloonApp::create_animations()
 {
-    if(!m_animations.empty() && m_animations[ANIM_TITLE_IN] && m_animations[ANIM_TITLE_IN]->is_playing())
+    if(!m_animations.empty() && m_animations[ANIM_TITLE_IN].is_playing())
     {
         m_title_mesh->material()->set_diffuse(g_color_opaque);
     }
 
-    m_animations[ANIM_TITLE_IN] = std::make_shared<animation::Animation>(2.f, 0.f,
-    [this](float progress)
+    m_animations[ANIM_TITLE_IN] = crocore::Animation(2.f, [this](float progress)
     {
         auto color = mix(g_color_transparent, g_color_opaque, progress);
         m_title_mesh->material()->set_diffuse(color);
 
-        auto color_credits = mix(g_color_tomb_transparent, g_color_tomb_opaque, progress);
+        auto color_credits = mix(g_color_tomb_transparent, g_color_tomb_opaque,
+                                 progress);
         gl::SelectVisitor<gl::Mesh> visitor;
         m_credits_handle->accept(visitor);
-        for(auto m : visitor.get_objects()){ m->material()->set_diffuse(color_credits); }
+
+        for(auto m : visitor.get_objects())
+        {
+            m->material()->set_diffuse(color_credits);
+        }
     });
-    
-    m_animations[ANIM_TITLE_OUT] = std::make_shared<animation::Animation>(2.f, 0.f,
-    [this](float progress)
+
+    m_animations[ANIM_TITLE_OUT] = crocore::Animation(2.f, [this](float progress)
     {
         auto z_val = m_title_mesh->position().z;
-        glm::vec3 pos = kinski::mix(glm::vec3(0.f, 2.f, z_val), glm::vec3(m_title_position->value(), z_val), 1.f - progress);
+        glm::vec3 pos = crocore::mix(glm::vec3(0.f, 2.f, z_val), glm::vec3(m_title_position->value(), z_val),
+                                     1.f - progress);
         m_title_mesh->set_position(pos);
     });
-    
-    m_animations[ANIM_FOREGROUND_IN] = std::make_shared<animation::Animation>(2.f, 0.f,
-                                                                              [this](float progress)
+
+    m_animations[ANIM_FOREGROUND_IN] = crocore::Animation(2.f, [this](float progress)
     {
         auto z_val = m_fg_mesh->position().z;
-        glm::vec3 pos = kinski::mix(glm::vec3(0.f, -2.f, z_val), glm::vec3(0.f, 0.f, z_val), progress);
+        glm::vec3 pos = crocore::mix(glm::vec3(0.f, -2.f, z_val), glm::vec3(0.f, 0.f, z_val),
+                                     progress);
         m_fg_mesh->set_position(pos);
         m_parallax_meshes[0]->material()->set_diffuse(gl::Color(1.f, 1.f, 1.f, .9f * (1.f - progress)));
     });
-    
-    m_animations[ANIM_FOREGROUND_OUT] = std::make_shared<animation::Animation>(2.f, 0.f,
-                                                                               [this](float progress)
+
+    m_animations[ANIM_FOREGROUND_OUT] = crocore::Animation(2.f, [this](float progress)
     {
         auto z_val = m_fg_mesh->position().z;
-        glm::vec3 pos = kinski::mix(glm::vec3(0.f, -2.f, z_val), glm::vec3(0.f, 0.f, z_val), 1.f - progress);
+        glm::vec3 pos = crocore::mix(glm::vec3(0.f, -2.f, z_val), glm::vec3(0.f, 0.f, z_val), 1.f - progress);
         m_fg_mesh->set_position(pos);
         m_parallax_meshes[0]->material()->set_diffuse(gl::Color(1.f, 1.f, 1.f, .9f * progress));
     });
-    
+
     // balloon exploded
-    m_animations[ANIM_ZED_DROP] = animation::create(&m_zed_offset,
-                                                    glm::vec2(0.f), glm::vec2(0.f, -0.3f),
-                                                    0.5f);
-    
-    m_animations[ANIM_ZED_DROP]->set_ease_function(animation::EaseOutElastic(3.f, 2.f));
-    
-    m_animations[ANIM_ZED_DROP]->set_finish_callback([this]()
-    {
-        m_animations[ANIM_ZED_DROP_RECOVER] = animation::create(&m_zed_offset, m_zed_offset, glm::vec2(0.f), 2.f);
-        m_animations[ANIM_ZED_DROP_RECOVER]->set_ease_function(animation::EaseOutCubic());
-        m_animations[ANIM_ZED_DROP_RECOVER]->start();
-    });
-    
+    m_animations[ANIM_ZED_DROP] = crocore::Animation::create(&m_zed_offset,
+                                                             glm::vec2(0.f), glm::vec2(0.f, -0.3f),
+                                                             0.5f);
+
+    m_animations[ANIM_ZED_DROP].set_ease_function(easing::EaseOutElastic(3.f, 2.f));
+
+    m_animations[ANIM_ZED_DROP].set_finish_callback([this](Animation &a)
+                                                    {
+                                                        m_animations[ANIM_ZED_DROP_RECOVER] = Animation::create(
+                                                                &m_zed_offset, m_zed_offset, glm::vec2(0.f), 2.f);
+                                                        m_animations[ANIM_ZED_DROP_RECOVER].set_ease_function(
+                                                                easing::EaseOutCubic());
+                                                        m_animations[ANIM_ZED_DROP_RECOVER].start();
+                                                    });
+
     auto out_of_screen_pos = glm::vec2(0.f, -1.5f);
-    
+
     // zed crashed
-    m_animations[ANIM_ZED_OUT] = std::make_shared<animation::Animation>(1.5f, 0.f,
-    [this, out_of_screen_pos](float progress)
+    m_animations[ANIM_ZED_OUT] = Animation(1.5f, [this, out_of_screen_pos](float progress)
     {
         m_zed_offset = mix(glm::vec2(0.f), out_of_screen_pos, progress);
     });
-    m_animations[ANIM_ZED_OUT]->set_ease_function(animation::EaseInQuad());
-    
-    m_animations[ANIM_ZED_OUT]->set_finish_callback([this]()
-    {
-        main_queue().post_with_delay([this]()
-                                     {
-                                         change_gamephase(GamePhase::CRASHED);
-                                     }, 2.f);
-    });
-    
+    m_animations[ANIM_ZED_OUT].set_ease_function(easing::EaseInQuad());
+
+    m_animations[ANIM_ZED_OUT].set_finish_callback([this](Animation &a) { m_timer_crash.expires_from_now(2.0); });
+
     // zed reborn
-    m_animations[ANIM_ZED_IN] = std::make_shared<animation::Animation>(2.f, 0.f,
-    [this, out_of_screen_pos](float progress)
+    m_animations[ANIM_ZED_IN] = Animation(2.f, [this, out_of_screen_pos](float progress)
     {
         m_zed_offset = mix(out_of_screen_pos, glm::vec2(0.f), progress);
     });
@@ -1222,13 +1237,14 @@ gl::MeshPtr BalloonApp::create_tombstone_mesh(uint32_t the_index, const glm::vec
 
     // pseudo perspective scaling
     float scale_y_frac = (the_pos.y - g_tombstone_y_pos_min.y) / (g_tombstone_y_pos_max.y - g_tombstone_y_pos_min.y);
-    scale.xy = scale.xy * mix(1.f, .6f, scale_y_frac);
+    scale.xy = scale.xy * crocore::mix(1.f, .6f, scale_y_frac);
     bool flip_x = false;//random_int(0, 1);
     if(flip_x){ scale.x *= -1.f; }
     m->set_scale(scale);
 
     // random rotation
-    auto transform = glm::rotate(m->transform(), random<float>(glm::radians(-10.f), glm::radians(10.f)), gl::Z_AXIS);
+    auto transform = glm::rotate(m->transform(), random < float > (glm::radians(-10.f), glm::radians(10.f)),
+                                 gl::Z_AXIS);
     m->set_transform(transform);
     m->set_name("tombstone_" + to_string(the_index));
 
@@ -1253,16 +1269,12 @@ void BalloonApp::create_tombstone_animations(const gl::MeshPtr &the_tombstone_me
     auto final_pos = the_tombstone_mesh->position();
 
     // tombstone drop
-    m_animations[ANIM_TOMBSTONE_IN] = std::make_shared<animation::Animation>(duration, delay,
-    [start_pos, final_pos, the_tombstone_mesh](float progress)
+    m_animations[ANIM_TOMBSTONE_IN] = Animation(duration, [start_pos, final_pos, the_tombstone_mesh](float progress)
     {
         the_tombstone_mesh->set_position(mix(start_pos, final_pos, progress));
     });
 
-
-
-    m_animations[ANIM_TOMBSTONE_OUT] = std::make_shared<animation::Animation>(2.f, 0.f,
-    [this](float progress)
+    m_animations[ANIM_TOMBSTONE_OUT] = Animation(2.f, [this](float progress)
     {
         auto color = mix(g_color_opaque, g_color_transparent, progress);
         m_tomb_balloon->material()->set_diffuse(color);
@@ -1270,24 +1282,28 @@ void BalloonApp::create_tombstone_animations(const gl::MeshPtr &the_tombstone_me
         for(auto &c : m_tomb_balloon->children())
         {
             auto child_mesh = std::dynamic_pointer_cast<gl::Mesh>(c);
-            if(child_mesh){ child_mesh->material()->set_diffuse(color); }
+            if(child_mesh)
+            {
+                child_mesh->material()->set_diffuse(color);
+            }
         }
     });
 
-    m_animations[ANIM_TOMBSTONE_IN]->set_finish_callback([this, the_tombstone_mesh]()
-    {
-        m_animations[ANIM_TOMBSTONE_OUT]->start();
+    m_animations[ANIM_TOMBSTONE_IN].set_finish_callback([this, the_tombstone_mesh](Animation &a)
+                                                        {
+                                                            m_animations[ANIM_TOMBSTONE_OUT].start();
 
-        m_animations[ANIM_TOMBSTONE_OUT]->set_finish_callback([the_tombstone_mesh]()
-        {
-            for(auto c : the_tombstone_mesh->children())
-            {
-                if(c->has_tag(g_tag_tomb_balloon))
-                {
-                    c->set_parent(nullptr);
-                    break;
-                }
-            }
-        });
-    });
+                                                            m_animations[ANIM_TOMBSTONE_OUT].set_finish_callback(
+                                                                    [the_tombstone_mesh](Animation &a)
+                                                                    {
+                                                                        for(auto c : the_tombstone_mesh->children())
+                                                                        {
+                                                                            if(c->has_tag(g_tag_tomb_balloon))
+                                                                            {
+                                                                                c->set_parent(nullptr);
+                                                                                break;
+                                                                            }
+                                                                        }
+                                                                    });
+                                                        });
 }
