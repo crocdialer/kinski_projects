@@ -43,13 +43,13 @@ void SensorDebug::setup()
 
     // buffer incoming bytes from serial connection
     m_serial_read_buf.resize(2048);
-    
+
     // use this for line drawing
     m_line_mesh = gl::Mesh::create(gl::Geometry::create(),
                                    gl::Material::create(gl::create_shader(gl::ShaderType::LINES_2D)));
     m_line_mesh->geometry()->set_primitive_type(GL_LINES);
     m_line_mesh->material()->set_depth_test(false);
-    
+
     // setup a recurring timer for sensor-refresh-rate measurement
     m_timer_sensor_refresh = Timer(main_queue().io_service(), [this]()
     {
@@ -59,7 +59,7 @@ void SensorDebug::setup()
     m_timer_sensor_refresh.set_periodic();
     m_timer_sensor_refresh.expires_from_now(1.f);
 
-    m_timer_game_ready = Timer(main_queue().io_service(), [this](){ change_gamestate(IDLE); });
+    m_timer_game_ready = Timer(main_queue().io_service(), [this]() { change_gamestate(IDLE); });
     m_timer_impact_measure = Timer(main_queue().io_service(), [this]()
     {
         m_current_value = m_sensor_last_max;
@@ -67,9 +67,9 @@ void SensorDebug::setup()
     });
 
     if(!load_settings()){ save_settings(); }
-    
+
     remote_control().set_components({shared_from_this()});
-    
+
     // start in IDLE state
     change_gamestate(IDLE);
 }
@@ -92,7 +92,7 @@ void SensorDebug::update(float timeDelta)
     if(m_timer_impact_measure.has_expired()){ process_impact(m_sensor_last_max); }
 
     m_dmx.update(timeDelta);
-    
+
     // send current value to nixies
     update_score_display();
 
@@ -106,7 +106,7 @@ void SensorDebug::draw()
 {
     gl::clear();
     gl::set_matrices_for_window();
-    
+
     // draw debug UI
     vec2 offset(55, 110), step(0, 90);
 
@@ -127,23 +127,23 @@ void SensorDebug::draw()
         // generate point array for bars
         auto &verts = m_line_mesh->geometry()->vertices();
         auto &colors = m_line_mesh->geometry()->colors();
-        
+
         verts.resize(m_measurements[i].size() * 2);
         colors.resize(verts.size(), gl::COLOR_WHITE);
         m_line_mesh->geometry()->tex_coords().resize(verts.size(), gl::vec2(0));
-        
-        for (size_t j = 0, sz = verts.size(); j < sz; j += 2)
+
+        for(size_t j = 0, sz = verts.size(); j < sz; j += 2)
         {
-            float x_val = offset.x + j / (float) sz * w;
+            float x_val = offset.x + j / (float)sz * w;
             float y_val = gl::window_dimension().y - offset.y - h;
-            
+
             float hist_val = m_measurements[i][j / 2];
             verts[sz - 1 - j] = vec3(x_val, y_val, 0.f);
             verts[sz - 2 - j] = vec3(x_val, y_val + std::max(h * hist_val, 1.f), 0.f);
             colors[sz - 1 - j] = colors[sz - 2 - j] =
-            hist_val < m_range_min_max->value().x ? gl::COLOR_WHITE : glm::mix(gl::COLOR_GREEN,
-                                                                               gl::COLOR_RED,
-                                                                               hist_val);
+                    hist_val < m_range_min_max->value().x ? gl::COLOR_WHITE : glm::mix(gl::COLOR_GREEN,
+                                                                                       gl::COLOR_RED,
+                                                                                       hist_val);
         }
         const auto line_thickness = 12.f;
         m_line_mesh->material()->uniform("u_window_size", gl::window_dimension());
@@ -165,14 +165,15 @@ void SensorDebug::draw()
     if(m_current_gamestate != IDLE){}
     else
     {
-        auto color_ready = gl::COLOR_GREEN; color_ready.a = .3f;
+        auto color_ready = gl::COLOR_GREEN;
+        color_ready.a = .3f;
         gl::draw_quad(vec2(75), color_ready, vec2(gl::window_dimension().x - 100, 25));
     }
 }
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::resize(int w ,int h)
+void SensorDebug::resize(int w, int h)
 {
     ViewerApp::resize(w, h);
 }
@@ -190,7 +191,7 @@ void SensorDebug::key_release(const KeyEvent &e)
 {
     ViewerApp::key_release(e);
 
-    switch (e.code())
+    switch(e.code())
     {
         case Key::_X:
         {
@@ -242,21 +243,21 @@ void SensorDebug::mouse_wheel(const MouseEvent &e)
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::touch_begin(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+void SensorDebug::touch_begin(const MouseEvent &e, const std::set<const Touch *> &the_touches)
 {
     set_display_gui(!display_gui());
 }
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::touch_end(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+void SensorDebug::touch_end(const MouseEvent &e, const std::set<const Touch *> &the_touches)
 {
 
 }
 
 /////////////////////////////////////////////////////////////////
 
-void SensorDebug::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
+void SensorDebug::touch_move(const MouseEvent &e, const std::set<const Touch *> &the_touches)
 {
 
 }
@@ -284,23 +285,17 @@ void SensorDebug::update_property(const PropertyConstPtr &theProperty)
     if(theProperty == m_device_name_sensor)
     {
         m_current_value = m_sensor_last_max = 0.f;
-        
+
         if(!m_device_name_sensor->value().empty())
         {
             auto serial = Serial::create(background_queue().io_service());
-            
-            if(serial->open(*m_device_name_sensor))
-            {
-                serial->write("\n");
-                m_serial_sensor = serial;
-            }
+            if(serial->open(*m_device_name_sensor, 115200)){ m_serial_sensor = serial; }
+            serial->write("\n");
         }
-    }
-    else if(theProperty == m_sensor_hist_size)
+    }else if(theProperty == m_sensor_hist_size)
     {
         m_measurements.clear();
-    }
-    else if(theProperty == m_device_name_nixie)
+    }else if(theProperty == m_device_name_nixie)
     {
         if(!m_device_name_nixie->value().empty())
         {
@@ -310,8 +305,7 @@ void SensorDebug::update_property(const PropertyConstPtr &theProperty)
                 m_serial_nixie = serial;
             }
         }
-    }
-    else if(theProperty == m_device_name_dmx)
+    }else if(theProperty == m_device_name_dmx)
     {
         if(!m_device_name_dmx->value().empty())
         {
@@ -326,7 +320,7 @@ void SensorDebug::update_sensor_values(float time_delta)
 {
     m_last_sensor_reading += time_delta;
     std::string reading_str;
-    
+
     // parse sensor input
     if(m_serial_sensor->is_open())
     {
@@ -334,7 +328,11 @@ void SensorDebug::update_sensor_values(float time_delta)
         uint8_t *buf_ptr = &m_serial_read_buf[0];
 
         m_serial_sensor->read_bytes(&m_serial_read_buf[0], bytes_to_read);
-        if(bytes_to_read){ m_last_sensor_reading = 0.f; m_sensor_refresh_count++;}
+        if(bytes_to_read)
+        {
+            m_last_sensor_reading = 0.f;
+            m_sensor_refresh_count++;
+        }
         bool reading_complete = false;
 
         for(uint32_t i = 0; i < bytes_to_read; i++)
@@ -358,13 +356,13 @@ void SensorDebug::update_sensor_values(float time_delta)
         if(reading_complete)
         {
             auto splits = split(reading_str, ' ');
-            
+
             if(m_measurements.size() < splits.size())
             {
                 m_measurements.resize(std::min<size_t>(splits.size(), 4),
                                       CircularBuffer<float>(*m_sensor_hist_size));
             }
-            
+
             size_t max_index = std::min(m_measurements.size(), splits.size());
             auto split_it = splits.begin();
 
@@ -408,9 +406,9 @@ void SensorDebug::update_dmx()
 //
 //    // current score
 //    m_dmx[2] = (uint8_t)(m_current_value * 255);
-    
+
     for(int i = 1; i < 512; ++i){ m_dmx[i] = 0; }
-    
+
     // determine channel
     int ch = m_current_value * 100 + 1;
     if(ch){ m_dmx[ch] = 255; }
@@ -439,7 +437,7 @@ bool SensorDebug::change_gamestate(GameState the_state)
 
     bool ret = false;
 
-    switch (the_state)
+    switch(the_state)
     {
         case IDLE:
             m_current_value = m_display_value = m_sensor_last_max = 0.f;
@@ -464,14 +462,15 @@ bool SensorDebug::change_gamestate(GameState the_state)
                 if(score != *m_score_min)
                 {
                     m_animations[ANIMATION_SCORE] = Animation::create<float>(&m_display_value,
-                                                                      0.f, m_current_value,
-                                                                      *m_duration_count_score);
+                                                                             0.f, m_current_value,
+                                                                             *m_duration_count_score);
 
                     m_animations[ANIMATION_SCORE].set_ease_function(easing::EaseOutCirc());
                     m_animations[ANIMATION_SCORE].set_finish_callback([this](Animation &a)
-                    {
-                        m_timer_game_ready.expires_from_now(*m_duration_display_score);
-                    });
+                                                                      {
+                                                                          m_timer_game_ready.expires_from_now(
+                                                                                  *m_duration_display_score);
+                                                                      });
 
                     m_animations[ANIMATION_SCORE].start();
                     ret = true;
