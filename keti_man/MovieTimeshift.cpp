@@ -6,6 +6,8 @@
 //
 //
 
+#include "array_shader.h"
+#include "gl/ShaderLibrary.h"
 #include "MovieTimeshift.hpp"
 
 using namespace std;
@@ -54,7 +56,7 @@ void MovieTimeshift::setup()
     
     try
     {
-        auto sh = gl::create_shader_from_file("array_shader.vert", "array_shader.frag");
+        auto sh = gl::Shader::create(unlit_vert, g_array_shader_frag);
         m_custom_mat->set_shader(sh);
     } catch (std::exception &e) { LOG_ERROR << e.what();}
     

@@ -1,0 +1,61 @@
+//
+// Created by crocdialer on 9/20/19.
+//
+
+#ifndef KINSKIGL_ARRAY_SHADER_H
+#define KINSKIGL_ARRAY_SHADER_H
+
+const char *g_array_shader_frag =
+        "#version 410 core\n"
+        "uniform int u_numTextures;\n"
+        "\n"
+        "uniform sampler2D u_sampler_2D[2];\n"
+        "//uniform sampler2DArray u_array_sampler[2];\n"
+        "uniform sampler3D u_sampler_3D[2];\n"
+        "\n"
+        "uniform int u_current_index = 0;\n"
+        "uniform int u_num_frames = 165;\n"
+        "\n"
+        "struct Material\n"
+        "{\n"
+        "    vec4 diffuse;\n"
+        "    vec4 emission;\n"
+        "    vec4 point_vals;// (size, constant_att, linear_att, quad_att)\n"
+        "    float metalness;\n"
+        "    float roughness;\n"
+        "    float occlusion;\n"
+        "    int shadow_properties;\n"
+        "    int texture_properties;\n"
+        "};\n"
+        "\n"
+        "layout(std140) uniform MaterialBlock\n"
+        "{\n"
+        "  Material u_material;\n"
+        "};\n"
+        "\n"
+        "in VertexData{\n"
+        "   vec4 color;\n"
+        "   vec2 texCoord;\n"
+        "} vertex_in;\n"
+        "\n"
+        "out vec4 fragData;\n"
+        "void main()\n"
+        "{\n"
+        "    vec4 texColors = vertex_in.color;\n"
+        "\n"
+        "    // sample our simplex texture\n"
+        "    float noise_val = texture(u_sampler_2D[0], vertex_in.texCoord).r;\n"
+        "\n"
+        "    // the time coordinate\n"
+        "    float index = (int(u_current_index + noise_val * u_num_frames) % u_num_frames) / float(u_num_frames);\n"
+        "\n"
+        "    // 3d texture coordinate\n"
+        "    vec3 tex_coord = vec3(vertex_in.texCoord, index);\n"
+        "\n"
+        "    // sample our samplerArray / 3DTexture\n"
+        "    vec4 video_color = texture(u_sampler_3D[0], tex_coord);\n"
+        "\n"
+        "    fragData = u_material.diffuse * texColors * video_color;\n"
+        "}";
+
+#endif //KINSKIGL_ARRAY_SHADER_H
