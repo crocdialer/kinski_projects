@@ -6,13 +6,13 @@
 //
 //
 
-#include "ModelViewer.h"
+#include "PsychoManage.h"
 //#include "fmod/Fmod_Sound.h"
 
 using namespace std;
 using namespace kinski;
 
-float ModelViewer::get_volume_for_subspectrum(float from_freq, float to_freq)
+float PsychoManage::get_volume_for_subspectrum(float from_freq, float to_freq)
 {
     //TODO no hardcoded frequency here
     float sampling_rate = 44100.f;
@@ -35,7 +35,7 @@ float ModelViewer::get_volume_for_subspectrum(float from_freq, float to_freq)
     return sum / (to_bin - from_bin);
 }
 
-float ModelViewer::get_volume_for_freq_band(FrequencyBand bnd)
+float PsychoManage::get_volume_for_freq_band(FrequencyBand bnd)
 {
     auto iter = m_frequency_map.find(bnd);
     if(iter == m_frequency_map.end()) return 0.f;
@@ -44,7 +44,7 @@ float ModelViewer::get_volume_for_freq_band(FrequencyBand bnd)
     return get_volume_for_subspectrum(pair.first, pair.second);
 }
 
-void ModelViewer::init_audio()
+void PsychoManage::init_audio()
 {
     auto rec_devices = audio::get_recording_devices();
     
@@ -74,7 +74,7 @@ void ModelViewer::init_audio()
 //    }
 }
 
-void ModelViewer::update_audio()
+void PsychoManage::update_audio()
 {
     // audio analysis
     if(m_sound_recording)

@@ -8,6 +8,7 @@
 
 #include "GrowthApp.h"
 #include "gl/ShaderLibrary.h"
+#include "shaders.h"
 
 using namespace std;
 using namespace kinski;
@@ -58,7 +59,7 @@ void GrowthApp::setup()
         // load shaders
         m_lsystem_shaders[0] = gl::Shader::create(geom_prepass_vert,
                                                   phong_frag,
-                                                  fs::read_file("lines_to_cuboids.geom").c_str());
+                                                  gl::g_lines_to_cuboids_geom);
     }
     catch(std::exception &e){LOG_ERROR << e.what();}
     

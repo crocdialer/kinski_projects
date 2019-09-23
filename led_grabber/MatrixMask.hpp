@@ -6,41 +6,44 @@
 //
 
 #pragma once
-#include "gl/Texture.hpp"
 
-namespace kinski{namespace gl{
-   
-class MatrixMask
+#include "MaskGenerator.hpp"
+
+namespace kinski::gl
+{
+
+DEFINE_CLASS_PTR(MatrixMask)
+
+class MatrixMask : public MaskGenerator
 {
 public:
-    
-    MatrixMask(const glm::ivec2 &the_size = glm::ivec2(3));
+
+    static MatrixMaskPtr create(const glm::ivec2 &size = glm::ivec2(3));
+
+    void update(float the_delta_time) override;
+
+    gl::Texture texture() const override;
 
     //!
-    void update(float the_delta_time);
+    glm::ivec2 size() const;
 
-    //!
-    void draw_overlay();
-
-    //!
-    const glm::ivec2 size() const;
-    
     //!
     void set_size(const glm::ivec2 &the_size);
-    
-    const gl::Texture texture() const;
-    
+
     void set_rate(float the_intensity){ m_rate = the_intensity; }
-    float rate() const { return m_rate; };
-    
+
+    float rate() const{ return m_rate; };
+
     void set_lifetime(float the_min, float the_max)
     {
         m_lifetime_min = the_min;
         m_lifetime_max = the_max;
     }
-    
+
 private:
-    
+
+    explicit MatrixMask(const glm::ivec2 &size);
+
     struct gridcell_t
     {
         float life_time;
@@ -55,5 +58,5 @@ private:
     float m_rate = 1.f;
     float m_lifetime_min = 0.f, m_lifetime_max = 1.f;
 };
-    
-}};
+
+};

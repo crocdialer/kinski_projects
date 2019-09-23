@@ -31,7 +31,7 @@ namespace kinski
     typedef std::map<FrequencyBand, std::pair<float, float>> FrequencyRangeMap;
     typedef std::map<FrequencyBand, float> FrequencyVolumeMap;
     
-    class ModelViewer : public ViewerApp
+    class PsychoManage : public ViewerApp
     {
     private:
         
@@ -205,7 +205,7 @@ namespace kinski
         
     public:
         
-        ModelViewer(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
+        PsychoManage(int argc = 0, char *argv[] = nullptr): ViewerApp(argc, argv){};
         void setup() override;
         void update(float timeDelta) override;
         void draw() override;

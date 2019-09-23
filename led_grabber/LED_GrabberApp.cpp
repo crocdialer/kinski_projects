@@ -31,16 +31,16 @@ namespace
 
     //! minimum difference to remote media-clock for fine-tuning (secs)
     double g_sync_thresh = 0.02;
-    
+
     //! minimum difference to remote media-clock for scrubbing (secs)
     const double g_scrub_thresh = 1.0;
-    
+
     //! force reset of playback speed (secs)
     const double g_sync_duration = 1.0;
 
     //!
     uint16_t g_led_tcp_port = 44444;
-    
+
     constexpr double g_led_refresh_interval = 0.04;
 
     const std::string g_id = "LEDS";
@@ -53,7 +53,7 @@ namespace
 void LED_GrabberApp::setup()
 {
     ViewerApp::setup();
-    Logger::get()->set_use_log_file(true);
+    crocore::g_logger.set_use_log_file(true);
 
     fonts()[1].load(fonts()[0].path(), 28);
     register_property(m_media_path);
@@ -79,7 +79,7 @@ void LED_GrabberApp::setup()
     register_property(m_led_unit_res);
     register_property(m_downsample_res);
     register_property(m_led_proxy_ip);
-    
+
     register_property(m_overlay_color);
     register_property(m_use_masking);
     register_property(m_mask_grid_size);
@@ -95,23 +95,23 @@ void LED_GrabberApp::setup()
     setup_rpc_interface();
 
     load_settings();
-    
+
     // check for command line input
     if(args().size() > 1)
     {
         fs::path p = args()[1];
-        
+
         if(fs::exists(p))
         {
             if(fs::is_directory(p))
             {
                 create_playlist(p);
-                
+
                 m_scan_media_timer = Timer(background_queue().io_service(),
                                            [this, p](){ create_playlist(p); });
                 m_scan_media_timer.set_periodic();
                 m_scan_media_timer.expires_from_now(5.f);
-                
+
                 fs::add_search_path(p, 3);
             }
             else{ *m_media_path = p; }
@@ -125,7 +125,7 @@ void LED_GrabberApp::setup()
     });
     m_check_ip_timer.set_periodic();
     m_check_ip_timer.expires_from_now(5.f);
-    
+
     // grabber setup
     m_led_grabber->set_resolution(m_led_res->value().x, m_led_res->value().y);
     m_led_update_timer = Timer(main_queue().io_service());
@@ -139,7 +139,7 @@ void LED_GrabberApp::setup()
 
 /////////////////////////////////////////////////////////////////
 
-void LED_GrabberApp::update(float the_delta_time)
+void LED_GrabberApp::update(float delta_time)
 {
     // construct ImGui window for this frame
     if(display_gui())
@@ -149,21 +149,25 @@ void LED_GrabberApp::update(float the_delta_time)
     }
 
     if(m_reload_media){ reload_media(); }
-    
+
     // update our mask generator
-    if(*m_use_masking){ m_matrix_mask.update(the_delta_time); }
-    
+    if(*m_use_masking)
+    {
+        m_elevator_mask->update(delta_time);
+        m_matrix_mask->update(delta_time);
+    }
+
     if(m_runmode == MODE_DEFAULT)
     {
         if(m_camera){ m_camera->copy_frame_to_texture(textures()[TEXTURE_CAM_INPUT]); }
         if(m_media)
         {
             bool has_new_image = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT], true);
-            
+
             if(has_new_image && m_led_update_timer.has_expired())
             {
                 auto tex_size = textures()[TEXTURE_INPUT].size();
-                
+
                 if(tex_size.x > m_fbo_downsample->size().x || tex_size.y > m_fbo_downsample->size().y || *m_use_masking)
                 {
                     gl::render_to_texture(m_fbo_downsample, [this]()
@@ -172,7 +176,7 @@ void LED_GrabberApp::update(float the_delta_time)
                         gl::clear();
                         if(*m_use_masking)
                         {
-                            gl::draw_texture_with_mask(textures()[TEXTURE_INPUT], m_matrix_mask.texture(),
+                            gl::draw_texture_with_mask(textures()[TEXTURE_INPUT], m_elevator_mask->texture(),
                                                        gl::window_dimension(), {0, 0}, m_overlay_color->value().rgb);
                         }
                         else
@@ -182,13 +186,15 @@ void LED_GrabberApp::update(float the_delta_time)
                         }
 
                     });
+                    textures()[TEXTURE_MASK] = m_elevator_mask->texture();
+
                     m_image_input = gl::create_image_from_framebuffer(m_fbo_downsample);
                     textures()[TEXTURE_DOWNSAMPLE] = m_fbo_downsample->texture();
                     textures()[TEXTURE_DOWNSAMPLE].set_mag_filter(GL_NEAREST);
                     textures()[TEXTURE_DOWNSAMPLE].set_min_filter(GL_NEAREST);
                 }
                 else{ m_image_input = gl::create_image_from_texture(textures()[TEXTURE_INPUT]); }
-                
+
                 m_led_grabber->set_warp(m_warp_component->quad_warp(0));
                 m_led_grabber->grab_from_image_calib(m_image_input);
                 m_led_update_timer.expires_from_now(g_led_refresh_interval);
@@ -200,7 +206,7 @@ void LED_GrabberApp::update(float the_delta_time)
     else if(m_runmode == MODE_MANUAL_CALIBRATION)
     {
         m_needs_redraw = true;
-        
+
         if(m_led_update_timer.has_expired())
         {
             m_led_grabber->set_warp(m_warp_component->quad_warp(0));
@@ -215,13 +221,13 @@ void LED_GrabberApp::update(float the_delta_time)
 void LED_GrabberApp::draw()
 {
     gl::clear();
-    
+
     // draw quad warp
     if(m_warp_component->enabled(0))
     {
         m_warp_component->render_output(0, textures()[TEXTURE_DOWNSAMPLE]);
     }
-    
+
     // draw camera input, if any
     if((m_camera->is_capturing() || *m_show_cam_overlay) && textures()[TEXTURE_CAM_INPUT])
     {
@@ -233,18 +239,18 @@ void LED_GrabberApp::draw()
         mat->add_texture(textures()[TEXTURE_CAM_INPUT]);
         gl::draw_quad(gl::window_dimension(), mat);
     }
-    
+
     if(m_runmode == MODE_MANUAL_CALIBRATION)
     {
         gl::draw_text_2D("segment: " + to_string(m_current_calib_segment), fonts()[1],
                          gl::COLOR_WHITE, vec2(50));
-        
+
         if(m_last_calib_click != gl::vec2(-1))
         {
             gl::draw_points_2D({m_last_calib_click * gl::window_dimension()}, gl::COLOR_GREEN, 5.f);
         }
     }
-    
+
     // draw calibration points
     {
         auto points_tmp = m_calibration_points->value();
@@ -252,8 +258,8 @@ void LED_GrabberApp::draw()
         gl::draw_points_2D(points_tmp, gl::COLOR_WHITE, 3.f);
         gl::reset_state();
     }
-    
-    if(!*m_is_master && m_is_syncing && Logger::get()->severity() >= Severity::DEBUG)
+
+    if(!*m_is_master && m_is_syncing && crocore::g_logger.severity() >= Severity::DEBUG)
     {
         gl::draw_text_2D(to_string(m_is_syncing) + " ms", fonts()[1], gl::COLOR_WHITE, vec2(50));
     }
@@ -262,15 +268,15 @@ void LED_GrabberApp::draw()
         // media title
         gl::draw_text_2D(m_media->is_loaded() ? fs::get_filename_part(m_media->path()) : *m_media_path,
                          fonts()[1], m_media->is_loaded() ? gl::COLOR_WHITE : gl::COLOR_RED, gl::vec2(10));
-        
+
         // time + playlist position
         auto str = secs_to_time_str(m_media->current_time()) + " / " +
             secs_to_time_str(m_media->duration());
         str += m_playlist.empty() ? "" : format(" (%d / %d)", m_current_playlist_index + 1,
                                                 m_playlist.size());
-        
+
         gl::draw_text_2D(str, fonts()[1], gl::COLOR_WHITE, gl::vec2(10, 40));
-        
+
         // ip-adress
         gl::draw_text_2D(m_ip_adress, fonts()[1],
                          m_ip_adress == net::UNKNOWN_IP ? gl::COLOR_RED : gl::COLOR_WHITE,
@@ -285,7 +291,7 @@ void LED_GrabberApp::draw()
 void LED_GrabberApp::key_press(const KeyEvent &e)
 {
     ViewerApp::key_press(e);
-    
+
     if(!e.is_alt_down())
     {
         switch (e.code())
@@ -294,11 +300,11 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                 m_media->is_playing() ? m_media->pause() : m_media->play();
                 if(*m_is_master){ send_network_cmd(m_media->is_playing() ? "play" : "pause"); }
                 break;
-            
+
             case Key::_C:
                 m_camera->is_capturing() ? m_camera->stop_capture() : m_camera->start_capture();
                 break;
-                
+
             case Key::_LEFT:
                 if(m_runmode == MODE_DEFAULT)
                 {
@@ -312,7 +318,7 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                     m_last_calib_click = gl::vec2(-1);
                 }
                 break;
-                
+
             case Key::_RIGHT:
                 if(m_runmode == MODE_DEFAULT)
                 {
@@ -328,19 +334,19 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
             case Key::_UP:
                 *m_volume += .1f;
                 break;
-                
+
             case Key::_DOWN:
                 *m_volume -= .1f;
                 break;
-            
+
             case Key::_PAGE_UP:
                 playlist_next();
                 break;
-                
+
             case Key::_PAGE_DOWN:
                 playlist_prev();
                 break;
-                
+
             case Key::_L:
                 {
                     m_camera->stop_capture();
@@ -351,7 +357,7 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                                                 auto points = m_led_grabber->run_calibration(*m_cam_index,
                                                                                              *m_calibration_thresh,
                                                                                              *m_led_calib_color);
-                                                main_queue().post([this, points]()
+                                                main_queue().post([this, &points]()
                                                                   {
                                                                       m_calibration_points->set_value(
                                                                               std::move(points));
@@ -359,7 +365,7 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                                             });
                 }
                 break;
-                
+
             case Key::_M:
                 if(m_runmode == MODE_DEFAULT)
                 {
@@ -457,7 +463,7 @@ void LED_GrabberApp::touch_end(const MouseEvent &e, const std::set<const Touch*>
 
 void LED_GrabberApp::touch_move(const MouseEvent &e, const std::set<const Touch*> &the_touches)
 {
-    
+
 }
 
 /////////////////////////////////////////////////////////////////
@@ -545,7 +551,7 @@ void LED_GrabberApp::update_property(const PropertyConstPtr &theProperty)
                 {
                     std::unique_lock<std::mutex> lock(g_ip_table_mutex);
                     m_ip_timestamps[remote_ip] = get_application_time();
-                    
+
                     ping_delay(remote_ip);
                 }
                 else if(str == LED_Grabber::id())
@@ -579,7 +585,7 @@ void LED_GrabberApp::update_property(const PropertyConstPtr &theProperty)
             m_udp_server.stop_listen();
             m_sync_timer.cancel();
             m_use_discovery_broadcast->notify_observers();
-            
+
             m_sync_off_timer = Timer(background_queue().io_service(), [this]()
             {
                 m_media->set_rate(*m_playback_speed);
@@ -603,7 +609,7 @@ void LED_GrabberApp::update_property(const PropertyConstPtr &theProperty)
     else if(theProperty == m_led_res)
     {
         size_t num_leds = m_led_res->value().x * m_led_res->value().y;
-        
+
         if(m_calibration_points->value().size() != num_leds)
         {
             m_calibration_points->value().resize(num_leds, gl::vec2(-1));
@@ -617,7 +623,7 @@ void LED_GrabberApp::update_property(const PropertyConstPtr &theProperty)
     else if(theProperty == m_downsample_res)
     {
         auto val = gl::ivec2(m_downsample_res->value());
-        
+
         if(!m_fbo_downsample || m_fbo_downsample->size() != val)
         {
             m_fbo_downsample = gl::Fbo::create(val);
@@ -640,15 +646,15 @@ void LED_GrabberApp::update_property(const PropertyConstPtr &theProperty)
     }
     else if(theProperty == m_mask_grid_size)
     {
-        m_matrix_mask.set_size(*m_mask_grid_size);
+        m_matrix_mask->set_size(*m_mask_grid_size);
     }
     else if(theProperty == m_mask_lifetime)
     {
-        m_matrix_mask.set_lifetime(m_mask_lifetime->value().x, m_mask_lifetime->value().y);
+        m_matrix_mask->set_lifetime(m_mask_lifetime->value().x, m_mask_lifetime->value().y);
     }
     else if(theProperty == m_mask_rate)
     {
-        m_matrix_mask.set_rate(*m_mask_rate);
+        m_matrix_mask->set_rate(*m_mask_rate);
     }
 }
 
@@ -685,7 +691,7 @@ void LED_GrabberApp::reload_media()
         m_media->set_media_ended_callback([this](media::MediaControllerPtr mc)
         {
             LOG_DEBUG << "media ended";
-            
+
             if(*m_is_master && *m_loop)
             {
                 send_network_cmd("restart");
@@ -700,7 +706,7 @@ void LED_GrabberApp::reload_media()
                                   });
             }
         });
-        
+
         m_media->set_on_load_callback([this](media::MediaControllerPtr mc)
         {
             if(m_media->has_video() && m_media->fps() > 0)
@@ -748,15 +754,15 @@ std::string LED_GrabberApp::secs_to_time_str(float the_secs) const
 void LED_GrabberApp::sync_media_to_timestamp(double the_timestamp)
 {
     auto diff = the_timestamp - m_media->current_time();
-    
+
     if(m_media->is_playing())
     {
         m_is_syncing = diff * 1000.0;
-        
+
         // adapt to playback rate
         auto scrub_thresh = g_scrub_thresh / *m_playback_speed;
         auto sync_thresh = g_sync_thresh / *m_playback_speed;
-        
+
         if((abs(diff) > scrub_thresh))
         {
             m_media->seek_to_time(the_timestamp);
@@ -792,15 +798,15 @@ void LED_GrabberApp::begin_network_sync()
 void LED_GrabberApp::send_sync_cmd()
 {
     remove_dead_ip_adresses();
-    
+
     std::unique_lock<std::mutex> lock(g_ip_table_mutex);
     bool use_udp = true;
-    
+
     for(auto &pair : m_ip_roundtrip)
     {
         double sync_delay = median(pair.second) * (use_udp ? 0.5 : 1.5);
         string cmd = "seek_to_time " + to_string(m_media->current_time() + sync_delay, 3);
-        
+
         if(use_udp)
         {
             net::async_send_udp(background_queue().io_service(), cmd, pair.first,
@@ -817,17 +823,17 @@ void LED_GrabberApp::send_sync_cmd()
 void LED_GrabberApp::remove_dead_ip_adresses()
 {
     std::unique_lock<std::mutex> lock(g_ip_table_mutex);
-    
+
     auto now = get_application_time();
     std::list<std::unordered_map<std::string, float>::iterator> dead_iterators;
-    
+
     auto it = m_ip_timestamps.begin();
-    
+
     for(; it != m_ip_timestamps.end(); ++it)
     {
         if(now - it->second >= g_dead_thresh){ dead_iterators.push_back(it); }
     }
-    
+
     // remove dead iterators
     for(auto &dead_it : dead_iterators)
     {
@@ -841,7 +847,7 @@ void LED_GrabberApp::remove_dead_ip_adresses()
 void LED_GrabberApp::send_network_cmd(const std::string &the_cmd)
 {
     remove_dead_ip_adresses();
-    
+
     std::unique_lock<std::mutex> lock(g_ip_table_mutex);
 
     auto it = m_ip_timestamps.begin();
@@ -859,17 +865,17 @@ void LED_GrabberApp::ping_delay(const std::string &the_ip)
 {
     Stopwatch timer;
     timer.start();
-    
+
     auto con = net::tcp_connection::create(background_queue().io_service(), the_ip,
                                            remote_control().tcp_port());
     auto receive_func = [this, timer, con](net::tcp_connection_ptr ptr,
                                            const std::vector<uint8_t> &data)
     {
         std::unique_lock<std::mutex> lock(g_ip_table_mutex);
-        
+
         // we measured 2 roundtrips
         auto delay = timer.time_elapsed() * 0.5;
-        
+
         auto it = m_ip_roundtrip.find(ptr->remote_ip());
         if(it == m_ip_roundtrip.end())
         {
@@ -877,10 +883,10 @@ void LED_GrabberApp::ping_delay(const std::string &the_ip)
             m_ip_roundtrip[ptr->remote_ip()].push_back(delay);
         }
         else{ it->second.push_back(delay); }
-        
+
         LOG_TRACE << ptr->remote_ip() << " (roundtrip, last 10s): "
             << (int)(1000.0 * mean(m_ip_roundtrip[ptr->remote_ip()])) << " ms";
-        
+
 //        ptr->close();
         con->set_tcp_receive_cb({});
     };
@@ -895,14 +901,14 @@ void LED_GrabberApp::create_playlist(const std::string &the_base_dir)
     std::map<fs::FileType, std::vector<fs::path>> files;
     files[fs::FileType::MOVIE] = {};
     files[fs::FileType::AUDIO] = {};
-    
+
     for(const auto &p : fs::get_directory_entries(the_base_dir, "", 3))
     {
         files[fs::get_file_type(p)].push_back(p);
     }
     auto file_list = concat_containers<fs::path>(files[fs::FileType::MOVIE], files[fs::FileType::AUDIO]);
     std::sort(file_list.begin(), file_list.end());
-    
+
     if(file_list.size() != m_playlist.size())
     {
         main_queue().post([this, file_list]()
@@ -1123,7 +1129,7 @@ void LED_GrabberApp::setup_rpc_interface()
 void LED_GrabberApp::set_runmode(RunMode the_mode)
 {
     m_runmode = the_mode;
-    
+
     if(the_mode == MODE_MANUAL_CALIBRATION)
     {
         m_last_calib_click = gl::vec2(-1);
@@ -1138,7 +1144,7 @@ void LED_GrabberApp::process_calib_click(const gl::vec2 &the_click_pos)
         size_t num_points = m_led_res->value().x;
         auto &calib_points = m_calibration_points->value();
         auto diff = (the_click_pos / gl::window_dimension()) - m_last_calib_click;
-        
+
         for(size_t i = 0; i < num_points; ++i)
         {
             float frac = i / (float) (num_points - 1);

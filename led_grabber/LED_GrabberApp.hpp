@@ -19,6 +19,7 @@
 #include "media/media.h"
 #include "LED_Grabber.hpp"
 #include "MatrixMask.hpp"
+#include "ElevatorMask.h"
 
 using namespace crocore;
 
@@ -45,8 +46,9 @@ namespace kinski
         gl::FboPtr m_fbo_downsample;
         Timer m_led_update_timer, m_device_scan_timer;
         
-        gl::MatrixMask m_matrix_mask;
-        
+        gl::MatrixMaskPtr m_matrix_mask = gl::MatrixMask::create();
+        gl::ElevatorMaskPtr m_elevator_mask = gl::ElevatorMask::create({640, 480});
+
         media::MediaControllerPtr m_media = media::MediaController::create();
         media::CameraControllerPtr m_camera = media::CameraController::create();
         
@@ -147,9 +149,9 @@ namespace kinski
         
     public:
 
-        LED_GrabberApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
+        explicit LED_GrabberApp(int argc = 0, char *argv[] = nullptr):ViewerApp(argc, argv){};
         void setup() override;
-        void update(float the_delta_time) override;
+        void update(float delta_time) override;
         void draw() override;
         void resize(int w ,int h) override;
         void key_press(const KeyEvent &e) override;

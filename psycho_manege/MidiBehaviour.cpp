@@ -6,7 +6,7 @@
 //
 //
 
-#include "ModelViewer.h"
+#include "PsychoManage.h"
 
 using namespace std;
 using namespace kinski;
@@ -15,7 +15,7 @@ using namespace kinski;
 #define NOTE_OFF 128
 #define CONTROL_CHANGE 176
 
-void ModelViewer::midi_callback(double time_stamp, const std::vector<uint8_t> &the_msg)
+void PsychoManage::midi_callback(double time_stamp, const std::vector<uint8_t> &the_msg)
 {
     if(the_msg.size() != 3){ return; }
 //    LOG_DEBUG << "midi msg: " << the_msg.size() << " bytes";
