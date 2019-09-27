@@ -28,6 +28,8 @@ public:
 
     void set_speed(float s){ m_speed = s; }
 
+    void set_line_thickness(float t){ m_line_thickness = t; }
+
     void set_spawn_frequency(float f){ m_spawn_frequency = f; }
 
 private:
@@ -46,15 +48,15 @@ private:
 
     float m_speed = .05f;
 
+    float m_line_thickness = .05f;
+
     float m_spawn_frequency = 2.f;
-    float m_next_spawn_time = 0.f;
+
+    float m_spawn_frequency_variance = .4f;
+
     float m_time_accum = 0.0;
 
-    std::deque<line_t> m_lines =
-            {
-                    {.2f, .05f},
-                    {.7f, .125f},
-            };
+    std::deque<line_t> m_lines;
 
 //    std::normal_distribution
 };

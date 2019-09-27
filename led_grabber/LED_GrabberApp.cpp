@@ -88,6 +88,7 @@ void LED_GrabberApp::setup()
     register_property(m_noise_scale);
     register_property(m_elevator_speed);
     register_property(m_elevator_spawn_frequency);
+    register_property(m_elevator_lines_thickness);
 
     observe_properties();
 
@@ -677,6 +678,10 @@ void LED_GrabberApp::update_property(const PropertyConstPtr &theProperty)
     else if(theProperty == m_elevator_spawn_frequency)
     {
         m_elevator_mask->set_spawn_frequency(*m_elevator_spawn_frequency);
+    }
+    else if(theProperty == m_elevator_lines_thickness)
+    {
+        m_elevator_mask->set_line_thickness(*m_elevator_lines_thickness);
     }
 }
 
