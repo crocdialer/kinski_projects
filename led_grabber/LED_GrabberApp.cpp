@@ -41,7 +41,7 @@ namespace
     //!
     uint16_t g_led_tcp_port = 44444;
 
-    constexpr double g_led_refresh_interval = 0.04;
+    constexpr double g_led_refresh_interval = 0.033;
 
     const std::string g_id = "LEDS";
 
@@ -85,6 +85,9 @@ void LED_GrabberApp::setup()
     register_property(m_mask_grid_size);
     register_property(m_mask_lifetime);
     register_property(m_mask_rate);
+    register_property(m_noise_scale);
+    register_property(m_elevator_speed);
+    register_property(m_elevator_spawn_frequency);
 
     observe_properties();
 
@@ -155,6 +158,10 @@ void LED_GrabberApp::update(float delta_time)
     {
         m_elevator_mask->update(delta_time);
         m_matrix_mask->update(delta_time);
+
+        // update simplex texture
+        textures()[TEXTURE_INPUT] = m_noise.simplex(*m_noise_speed * get_application_time());
+        m_noise.texture().set_flipped();
     }
 
     if(m_runmode == MODE_DEFAULT)
@@ -162,9 +169,11 @@ void LED_GrabberApp::update(float delta_time)
         if(m_camera){ m_camera->copy_frame_to_texture(textures()[TEXTURE_CAM_INPUT]); }
         if(m_media)
         {
-            bool has_new_image = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT], true);
+//            bool has_new_image = m_media->copy_frame_to_texture(textures()[TEXTURE_INPUT], true);
+            bool has_new_image = true;
 
-            if(has_new_image && m_led_update_timer.has_expired())
+            if(m_led_update_timer.has_expired())
+//            if(has_new_image && m_led_update_timer.has_expired())
             {
                 auto tex_size = textures()[TEXTURE_INPUT].size();
 
@@ -174,6 +183,7 @@ void LED_GrabberApp::update(float delta_time)
                     {
                         gl::reset_state();
                         gl::clear();
+
                         if(*m_use_masking)
                         {
                             gl::draw_texture_with_mask(textures()[TEXTURE_INPUT], m_elevator_mask->texture(),
@@ -655,6 +665,18 @@ void LED_GrabberApp::update_property(const PropertyConstPtr &theProperty)
     else if(theProperty == m_mask_rate)
     {
         m_matrix_mask->set_rate(*m_mask_rate);
+    }
+    else if(theProperty == m_noise_scale)
+    {
+        m_noise.set_scale(*m_noise_scale);
+    }
+    else if(theProperty == m_elevator_speed)
+    {
+        m_elevator_mask->set_speed(*m_elevator_speed);
+    }
+    else if(theProperty == m_elevator_spawn_frequency)
+    {
+        m_elevator_mask->set_spawn_frequency(*m_elevator_spawn_frequency);
     }
 }
 

@@ -6,7 +6,7 @@
 
 #include "gl/Fbo.hpp"
 #include "gl/Scene.hpp"
-
+#include "gl/Noise.hpp"
 #include "MaskGenerator.hpp"
 
 namespace kinski::gl
@@ -26,6 +26,10 @@ public:
 
     void set_resolution(const glm::vec2 &res);
 
+    void set_speed(float s){ m_speed = s; }
+
+    void set_spawn_frequency(float f){ m_spawn_frequency = f; }
+
 private:
 
     struct line_t
@@ -36,13 +40,23 @@ private:
 
     ElevatorMask() = default;
 
-    float m_velocity = 1.2f;
     gl::FboPtr m_fbo;
 
-    std::vector<line_t> m_lines =
+    glm::vec2 m_resolution = glm::vec2(640, 480);
+
+    float m_speed = .05f;
+
+    float m_spawn_frequency = 2.f;
+    float m_next_spawn_time = 0.f;
+    float m_time_accum = 0.0;
+
+    std::deque<line_t> m_lines =
             {
                     {.2f, .05f},
+                    {.7f, .125f},
             };
+
+//    std::normal_distribution
 };
 
 }
