@@ -89,6 +89,7 @@ void LED_GrabberApp::setup()
     register_property(m_elevator_speed);
     register_property(m_elevator_spawn_frequency);
     register_property(m_elevator_lines_thickness);
+    register_property(m_elevator_tilt);
 
     observe_properties();
 
@@ -160,9 +161,17 @@ void LED_GrabberApp::update(float delta_time)
         m_elevator_mask->update(delta_time);
         m_matrix_mask->update(delta_time);
 
+        // setting for elevator texture
+        m_elevator_mask->texture().set_wrap_s(GL_MIRRORED_REPEAT);
+        m_elevator_mask->texture().set_wrap_t(GL_REPEAT);
+
         // update simplex texture
         textures()[TEXTURE_INPUT] = m_noise.simplex(*m_noise_speed * get_application_time());
-        m_noise.texture().set_flipped();
+        textures()[TEXTURE_INPUT].set_flipped();
+        textures()[TEXTURE_INPUT].set_wrap_s(GL_MIRRORED_REPEAT);
+        textures()[TEXTURE_INPUT].set_wrap_t(GL_MIRRORED_REPEAT);
+        textures()[TEXTURE_INPUT].texture_matrix = glm::rotate(glm::mat4(1), glm::radians(m_elevator_tilt->value()),
+                                                               glm::vec3(0, 0, -1.f));
     }
 
     if(m_runmode == MODE_DEFAULT)
@@ -368,7 +377,7 @@ void LED_GrabberApp::key_press(const KeyEvent &e)
                                                 auto points = m_led_grabber->run_calibration(*m_cam_index,
                                                                                              *m_calibration_thresh,
                                                                                              *m_led_calib_color);
-                                                main_queue().post([this, &points]()
+                                                main_queue().post([this, points]()
                                                                   {
                                                                       m_calibration_points->set_value(
                                                                               std::move(points));

@@ -26,7 +26,8 @@ void ElevatorMask::update(float delta_time)
     if(m_spawn_frequency != 0.f && m_time_accum > 1.f / m_spawn_frequency && m_speed != 0.f)
     {
         line_t l = {};
-        l.thickness = m_line_thickness;
+        l.thickness = crocore::random(std::max(0.f, m_line_thickness - m_line_thickness * m_line_thickness_variance),
+                                      std::min(m_line_thickness + m_line_thickness * m_line_thickness_variance, 1.f));
         l.position = m_speed > 0.f ? -l.thickness / 2.f : 1.f + l.thickness / 2.f;
 
         new_lines.push_back(l);

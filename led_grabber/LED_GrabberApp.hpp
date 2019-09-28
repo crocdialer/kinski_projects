@@ -129,7 +129,8 @@ namespace kinski
         m_noise_speed = Property_<float>::create("noise speed", 0.3f),
         m_elevator_speed = RangedProperty<float>::create("elevator speed", 0.3f, -1.f, 1.f),
         m_elevator_spawn_frequency = RangedProperty<float>::create("elevator spawn frequency", 2.3f, .1f, 10.f),
-        m_elevator_lines_thickness = RangedProperty<float>::create("elevator line thickness", 0.05f, 0.f, .5f);
+        m_elevator_lines_thickness = RangedProperty<float>::create("elevator line thickness", 0.05f, 0.f, .5f),
+        m_elevator_tilt = RangedProperty<float>::create("elevator tilt", 0.f, -45.f, 45.f);
 
         Property_<glm::vec2>::Ptr
         m_noise_scale = Property_<glm::vec2>::create("noise scale", glm::vec2(0.05f));

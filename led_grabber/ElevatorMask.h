@@ -52,7 +52,7 @@ private:
 
     float m_spawn_frequency = 2.f;
 
-    float m_spawn_frequency_variance = .4f;
+    float m_line_thickness_variance = .4f;
 
     float m_time_accum = 0.0;
 
