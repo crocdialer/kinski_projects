@@ -79,7 +79,7 @@ void ElevatorMask::set_resolution(const glm::vec2 &res)
 
     gl::Fbo::Format fmt = {};
 #ifdef KINSKI_GLES_2
-    fmt.color_internal_format = GL_LUMINANCE;
+//    fmt.color_internal_format = GL_LUMINANCE;
 #else
     fmt.color_internal_format = GL_R8;
 #endif
