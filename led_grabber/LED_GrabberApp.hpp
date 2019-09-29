@@ -44,12 +44,12 @@ namespace kinski
         LED_GrabberPtr m_led_grabber = LED_Grabber::create();
         ImagePtr m_image_input;
         gl::FboPtr m_fbo_downsample;
-        Timer m_led_update_timer, m_device_scan_timer;
+        Timer m_led_update_timer, m_device_scan_timer, m_timer_config_reset;
         
         gl::MatrixMaskPtr m_matrix_mask = gl::MatrixMask::create();
         gl::ElevatorMaskPtr m_elevator_mask = gl::ElevatorMask::create({640, 480});
-
         gl::Noise m_noise;
+        crocore::ConnectionPtr m_lora_gateway;
 
         media::MediaControllerPtr m_media = media::MediaController::create();
         media::CameraControllerPtr m_camera = media::CameraController::create();
@@ -156,6 +156,8 @@ namespace kinski
         void process_calib_click(const gl::vec2 &the_click_pos);
 
         void search_devices();
+
+        void lora_gateway_receive(net::tcp_connection_ptr con, const std::vector<uint8_t> &data);
         
     public:
 
