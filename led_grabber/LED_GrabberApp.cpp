@@ -1206,6 +1206,11 @@ void LED_GrabberApp::search_devices()
         m_lora_gateway = net::tcp_connection::create(background_queue().io_service(), "loranger.local", 4444,
                                                      std::bind(&LED_GrabberApp::lora_gateway_receive, this,
                                                                std::placeholders::_1, std::placeholders::_2));
+
+        m_lora_gateway->set_connect_cb([this](crocore::ConnectionPtr con)
+                                       {
+                                            LOG_DEBUG << "connected elevator-control: " << con->description();
+                                       });
     }
 }
 
@@ -1219,7 +1224,7 @@ void LED_GrabberApp::lora_gateway_receive(net::tcp_connection_ptr con, const std
         if(type == "elevator_control")
         {
             float velocity = json_data["velocity"].get<float>();
-            float intensity = crocore::easing::easeInCubic(json_data["intensity"].get<float>());
+            float intensity = json_data["intensity"].get<float>();
             uint8_t touch_state = json_data["touch_status"].get<uint8_t>();
 
             if(*m_elevator_speed < 0.f){ velocity *= -1.f; }
