@@ -6,8 +6,6 @@
 //
 //
 
-#include <crocore/Easing.hpp>
-
 #include "LED_GrabberApp.hpp"
 #include "sensors/sensors.h"
 #include <mutex>
@@ -92,6 +90,7 @@ void LED_GrabberApp::setup()
     register_property(m_elevator_spawn_frequency);
     register_property(m_elevator_lines_thickness);
     register_property(m_elevator_tilt);
+    register_property(m_elevator_button);
 
     observe_properties();
 
@@ -141,6 +140,15 @@ void LED_GrabberApp::setup()
                                 std::bind(&LED_GrabberApp::search_devices, this));
     m_device_scan_timer.set_periodic();
     m_device_scan_timer.expires_from_now(g_device_scan_interval);
+
+    m_timer_config_reset = Timer(main_queue().io_service(),
+                                 [this]()
+                                 {
+                                     LOG_DEBUG << "elevator config reset";
+                                     *m_elevator_speed = 1.0f;
+                                     *m_elevator_spawn_frequency = 0.1f;
+                                     *m_elevator_button = false;
+                                 });
 }
 
 /////////////////////////////////////////////////////////////////
@@ -670,7 +678,7 @@ void LED_GrabberApp::update_property(const PropertyConstPtr &theProperty)
     } else if(theProperty == m_elevator_lines_thickness)
     {
         m_elevator_mask->set_line_thickness(*m_elevator_lines_thickness);
-    }
+    } else if(theProperty == m_elevator_button){ m_elevator_mask->set_force_spawn(*m_elevator_button); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1201,7 +1209,7 @@ void LED_GrabberApp::search_devices()
     };
     sensors::scan_for_serials(background_queue().io_service(), query_cb);
 
-    if(!m_lora_gateway)
+    if(!m_lora_gateway || !m_lora_gateway->is_open())
     {
         m_lora_gateway = net::tcp_connection::create(background_queue().io_service(), "loranger.local", 4444,
                                                      std::bind(&LED_GrabberApp::lora_gateway_receive, this,
@@ -1209,7 +1217,7 @@ void LED_GrabberApp::search_devices()
 
         m_lora_gateway->set_connect_cb([this](crocore::ConnectionPtr con)
                                        {
-                                            LOG_DEBUG << "connected elevator-control: " << con->description();
+                                           LOG_DEBUG << "connected elevator-control: " << con->description();
                                        });
     }
 }
@@ -1219,19 +1227,26 @@ void LED_GrabberApp::lora_gateway_receive(net::tcp_connection_ptr con, const std
     try
     {
         auto json_data = json::parse(data);
-        std::string type = json_data["type"].get<std::string>();//elevator_control
+        std::string type = json_data["type"].get<std::string>();
 
         if(type == "elevator_control")
         {
-            float velocity = json_data["velocity"].get<float>();
-            float intensity = json_data["intensity"].get<float>();
-            uint8_t touch_state = json_data["touch_status"].get<uint8_t>();
+            auto velocity = json_data["velocity"].get<float>();
+            auto intensity = json_data["intensity"].get<float>();
+            auto touch_state = json_data["touch_status"].get<uint8_t>();
+            auto button = json_data["button"].get<uint8_t>();
 
-            if(*m_elevator_speed < 0.f){ velocity *= -1.f; }
-            *m_elevator_speed = velocity;
-            *m_elevator_spawn_frequency = crocore::map_value(intensity, 0.f, 1.f, .1f, 10.f);
-            if(touch_state == 1){ *m_elevator_speed = std::abs(m_elevator_speed->value()); }
-            else if(touch_state == 2){ *m_elevator_speed = -std::abs(m_elevator_speed->value()); }
+            main_queue().post([this, velocity, intensity, touch_state, button]()
+                              {
+                                  *m_elevator_button = button;
+                                  *m_elevator_speed = *m_elevator_speed < 0.f ? -velocity : velocity;
+                                  *m_elevator_spawn_frequency = crocore::map_value(intensity, 0.f, 1.f, .1f, 10.f);
+                                  if(touch_state == 1){ *m_elevator_speed = std::abs(m_elevator_speed->value()); }
+                                  else if(touch_state == 2){ *m_elevator_speed = -std::abs(m_elevator_speed->value()); }
+                              });
+
+            // start reset timer
+            m_timer_config_reset.expires_from_now(10.0);
         }
     } catch(std::exception &e){ LOG_WARNING << e.what(); }
 }

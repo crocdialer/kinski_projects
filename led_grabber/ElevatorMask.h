@@ -32,6 +32,8 @@ public:
 
     void set_spawn_frequency(float f){ m_spawn_frequency = f; }
 
+    void set_force_spawn(bool b){ m_force_spawn = b; }
+
 private:
 
     struct line_t
@@ -55,6 +57,8 @@ private:
     float m_line_thickness_variance = .4f;
 
     float m_time_accum = 0.0;
+
+    bool m_force_spawn = false;
 
     std::deque<line_t> m_lines;
 

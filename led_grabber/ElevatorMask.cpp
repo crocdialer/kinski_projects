@@ -23,7 +23,7 @@ void ElevatorMask::update(float delta_time)
 
     std::deque<line_t> new_lines;
 
-    if(m_spawn_frequency != 0.f && m_time_accum > 1.f / m_spawn_frequency && m_speed != 0.f)
+    if(m_spawn_frequency != 0.f && ( m_force_spawn || (m_time_accum > 1.f / m_spawn_frequency && m_speed != 0.f)))
     {
         line_t l = {};
         l.thickness = crocore::random(std::max(0.f, m_line_thickness - m_line_thickness * m_line_thickness_variance),
