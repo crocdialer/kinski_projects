@@ -81,11 +81,13 @@ void LED_GrabberApp::setup()
     register_property(m_led_proxy_ip);
 
     register_property(m_overlay_color);
+    register_property(m_overlay_color_alt);
     register_property(m_use_masking);
     register_property(m_mask_grid_size);
     register_property(m_mask_lifetime);
     register_property(m_mask_rate);
     register_property(m_noise_scale);
+    register_property(m_lora_gateway_url);
     register_property(m_elevator_speed);
     register_property(m_elevator_spawn_frequency);
     register_property(m_elevator_lines_thickness);
@@ -203,14 +205,16 @@ void LED_GrabberApp::update(float delta_time)
                         gl::reset_state();
                         gl::clear();
 
+                        gl::Color overlay_color = *m_elevator_button ? *m_overlay_color_alt : *m_overlay_color;
+
                         if(*m_use_masking)
                         {
                             gl::draw_texture_with_mask(textures()[TEXTURE_INPUT], m_elevator_mask->texture(),
-                                                       gl::window_dimension(), {0, 0}, m_overlay_color->value().rgb);
+                                                       gl::window_dimension(), {0, 0}, overlay_color.rgb);
                         } else
                         {
                             gl::draw_texture(textures()[TEXTURE_INPUT], gl::window_dimension(), {0, 0},
-                                             m_overlay_color->value().rgb);
+                                             overlay_color.rgb);
                         }
 
                     });
@@ -678,7 +682,7 @@ void LED_GrabberApp::update_property(const PropertyConstPtr &theProperty)
     } else if(theProperty == m_elevator_lines_thickness)
     {
         m_elevator_mask->set_line_thickness(*m_elevator_lines_thickness);
-    } else if(theProperty == m_elevator_button){ m_elevator_mask->set_force_spawn(*m_elevator_button); }
+    } //else if(theProperty == m_elevator_button){ m_elevator_mask->set_force_spawn(*m_elevator_button); }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -1211,7 +1215,7 @@ void LED_GrabberApp::search_devices()
 
     if(!m_lora_gateway || !m_lora_gateway->is_open())
     {
-        m_lora_gateway = net::tcp_connection::create(background_queue().io_service(), "loranger.local", 4444,
+        m_lora_gateway = net::tcp_connection::create(background_queue().io_service(), *m_lora_gateway_url, 4444,
                                                      std::bind(&LED_GrabberApp::lora_gateway_receive, this,
                                                                std::placeholders::_1, std::placeholders::_2));
 

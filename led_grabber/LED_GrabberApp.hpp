@@ -118,7 +118,8 @@ private:
 
     // overlay color
     Property_<gl::Color>::Ptr
-            m_overlay_color = Property_<gl::Color>::create("overlay color", gl::COLOR_WHITE);
+            m_overlay_color = Property_<gl::Color>::create("overlay color", gl::COLOR_WHITE),
+            m_overlay_color_alt = Property_<gl::Color>::create("overlay color alternative", gl::COLOR_WHITE);
 
     // mask generation properties
     Property_<bool>::Ptr
@@ -141,6 +142,9 @@ private:
 
     Property_<glm::vec2>::Ptr
             m_noise_scale = Property_<glm::vec2>::create("noise scale", glm::vec2(0.05f));
+
+    Property_<std::string>::Ptr
+            m_lora_gateway_url = Property_<std::string>::create("lora gateway url", "localhost");
 
     std::string secs_to_time_str(float the_secs) const;
 
