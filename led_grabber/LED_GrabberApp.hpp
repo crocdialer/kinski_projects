@@ -32,7 +32,7 @@ private:
     enum TextureEnum
     {
         TEXTURE_INPUT = 0, TEXTURE_CAM_INPUT = 1, TEXTURE_OUTPUT = 2,
-        TEXTURE_DOWNSAMPLE = 3, TEXTURE_MASK = 4
+        TEXTURE_DOWNSAMPLE = 3, TEXTURE_MASK = 4, TEXTURE_WHITE = 5
     };
 
     enum RunMode
@@ -124,6 +124,7 @@ private:
     // mask generation properties
     Property_<bool>::Ptr
             m_use_masking = Property_<bool>::create("use masking", false),
+            m_use_noise = Property_<bool>::create("use noise", true),
             m_elevator_button = Property_<bool>::create("elevator button", false);
 
     Property_<glm::ivec2>::Ptr

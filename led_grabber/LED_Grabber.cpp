@@ -54,7 +54,7 @@ std::array<uint8_t, 256> create_gamma_lut(float the_brighntess, float the_gamma,
     
     for(int i = 0; i < 256; ++i)
     {
-        ret[i] = roundf(the_max_out * the_brighntess * pow((float)i / 255, the_gamma));
+        ret[i] = roundf(the_max_out * the_brighntess * powf((float)i / 255, the_gamma));
     }
     return ret;
 }
